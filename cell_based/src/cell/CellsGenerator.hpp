@@ -92,6 +92,12 @@ public:
     void GenerateGivenLocationIndices(std::vector<CellPtr>& rCells,
                                       const std::vector<unsigned> locationIndices,
                                       boost::shared_ptr<AbstractCellProperty> pCellProliferativeType=boost::shared_ptr<AbstractCellProperty>());
+    // My changes.
+    void GenerateBasicRandomWithStopProliferateTime(std::vector<CellPtr>& rCells,
+    		unsigned numCells,
+			double stopProliferateTime,
+			boost::shared_ptr<AbstractCellProperty> pCellProliferativeType=boost::shared_ptr<AbstractCellProperty>());
+
 };
 
 template<class CELL_CYCLE_MODEL, unsigned DIM>
@@ -220,5 +226,50 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateGivenLocationIndices(std::vec
         rCells.push_back(p_cell);
     }
 }
+
+// My changes.
+template<class CELL_CYCLE_MODEL, unsigned DIM>
+void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandomWithStopProliferateTime(std::vector<CellPtr>& rCells,
+		unsigned numCells,
+		double stopProliferateTime,
+		boost::shared_ptr<AbstractCellProperty> pCellProliferativeType)
+{
+    rCells.clear();
+
+    rCells.reserve(numCells);
+
+    // Create cells
+    for (unsigned i=0; i<numCells; i++)
+    {
+        CELL_CYCLE_MODEL* p_cell_cycle_model = new CELL_CYCLE_MODEL;
+        p_cell_cycle_model->SetDimension(DIM);
+
+        boost::shared_ptr<AbstractCellProperty> p_state(CellPropertyRegistry::Instance()->Get<WildTypeCellMutationState>());
+        CellPtr p_cell(new Cell(p_state, p_cell_cycle_model));
+
+        if (!pCellProliferativeType)
+        {
+            p_cell->SetCellProliferativeType(CellPropertyRegistry::Instance()->Get<StemCellProliferativeType>());
+        }
+        else
+        {
+            p_cell->SetCellProliferativeType(pCellProliferativeType);
+        }
+
+        double birth_time = -p_cell_cycle_model->GetAverageStemCellCycleTime()*RandomNumberGenerator::Instance()->ranf();
+
+        if (p_cell->GetCellProliferativeType()->IsType<TransitCellProliferativeType>())
+        {
+            birth_time = -p_cell_cycle_model->GetAverageTransitCellCycleTime()*RandomNumberGenerator::Instance()->ranf();
+        }
+
+        p_cell->SetBirthTime(birth_time);
+        
+        // My changes.
+        p_cell->SetStopProliferateTime(stopProliferateTime);
+        rCells.push_back(p_cell);
+    }
+}
+
 
 #endif /* CELLSGENERATOR_HPP_ */

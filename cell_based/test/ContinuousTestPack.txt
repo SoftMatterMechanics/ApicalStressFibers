@@ -93,3 +93,6 @@ tutorial/TestRunningPottsBasedSimulationsTutorial.hpp
 tutorial/TestRunningTumourSpheroidSimulationsTutorial.hpp
 tutorial/TestRunningVertexBasedSimulationsTutorial.hpp
 tutorial/TestVisualizingWithParaviewTutorial.hpp
+
+my_tests/TestMyStripesAdhesionSimulation.hpp
+my_tests/TestMyXToroidalStripesAdhesionSimulation.hpp

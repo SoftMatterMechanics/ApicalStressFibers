@@ -83,7 +83,7 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
     }
 
     // If in 3D, then also populate mFaces
-    if (SPACE_DIM == 3)
+    if (SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2))
     {
         // Use a std::set to keep track of which faces have been added to mFaces
         std::set<unsigned> faces_counted;
@@ -1534,6 +1534,136 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
     std::set<unsigned> nodeA_elem_indices = pNodeA->rGetContainingElementIndices();
     std::set<unsigned> nodeB_elem_indices = pNodeB->rGetContainingElementIndices();
 
+    // my changes get error because there may only be 3, 2 elements
+    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element1 = nullptr; 
+    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element2 = nullptr; 
+    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element3 = nullptr; 
+    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element4 = nullptr; 
+    for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
+         it != rElementsContainingNodes.end();
+         ++it)
+    {
+        if (nodeA_elem_indices.find(*it) == nodeA_elem_indices.end())
+        {
+            p_element3 = this->mElements[*it];
+        }
+        else if (nodeB_elem_indices.find(*it) == nodeB_elem_indices.end())
+        {
+            p_element1 = this->mElements[*it];
+        }
+        else
+        {
+            unsigned nodeA_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeA->GetIndex());
+            unsigned nodeB_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeB->GetIndex());
+            assert(nodeA_local_index < UINT_MAX);
+            assert(nodeB_local_index < UINT_MAX);
+            unsigned nodeB_local_index_plus_one = (nodeB_local_index + 1)%(this->mElements[*it]->GetNumNodes());
+            if (nodeA_local_index == nodeB_local_index_plus_one)
+            {
+                p_element2 = this->mElements[*it];
+            }
+            else
+            {
+                assert(nodeB_local_index == (nodeA_local_index + 1)%(this->mElements[*it]->GetNumNodes()));
+                p_element4 = this->mElements[*it];
+            }
+        }
+    }
+
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceAB = nullptr;
+    if (p_element2 != nullptr)
+        p_faceAB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
+    else
+    {
+        if (p_element4 == nullptr)
+        {
+            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 4 both are void!";
+        }
+        assert(p_element4!= nullptr);
+        p_faceAB = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()) );
+    }// Get faceAB
+    unsigned faceXXA_local_index_in_element1 = 0;
+    if (p_element1 != nullptr)
+    {
+        unsigned nodeXXGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element1->GetNumNodes())%p_element1->GetNumNodes());
+        faceXXA_local_index_in_element1 = p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXXGlobalIndex,pNodeA->GetIndex());
+    }// get faceXXA_local_index_in_element1
+    unsigned faceXB_local_index_in_element3 = 0;
+    if (p_element3 != nullptr)
+    {
+        unsigned nodeXGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element3->GetNumNodes())%p_element3->GetNumNodes());
+        faceXB_local_index_in_element3 = p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXGlobalIndex, pNodeB->GetIndex());
+    }// get faceXB_local_index_in_element3
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYB = nullptr;
+    if (p_element3 != nullptr)
+    {
+        unsigned nodeYGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())+1)%p_element3->GetNumNodes());
+        p_faceYB = p_element3->GetFace(p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(),nodeYGlobalIndex));
+    }
+    else
+    {
+        if (p_element2 == nullptr)
+        {
+            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 3 both are void!";
+        }
+        assert(p_element2!= nullptr);
+
+        unsigned nodeYGlobalIndex = p_element2->GetNodeGlobalIndex((p_element2->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element2->GetNumNodes())%p_element2->GetNumNodes());
+        p_faceYB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYGlobalIndex, pNodeB->GetIndex()));
+    }// get p_faceYB
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYYA = nullptr;
+    if (p_element1 != nullptr)
+    {
+        unsigned nodeYYGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())+1)%p_element1->GetNumNodes());
+        p_faceYYA = p_element1->GetFace(p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(),nodeYYGlobalIndex));
+    }
+    else
+    {
+        if (p_element4 == nullptr)
+        {
+            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 1 and 4 both are void!";
+        }
+        assert(p_element4!= nullptr);
+        unsigned nodeYYGlobalIndex = p_element4->GetNodeGlobalIndex((p_element4->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element4->GetNumNodes())%p_element4->GetNumNodes());
+        p_faceYYA = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYYGlobalIndex, pNodeA->GetIndex()));
+    }// get p_faceYYA
+    unsigned faceAB_local_index_in_element2 = 0;
+    if (p_element2 != nullptr)
+        faceAB_local_index_in_element2 = p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex());
+    unsigned faceAB_local_index_in_element4 = 0;    
+    if (p_element4 != nullptr)
+        faceAB_local_index_in_element4 = p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex());
+
+    // output nodes and faces information of each element:
+    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
+    std::cout << std::endl;
+    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element; 
+    for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
+         it != rElementsContainingNodes.end();
+         ++it)
+    {
+        p_element = this->mElements[*it];
+        std::cout <<  std::endl << "ElementIndex: " << p_element->GetIndex();
+        std::cout <<  std::endl << "Nodes: ";
+        for(unsigned index =0; index< p_element->GetNumNodes(); index++)
+        {
+            std::cout << index << "_" << p_element->GetNodeGlobalIndex(index) << ' ';
+        }
+        std::cout <<  std::endl << "Faces: ";
+        for(unsigned index =0; index< p_element->GetNumFaces(); index++)
+        {
+            std::cout <<  index << "_" << p_element->GetFace(index)->GetIndex();
+            std::cout << " orien_" << p_element->GetOrientation(index);
+            std::cout << " fir_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl << "END: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
+    std::cout << std::endl << std::endl;
+
+    /*--------------------Default element-nodes relationship manipulation---------------------------------*/
     for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
          it != rElementsContainingNodes.end();
          ++it)
@@ -1547,9 +1677,9 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
 
             this->mElements[*it]->AddNode(pNodeA, nodeB_local_index);
         }
+        // Do similarly if the element does not contain node B (now D), as in element 1 above
         else if (nodeB_elem_indices.find(*it) == nodeB_elem_indices.end())
         {
-            // Do similarly if the element does not contain node B (now D), as in element 4 above
             unsigned nodeA_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeA->GetIndex());
             assert(nodeA_local_index < UINT_MAX);
 
@@ -1590,7 +1720,6 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
             }
         }
     }
-
     // Sort out boundary nodes
     if (pNodeA->IsBoundaryNode() || pNodeB->IsBoundaryNode())
     {
@@ -1611,6 +1740,23 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
             pNodeB->SetAsBoundaryNode(true);
         }
     }
+    /*--------------------End of default element-nodes relationship manipulation---------------------------*/
+
+
+    /*-----------------------------------Start of my face manipulation----------------------------------------*/
+    //p_faceAB->ResetAdhesionPara();
+    if (p_element1 != nullptr)
+        p_element1->AddFace(p_faceAB, faceXXA_local_index_in_element1);//mOrientations also need to be changed later
+    if (p_element3 != nullptr)    
+        p_element3->AddFace(p_faceAB, faceXB_local_index_in_element3);//mOrientations also need to be changed
+    p_faceYB->ReplaceOneNodeBy(pNodeB,pNodeA);
+    p_faceYYA->ReplaceOneNodeBy(pNodeA,pNodeB);
+    if (p_element2 != nullptr)
+        p_element2->DeleteFace(faceAB_local_index_in_element2);
+    if (p_element4 != nullptr)
+        p_element4->DeleteFace(faceAB_local_index_in_element4);
+    /*-----------------------------------End of my face manipulation----------------------------------------*/
+
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>

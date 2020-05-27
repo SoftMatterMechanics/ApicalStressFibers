@@ -46,7 +46,7 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
       mOrientations(rOrientations)
 {
     // This constructor should only be used in 3D
-    assert(SPACE_DIM == 3);    // LCOV_EXCL_LINE - code will be removed at compile time
+    assert(SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2));    // LCOV_EXCL_LINE - code will be removed at compile time
 
     // Each face must have an associated orientation
     assert(mFaces.size() == mOrientations.size());
@@ -171,6 +171,10 @@ template<unsigned SPACE_DIM>
 VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Node<SPACE_DIM>*>& rNodes)
     : MutableElement<1, SPACE_DIM>(index, rNodes)
 {
+    if (SPACE_DIM==2)
+    {
+        mUnifiedCellCellAdhesionEnergyParameter = -0.0;
+    }
 }
 
 template<unsigned SPACE_DIM>
