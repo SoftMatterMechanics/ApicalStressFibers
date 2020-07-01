@@ -40,10 +40,12 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::PlaneBoundaryCondition(AbstractCellPopulation<ELEMENT_DIM,SPACE_DIM>* pCellPopulation,
                                                     c_vector<double, SPACE_DIM> point,
-                                                    c_vector<double, SPACE_DIM> normal)
+                                                    c_vector<double, SPACE_DIM> normal,
+                                                    double stopTime)
         : AbstractCellPopulationBoundaryCondition<ELEMENT_DIM,SPACE_DIM>(pCellPopulation),
           mPointOnPlane(point),
-          mUseJiggledNodesOnPlane(false)
+          mUseJiggledNodesOnPlane(false),
+          mStopTime(stopTime)
 {
     assert(norm_2(normal) > 0.0);
     mNormalToPlane = normal/norm_2(normal);
@@ -77,6 +79,8 @@ bool PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::GetUseJiggledNodesOnPlane()
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::ImposeBoundaryCondition(const std::map<Node<SPACE_DIM>*, c_vector<double, SPACE_DIM> >& rOldLocations)
 {
+    if (SimulationTime::Instance()->GetTime()<=mStopTime)
+    {
     ///\todo Move this to constructor. If this is in the constructor then Exception always throws.
     if (dynamic_cast<AbstractOffLatticeCellPopulation<ELEMENT_DIM,SPACE_DIM>*>(this->mpCellPopulation)==nullptr)
     {
@@ -155,6 +159,8 @@ void PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::ImposeBoundaryCondition(cons
         NEVER_REACHED;
         //PlaneBoundaryCondition::ImposeBoundaryCondition is not implemented in 1D
     }
+
+    }
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
@@ -162,6 +168,8 @@ bool PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::VerifyBoundaryCondition()
 {
     bool condition_satisfied = true;
 
+    if (SimulationTime::Instance()->GetTime()<=mStopTime)
+    {
     if (SPACE_DIM == 1)
     {
         EXCEPTION("PlaneBoundaryCondition is not implemented in 1D");
@@ -180,6 +188,7 @@ bool PlaneBoundaryCondition<ELEMENT_DIM,SPACE_DIM>::VerifyBoundaryCondition()
                 break;
             }
         }
+    }
     }
 
     return condition_satisfied;

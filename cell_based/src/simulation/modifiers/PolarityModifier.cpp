@@ -33,74 +33,91 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "AbstractTargetAreaModifier.hpp"
+#include "PolarityModifier.hpp"
+#include "RandomNumberGenerator.hpp"
+
 
 template<unsigned DIM>
-AbstractTargetAreaModifier<DIM>::AbstractTargetAreaModifier()
+PolarityModifier<DIM>::PolarityModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
-      mReferenceTargetArea(1.0),
-      mpCellPopulation(nullptr)
+      mD(0.1),
+      mDt(0.1),
+      mPolarityMagnitude(0.1),
+      mAngleForInitialization(M_PI)
 {
 }
 
 template<unsigned DIM>
-AbstractTargetAreaModifier<DIM>::~AbstractTargetAreaModifier()
+PolarityModifier<DIM>::~PolarityModifier()
 {
 }
 
 template<unsigned DIM>
-void AbstractTargetAreaModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+void PolarityModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
-    UpdateTargetAreas(rCellPopulation);
+    UpdatePolarityOfCells(rCellPopulation);
 }
 
 template<unsigned DIM>
-void AbstractTargetAreaModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory)
+void PolarityModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory)
 {
     /*
      * We must update CellData in SetupSolve(), otherwise it will not have been
      * fully initialised by the time we enter the main time loop.
      */
-    UpdateTargetAreas(rCellPopulation);
+    InitializePolarityOfCells(rCellPopulation);
 }
 
 template<unsigned DIM>
-void AbstractTargetAreaModifier<DIM>::UpdateTargetAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
-    // my changes
-    mpCellPopulation = &rCellPopulation;
-    // Loop over the list of cells, rather than using the population iterator, so as to include dead cells
+    srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
     for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
          cell_iter != rCellPopulation.rGetCells().end();
          ++cell_iter)
     {
-        UpdateTargetAreaOfCell(*cell_iter);
+        double angle = mAngleForInitialization; //angle: 0-PI
+        double polarity_angle = (rand()%int(round((M_PI+angle)*1e5)))/1e5-0.5*angle;// Err: 0-PI-->>(0-x)-(PI+x)
+        polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
     }
 }
 
 template<unsigned DIM>
-double AbstractTargetAreaModifier<DIM>::GetReferenceTargetArea()
+void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
-    return mReferenceTargetArea;
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+         cell_iter != rCellPopulation.rGetCells().end();
+         ++cell_iter)
+    {
+        double x = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
+        double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD*mDt)*x;
+        if (polarity_angle>=2*M_PI)
+            polarity_angle -= 2*M_PI;
+        else if (polarity_angle < 0.0)
+            polarity_angle += 2*M_PI;
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
+    }    
 }
 
 template<unsigned DIM>
-void AbstractTargetAreaModifier<DIM>::SetReferenceTargetArea(double referenceTargetArea)
+void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude)
 {
-    assert(referenceTargetArea >= 0.0);
-    mReferenceTargetArea = referenceTargetArea;
+    pCell->GetCellData()->SetItem("PolarityAngle", polarityAngle);
+    pCell->GetCellData()->SetItem("PolarityMagnitude", polarityMagnitude);
 }
 
+
 template<unsigned DIM>
-void AbstractTargetAreaModifier<DIM>::OutputSimulationModifierParameters(out_stream& rParamsFile)
+void PolarityModifier<DIM>::OutputSimulationModifierParameters(out_stream& rParamsFile)
 {
-    *rParamsFile << "\t\t\t<ReferenceTargetArea>" << mReferenceTargetArea << "</ReferenceTargetArea>\n";
+    // *rParamsFile << "\t\t\t<ReferenceTargetArea>" << mReferenceTargetArea << "</ReferenceTargetArea>\n";
 
     // Next, call method on direct parent class
     AbstractCellBasedSimulationModifier<DIM>::OutputSimulationModifierParameters(rParamsFile);
 }
 
 // Explicit instantiation
-template class AbstractTargetAreaModifier<1>;
-template class AbstractTargetAreaModifier<2>;
-template class AbstractTargetAreaModifier<3>;
+template class PolarityModifier<1>;
+template class PolarityModifier<2>;
+template class PolarityModifier<3>;

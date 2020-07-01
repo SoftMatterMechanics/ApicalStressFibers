@@ -69,6 +69,9 @@ private:
      */
     bool mUseJiggledNodesOnPlane;
 
+    // my changes
+    double mStopTime;
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -95,7 +98,8 @@ public:
      */
     PlaneBoundaryCondition(AbstractCellPopulation<ELEMENT_DIM, SPACE_DIM>* pCellPopulation,
                            c_vector<double, SPACE_DIM> point,
-                           c_vector<double, SPACE_DIM> normal);
+                           c_vector<double, SPACE_DIM> normal,
+                           double stopTime = DOUBLE_UNSET);
 
     /**
      * @return #mPointOnPlane.

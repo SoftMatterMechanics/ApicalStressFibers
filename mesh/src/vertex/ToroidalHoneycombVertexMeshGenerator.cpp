@@ -38,7 +38,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ToroidalHoneycombVertexMeshGenerator::ToroidalHoneycombVertexMeshGenerator(unsigned numElementsAcross,
    unsigned numElementsUp,
    double cellRearrangementThreshold,
-   double t2Threshold)
+   double t2Threshold,
+   double initialArea)
 {
     // numElementsAcross and numElementsUp must be even for toroidal meshes
     assert(numElementsAcross > 1);
@@ -63,6 +64,10 @@ ToroidalHoneycombVertexMeshGenerator::ToroidalHoneycombVertexMeshGenerator(unsig
         {
             double x_coord = ((j%4 == 0)||(j%4 == 3)) ? i+0.5 : i;
             double y_coord = (1.5*j - 0.5*(j%2))*0.5/sqrt(3.0);
+
+            // my changes
+            x_coord *=sqrt(initialArea/(sqrt(3)/2));
+            y_coord *=sqrt(initialArea/(sqrt(3)/2));
 
             Node<2>* p_node = new Node<2>(node_index, false , x_coord, y_coord);
             nodes.push_back(p_node);
@@ -112,8 +117,9 @@ ToroidalHoneycombVertexMeshGenerator::ToroidalHoneycombVertexMeshGenerator(unsig
     }
 
     double mesh_width = numElementsAcross;
+    mesh_width *= sqrt(initialArea/(sqrt(3)/2));
     double mesh_height = 1.5*numElementsUp/sqrt(3.0);
-
+    mesh_height *= sqrt(initialArea/(sqrt(3)/2));
     mpMesh = new Toroidal2dVertexMesh(mesh_width, mesh_height, nodes, elements, cellRearrangementThreshold, t2Threshold);
 }
 

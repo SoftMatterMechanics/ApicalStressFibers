@@ -37,12 +37,14 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ApoptoticCellProperty.hpp"
 #include "DifferentiatedCellProliferativeType.hpp"
 #include "AbstractPhaseBasedCellCycleModel.hpp"
+#include "BernoulliTrialCellCycleModel.hpp"
 
 template<unsigned DIM>
 TargetAreaLinearGrowthModifier<DIM>::TargetAreaLinearGrowthModifier()
     : AbstractTargetAreaModifier<DIM>(),
       mAgeToStartGrowing(DOUBLE_UNSET),
-      mGrowthRate(DOUBLE_UNSET)
+      mGrowthRate(DOUBLE_UNSET),
+      mUseMyOwnRuleForUpdateTargetAreaOfCell(false)
 {
 }
 
@@ -119,10 +121,26 @@ void TargetAreaLinearGrowthModifier<DIM>::UpdateTargetAreaOfCell(CellPtr pCell)
              *
              * \todo This is a little hack that we might want to clean up in the future.
              */
-            if (pCell->ReadyToDivide())
+            //my changes
+            if (dynamic_cast<BernoulliTrialCellCycleModel*>(pCell->GetCellCycleModel())==nullptr)
             {
-                cell_target_area = this->mReferenceTargetArea;
+                if (pCell->ReadyToDivide())
+                {
+                    cell_target_area = this->mReferenceTargetArea;
+                }
             }
+
+            // To do later
+            if (mUseMyOwnRuleForUpdateTargetAreaOfCell)
+            {
+                if (!pCell->GetCellData()->HasItem("target area"))
+                    cell_target_area = this->mReferenceTargetArea;
+                else
+                    cell_target_area = pCell->GetCellData()->GetItem("target area")
+                            + SimulationTime::Instance()->GetTimeStep()*mGrowthRate;
+                cell_target_area = std::min(cell_target_area, this->mReferenceTargetArea);
+            }
+
         }
     }
 

@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DefaultCellProliferativeType.hpp"
 #include "NullSrnModel.hpp"
 #include "SmartPointers.hpp"
+#include "RandomNumberGenerator.hpp"
 
 Cell::Cell(boost::shared_ptr<AbstractCellProperty> pMutationState,
            AbstractCellCycleModel* pCellCycleModel,
@@ -58,8 +59,8 @@ Cell::Cell(boost::shared_ptr<AbstractCellProperty> pMutationState,
       mUndergoingApoptosis(false),
       mIsDead(false),
       mIsLogged(false),
-      mStopProliferateTime(0.0), // My changes.
-      mMyosinActivity(1.0) // My changes.
+      // My changes
+      mMyosinActivity(1.0)
 
 
 {
@@ -458,18 +459,13 @@ bool Cell::ReadyToDivide()
     // This in turn runs any simulations within the CCM through ReadyToDivide();
     mCanDivide = mpCellCycleModel->ReadyToDivide();
 
-    // My changes.
-    double current_time = SimulationTime::Instance()->GetTime();
-    if (current_time>=mStopProliferateTime)
-    {
-        mCanDivide = false;
-    }
-
     return mCanDivide;
 }
 
 CellPtr Cell::Divide()
 {
+    // tmp
+    std::cout << std::endl << "In Cell::Divide()" << std::endl;
     // Check we're allowed to divide
     assert(!IsDead());
     assert(mCanDivide);
@@ -518,10 +514,14 @@ CellPtr Cell::Divide()
     // Set the daughter cell to inherit the apoptosis time of the parent cell
     p_new_cell->SetApoptosisTime(mApoptosisTime);
 
-    // My changes.
-    p_new_cell->SetStopProliferateTime(mStopProliferateTime);
-
+    // my changes
     p_new_cell->SetMyosinActivity(mMyosinActivity);
+    
+    this->GetCellData()->SetItem("target area", 0.5*this->GetCellData()->GetItem("target area"));
+    p_new_cell->GetCellData()->SetItem("target area", 0.5*p_new_cell->GetCellData()->GetItem("target area"));
+    //tmp
+    std::cout << std::endl << "TargetAreaOfNewCell:" << p_new_cell->GetCellData()->GetItem("target area") << std::endl;
+    std::cout << std::endl << "Cell::Divide() finished!" << std::endl;
 
     return p_new_cell;
 }

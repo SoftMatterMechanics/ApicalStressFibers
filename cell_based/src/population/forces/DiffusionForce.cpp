@@ -44,7 +44,10 @@ template<unsigned DIM>
 DiffusionForce<DIM>::DiffusionForce()
     : AbstractForce<DIM>(),
       mAbsoluteTemperature(296.0), // default to room temperature
-      mViscosity(3.204e-6) // default to viscosity of water at room temperature in (using 10 microns and hours)
+      mViscosity(3.204e-6), // default to viscosity of water at room temperature in (using 10 microns and hours)
+      mConsiderPolarity(true),
+      mUseTheSameNodeRadius(false),
+      mTheSameNodeRadius(10.0)
 {
 }
 
@@ -99,12 +102,17 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
         unsigned node_index = node_iter->GetIndex();
         double node_radius = node_iter->GetRadius();
 
-        // If the node radius is zero, then it has not been set...
-        if (node_radius == 0.0)
+        if (!mUseTheSameNodeRadius)
         {
-            // ...so throw an exception to avoid dividing by zero when we compute diffusion_constant below
-            EXCEPTION("SetRadius() must be called on each Node before calling DiffusionForce::AddForceContribution() to avoid a division by zero error");
+            // If the node radius is zero, then it has not been set...
+            if (node_radius == 0.0)
+            {
+                // ...so throw an exception to avoid dividing by zero when we compute diffusion_constant below
+                EXCEPTION("SetRadius() must be called on each Node before calling DiffusionForce::AddForceContribution() to avoid a division by zero error");
+            }
         }
+        else
+            node_radius = mTheSameNodeRadius;
 
         double nu = dynamic_cast<AbstractOffLatticeCellPopulation<DIM>*>(&rCellPopulation)->GetDampingConstant(node_index);
 
@@ -134,6 +142,17 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
             double xi = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
 
             force_contribution[i] = (nu*sqrt(2.0*diffusion_constant*dt)/dt)*xi;
+
+            if (mConsiderPolarity)
+            {
+                std::set<unsigned> containing_elem_indices = node_iter->rGetContainingElementIndices();
+                for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
+                {
+                    double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
+                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
+                    force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                }
+            }
         }
         node_iter->AddAppliedForceContribution(force_contribution);
     }

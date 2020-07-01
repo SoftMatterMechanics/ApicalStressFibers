@@ -96,3 +96,5 @@ tutorial/TestVisualizingWithParaviewTutorial.hpp
 
 my_tests/TestMyStripesAdhesionSimulation.hpp
 my_tests/TestMyXToroidalStripesAdhesionSimulation.hpp
+my_tests/TestMyFluidState.hpp
+my_tests/TestMyXToroidalStripesAdhesionSimulationRAW.hpp

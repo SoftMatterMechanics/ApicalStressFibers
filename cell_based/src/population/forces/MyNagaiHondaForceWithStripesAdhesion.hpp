@@ -108,6 +108,10 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
+    double mSubstrateAdhesionLeadingTopLength;
+
+    double mSubstrateAdhesionParameterAtLeadingTop;
+
     double mSubstrateAdhesionParameter;
 
     double mStripWidth;
@@ -122,21 +126,35 @@ protected:
 
     double mFixedTargetPerimeter;
 
-    double mFixedTargetShapeIndex;
+    double mTargetShapeIndex;
+
+    bool mIfConsiderSubstrateAdhesion;
+
+    bool mIfConsiderReservoirSubstrateAdhesion;
+
+    bool mIfIgnoreReservoirSubstrateAdhesionAtBottom;
+
+    double mReservoirSubstrateAdhesionParameter;
+
+    double mWidth;
+
+    double mCenterOfWidth;
+
+    bool mIfConsiderIntervalSubstrateRepulsion;
 
     bool mUseFineMesh;
 
-    bool mIfSubstrateAdhesionParameterChange;
+    bool mIfSubstrateAdhesionIsHomogeneous;
 
     double mSubstrateAdhesionParameterChangePerUnitLength;
 
-    double mSubstrateAdhesionParameterTopAreaMagnifies;
+    bool mUseFixedTargetArea;
 
-    double mSubstrateAdhesionLeadingTopLength;
+    unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
 
+    bool mIfUseFaceElementToGetAdhesionParameter;
 
-
-
+    bool mOutputInformationForNagaiHondaForce;
 
 public:
 
@@ -248,6 +266,12 @@ public:
     {
       mStripStartYLocation = stripStartYLocation;
     }
+    
+    void SetUseFixedTargetArea(double useFixedTargetArea)
+    {
+      mUseFixedTargetArea = useFixedTargetArea;
+    }
+
     void SetFixedTargetArea(double fixedTargetArea)
     {
       mFixedTargetArea = fixedTargetArea;
@@ -256,32 +280,79 @@ public:
     {
       mFixedTargetPerimeter = fixedTargetPerimeter;
     }
-    void SetFixedTargetShapeIndex(double fixedTargetShapeIndex)
+    void SetTargetShapeIndex(double targetShapeIndex)
     {
-      mFixedTargetShapeIndex = fixedTargetShapeIndex;
+      mTargetShapeIndex = targetShapeIndex;
     }
-    void SetUseFineMesh(double usefineMesh)
+    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
     {
-      mUseFineMesh = usefineMesh;
+      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
     }
-    void SetIfSubstrateAdhesionParameterChange(bool ifSubstrateAdhesionParameterChange)
+    void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
     {
-      mIfSubstrateAdhesionParameterChange = ifSubstrateAdhesionParameterChange;
+      mIfConsiderReservoirSubstrateAdhesion = ifConsiderReservoirSubstrateAdhesion;
+    }
+    void SetIfIgnoreReservoirSubstrateAdhesionAtBottom (bool ifIgnoreReservoirSubstrateAdhesionAtBottom)
+    {
+      mIfIgnoreReservoirSubstrateAdhesionAtBottom = ifIgnoreReservoirSubstrateAdhesionAtBottom;
+    }
+    void SetReservoirSubstrateAdhesionParameter (double reservoirSubstrateAdhesionParameter)
+    {
+      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
+    }
+    void SetWidth(double width)
+    {
+      mWidth = width;
+    }
+    void SetCenterOfWidth(double centerOfWidth)
+    {
+      mCenterOfWidth = centerOfWidth;
+    }
+    void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
+    {
+      mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
+    }
+    void SetUseFineMesh(double useFineMesh)
+    {
+      mUseFineMesh = useFineMesh;
+    }
+    void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
+    {
+      mIfSubstrateAdhesionIsHomogeneous = ifSubstrateAdhesionIsHomogeneous;
     }
 
     void SetSubstrateAdhesionParameterChangePerUnitLength(double substrateAdhesionParameterChangePerUnitLength)
     {
       mSubstrateAdhesionParameterChangePerUnitLength = substrateAdhesionParameterChangePerUnitLength;
     }
-    void SetSubstrateAdhesionParameterTopAreaMagnifies( double substrateAdhesionParameterTopAreaMagnifies)
+    void SetSubstrateAdhesionParameterAtLeadingTop( double substrateAdhesionParameterAtLeadingTop)
     {
-      mSubstrateAdhesionParameterTopAreaMagnifies = substrateAdhesionParameterTopAreaMagnifies;
+      mSubstrateAdhesionParameterAtLeadingTop = substrateAdhesionParameterAtLeadingTop;
     }
     void SetSubstrateAdhesionLeadingTopLength( double substrateAdhesionLeadingTopLength)
     {
       mSubstrateAdhesionLeadingTopLength = substrateAdhesionLeadingTopLength;
     }
 
+    void SetCaseNumberOfMembraneSurfaceEnergyForm ( unsigned caseNumberOfMembraneSurfaceEnergyForm)
+    {
+      this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
+    }
+
+    unsigned GetCaseNumberOfMembraneSurfaceEnergyForm()
+    {
+      return this->mCaseNumberOfMembraneSurfaceEnergyForm;
+    }
+
+    void SetUseFaceElementToGetAdhesionParameterBoolean(bool ifUseFaceElementToGetAdhesionParameter)
+    {
+      mIfUseFaceElementToGetAdhesionParameter = ifUseFaceElementToGetAdhesionParameter;
+    }
+
+    void SetOutputInformationForNagaiHondaForce(bool outputInformationForNagaiHondaForce)
+    {
+      mOutputInformationForNagaiHondaForce = outputInformationForNagaiHondaForce;
+    }
 
 };
 

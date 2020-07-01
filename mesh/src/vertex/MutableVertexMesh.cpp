@@ -55,7 +55,10 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mProtorosetteResolutionProbabilityPerTimestep(protorosetteResolutionProbabilityPerTimestep),
           mRosetteResolutionProbabilityPerTimestep(rosetteResolutionProbabilityPerTimestep),
           mCheckForInternalIntersections(false),
-          mDistanceForT3SwapChecking(5.0)
+          mDistanceForT3SwapChecking(5.0),
+          mIfUpdateFaceElementsInMesh(true),
+          mOutputConciseSwapInformationWhenRemesh(false),
+          mOutputDetailedSwapInformationWhenRemesh(false)
 {
     // Threshold parameters must be strictly positive
     assert(cellRearrangementThreshold > 0.0);
@@ -403,6 +406,7 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElementAlongGivenAxis(
     // If the axis of division does not cross two edges then we cannot proceed
     if (intersecting_nodes.size() != 2)
     {
+        std::cout << std::endl << "Cannot proceed with element division: the given axis of division does not cross two edges of the element" << std::endl;
         EXCEPTION("Cannot proceed with element division: the given axis of division does not cross two edges of the element");
     }
 
@@ -493,6 +497,34 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElementAlongGivenAxis(
         unsigned new_node_global_index = this->AddNode(new Node<SPACE_DIM>(0, is_boundary, intersection[0], intersection[1]));
         nodes_added++;
 
+        // my changes:
+        // 1.mark the original face as deleted.
+        // 2.create two new faces!
+        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = nullptr;
+        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAC = nullptr;
+        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceCB = nullptr;
+        Node<SPACE_DIM>* p_node_C = this->GetNode(new_node_global_index);
+        if (mIfUpdateFaceElementsInMesh)
+        {
+            p_faceAB = pElement->GetFace(pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    p_node_A->GetIndex(), p_node_B->GetIndex()));
+            p_faceAB->MarkAsDeleted();
+
+            unsigned faceAC_index = this->GetNumFaces();
+            std::vector<Node<SPACE_DIM>*> nodes_faceAC;
+            nodes_faceAC.push_back(p_node_A);
+            nodes_faceAC.push_back(p_node_C);
+            p_faceAC = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceAC_index, nodes_faceAC);
+            (this->mFaces).push_back(p_faceAC);
+
+            unsigned faceCB_index = this->GetNumFaces();
+            std::vector<Node<SPACE_DIM>*> nodes_faceCB;
+            nodes_faceCB.push_back(p_node_C);
+            nodes_faceCB.push_back(p_node_B);
+            p_faceCB = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceCB_index, nodes_faceCB);
+            (this->mFaces).push_back(p_faceCB);
+        }
+
         // Now make sure the new node is added to all neighbouring elements
 
         // Find common elements
@@ -537,6 +569,32 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElementAlongGivenAxis(
 
             // Add new node to this element
             this->GetElement(*iter)->AddNode(this->GetNode(new_node_global_index), index);
+
+            // my changes for face manipulation:
+            // 1.delete original face in the element: we don't keep the original face to avoid repeated manipulation of replace node
+            // 2.add two faces in the element in order.
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                if (index==local_indexA)
+                {
+                    assert(*iter==pElement->GetIndex());
+                    p_element->DeleteFace(p_element->GetFaceLocalIndex(p_faceAB->GetIndex()));
+                    Node<SPACE_DIM>* p_node_X = p_element->GetNode((index-1+p_element->GetNumNodes())%p_element->GetNumNodes());
+                    p_element->AddFace(p_faceAC, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_X->GetIndex(), p_node_A->GetIndex()));
+                    p_element->AddFace(p_faceCB, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_A->GetIndex(), p_node_C->GetIndex()));
+
+                }
+                else
+                {
+                    assert(*iter!=pElement->GetIndex());
+                    p_element->DeleteFace(p_element->GetFaceLocalIndex(p_faceAB->GetIndex()));
+                    Node<SPACE_DIM>* p_node_X = p_element->GetNode((index-1+p_element->GetNumNodes())%p_element->GetNumNodes());
+                    p_element->AddFace(p_faceCB, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_X->GetIndex(), p_node_B->GetIndex()));
+                    p_element->AddFace(p_faceAC, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_B->GetIndex(), p_node_C->GetIndex()));
+                }
+                
+            }
+
         }
 
         // Store index of new node
@@ -579,6 +637,9 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
     unsigned node1_index = (nodeAIndex < nodeBIndex) ? nodeAIndex : nodeBIndex; // low index
     unsigned node2_index = (nodeAIndex < nodeBIndex) ? nodeBIndex : nodeAIndex; // high index
 
+    Node<SPACE_DIM>* p_Node_C = pElement->GetNode(node1_index);
+    Node<SPACE_DIM>* p_Node_D = pElement->GetNode(node2_index);
+
     // Store the number of nodes in the element (this changes when nodes are deleted from the element)
     unsigned num_nodes = pElement->GetNumNodes();
 
@@ -602,8 +663,23 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
         delete this->mElements[new_element_index];
     }
 
+    // my changes
+    std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*> element_faces;// get error in instantialtion
+    std::vector<bool> element_orientations;
+    if (mIfUpdateFaceElementsInMesh)
+    {
+        for (unsigned i =0; i< num_nodes; i++)
+        {
+            element_faces.push_back(pElement->GetFace(i));
+            element_orientations.push_back(pElement->GetOrientation(i));
+        }
+    }
+
     // Add the new element to the mesh
-    AddElement(new VertexElement<ELEMENT_DIM,SPACE_DIM>(new_element_index, nodes_elem));
+    if (mIfUpdateFaceElementsInMesh)// my changes
+        AddElement(new VertexElement<ELEMENT_DIM,SPACE_DIM>(new_element_index, element_faces, element_orientations, nodes_elem));
+    else
+        AddElement(new VertexElement<ELEMENT_DIM,SPACE_DIM>(new_element_index, nodes_elem));
 
     /**
      * Remove the correct nodes from each element. If placeOriginalElementBelow is true,
@@ -636,13 +712,14 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
 
     for (unsigned i=num_nodes; i>0; i--)
     {
-        if (i-1 < node1_index || i-1 > node2_index)
+        // note: it is very good for the iteration start from large index, in this case!
+        if (i-1 < node1_index || i-1 > node2_index)// node is in the nodes range index: 2
         {
-            if (height_midpoint_1 < height_midpoint_2)
+            if (height_midpoint_1 < height_midpoint_2) // nodes in the nodes range index: 2 are in the above(new element for default).
             {
                 if (placeOriginalElementBelow)
                 {
-                    pElement->DeleteNode(i-1);
+                    pElement->DeleteNode(i-1);// node is kept in the new element, so delete it from the old element.
                 }
                 else
                 {
@@ -685,6 +762,125 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
                     this->mElements[new_element_index]->DeleteNode(i-1);
                 }
             }
+        }
+    }
+
+    // my changes
+    if (mIfUpdateFaceElementsInMesh)
+    {
+        for (unsigned i=0; i<num_nodes; i++)
+        {
+            if (i < node1_index || i >=node2_index)// face to be deleted is in the nodes range index: 2
+            {
+                if (height_midpoint_1 < height_midpoint_2) // face to be deleted in the nodes range index: 2 are in the above(new element for default).
+                {
+                    if (placeOriginalElementBelow)
+                    {
+                        // face is kept in the new element, so delete it from the old element.
+                        pElement->DeleteFace(pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                        
+                    }
+                    else
+                    {
+                        this->mElements[new_element_index]->DeleteFace(this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+
+                    }
+                }
+                else
+                {
+                    if (placeOriginalElementBelow)
+                    {
+                        this->mElements[new_element_index]->DeleteFace(this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                    else
+                    {
+                        // face is kept in the new element, so delete it from the old element.
+                        pElement->DeleteFace(pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                }
+            }
+            else
+            {
+                if (height_midpoint_1 < height_midpoint_2)
+                {
+                    if (placeOriginalElementBelow)
+                    {
+                        this->mElements[new_element_index]->DeleteFace(this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                    else
+                    {
+                        pElement->DeleteFace(pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                }
+                else
+                {
+                    if (placeOriginalElementBelow)
+                    {
+                        pElement->DeleteFace(pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                    else
+                    {
+                        this->mElements[new_element_index]->DeleteFace(this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                                nodes_elem[i]->GetIndex(), nodes_elem[(i+1)%num_nodes]->GetIndex()));
+                    }
+                }
+            }
+
+        }
+
+        unsigned faceCD_index = this->GetNumFaces();
+        std::vector<Node<SPACE_DIM>*> nodes_faceCD;
+        nodes_faceCD.push_back(p_Node_C);
+        nodes_faceCD.push_back(p_Node_D);
+        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceCD = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceCD_index, nodes_faceCD);
+        (this->mFaces).push_back(p_faceCD);
+
+        // unsigned previous_face_first_node_global_index;
+        // unsigned previous_face_second_node_global_index;
+        //for old element:
+        // if in the range 1:
+        if (placeOriginalElementBelow) //old in the below
+        {
+            if (height_midpoint_1<height_midpoint_2) // range 1 in the below->old in the range 1.
+            {                
+                pElement->AddFace(p_faceCD, pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    pElement->GetNodeGlobalIndex((pElement->GetNodeLocalIndex(p_Node_D->GetIndex())-1+pElement->GetNumNodes())%pElement->GetNumNodes()), p_Node_D->GetIndex()));
+                this->mElements[new_element_index]->AddFace(p_faceCD, this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    this->mElements[new_element_index]->GetNodeGlobalIndex((this->mElements[new_element_index]->GetNodeLocalIndex(p_Node_C->GetIndex())-1+this->mElements[new_element_index]->GetNumNodes())%this->mElements[new_element_index]->GetNumNodes()), p_Node_C->GetIndex()));
+            }
+            else
+            {
+                this->mElements[new_element_index]->AddFace(p_faceCD, this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    this->mElements[new_element_index]->GetNodeGlobalIndex((this->mElements[new_element_index]->GetNodeLocalIndex(p_Node_D->GetIndex())-1+this->mElements[new_element_index]->GetNumNodes())%this->mElements[new_element_index]->GetNumNodes()), p_Node_D->GetIndex()));
+                pElement->AddFace(p_faceCD, pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    pElement->GetNodeGlobalIndex((pElement->GetNodeLocalIndex(p_Node_C->GetIndex())-1+pElement->GetNumNodes())%pElement->GetNumNodes()), p_Node_C->GetIndex()));
+            }
+            
+        }
+        else
+        {
+            if (height_midpoint_1>height_midpoint_2) // range 1 in the above->old in the range 1.
+            {                
+                pElement->AddFace(p_faceCD, pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    pElement->GetNodeGlobalIndex((pElement->GetNodeLocalIndex(p_Node_D->GetIndex())-1+pElement->GetNumNodes())%pElement->GetNumNodes()), p_Node_D->GetIndex()));
+                this->mElements[new_element_index]->AddFace(p_faceCD, this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    this->mElements[new_element_index]->GetNodeGlobalIndex((this->mElements[new_element_index]->GetNodeLocalIndex(p_Node_C->GetIndex())-1+this->mElements[new_element_index]->GetNumNodes())%this->mElements[new_element_index]->GetNumNodes()), p_Node_C->GetIndex()));
+            }
+            else
+            {
+                this->mElements[new_element_index]->AddFace(p_faceCD, this->mElements[new_element_index]->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    this->mElements[new_element_index]->GetNodeGlobalIndex((this->mElements[new_element_index]->GetNodeLocalIndex(p_Node_D->GetIndex())-1+this->mElements[new_element_index]->GetNumNodes())%this->mElements[new_element_index]->GetNumNodes()), p_Node_D->GetIndex()));
+                pElement->AddFace(p_faceCD, pElement->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(
+                    pElement->GetNodeGlobalIndex((pElement->GetNodeLocalIndex(p_Node_C->GetIndex())-1+pElement->GetNumNodes())%pElement->GetNumNodes()), p_Node_C->GetIndex()));
+            }
+            
         }
     }
 
@@ -1437,6 +1633,23 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::IdentifySwapType(Node<SPACE_DIM>
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformNodeMerge(Node<SPACE_DIM>* pNodeA, Node<SPACE_DIM>* pNodeB)
 {
+    // my changes
+    if (mOutputConciseSwapInformationWhenRemesh)
+    {
+        std::cout << std::endl << "We are now at PerformNodeMerge!" << std::endl;
+        std::cout << "Node A: Index=" << pNodeA->GetIndex() << ", Location=" 
+                << pNodeA->rGetLocation()[0] << ", " << pNodeA->rGetLocation()[1] << std::endl;
+        std::cout << "Node B: Index=" << pNodeB->GetIndex() << ", Location=" 
+                << pNodeB->rGetLocation()[0] << ", " << pNodeB->rGetLocation()[1] << std::endl;
+    }
+    /*
+    *     \  (/                    CASE: NodeMerge
+    *      \A/)
+    *       | 
+    *       |            edge AB is a boundary edge.
+    *      /B\)
+    *    X/  (\
+    */
     // Find the sets of elements containing each of the nodes, sorted by index
     std::set<unsigned> nodeA_elem_indices = pNodeA->rGetContainingElementIndices();
     std::set<unsigned> nodeB_elem_indices = pNodeB->rGetContainingElementIndices();
@@ -1456,20 +1669,96 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformNodeMerge(Node<SPACE_DIM>
          * If this element already contains node A, then just remove node B.
          * Otherwise replace it with node A in the element and remove it from mNodes.
          */
-        if (nodeA_elem_indices.count(*it) != 0)
+        if (nodeA_elem_indices.count(*it) != 0)// in element has both A and B
         {
+            // my changes
+            VertexElement<ELEMENT_DIM, SPACE_DIM>* element = this->mElements[*it];
+            unsigned node_A_local_index = element->GetNodeLocalIndex(pNodeA->GetIndex());
+            bool B_is_after_A_in_this_elem = (node_B_local_index - node_A_local_index + element->GetNumNodes()) % element->GetNumNodes() == 1;
+            if (B_is_after_A_in_this_elem == false)
+                assert((node_A_local_index - node_B_local_index + element->GetNumNodes()) % element->GetNumNodes() == 1);
+            
+            // Delete node B in this element
             this->mElements[*it]->DeleteNode(node_B_local_index);
+            
+            // my changes
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                if (B_is_after_A_in_this_elem)// in element has both A and B, if previous nodes order: A->B->X
+                {
+                    unsigned node_X_local_index = (element->GetNodeLocalIndex(pNodeA->GetIndex()) + 1) % element->GetNumNodes();
+                    Node<SPACE_DIM>* pNodeX = element->GetNode(node_X_local_index);
+                    // note: faceBX may have already been treated, so we need to check it first!
+                    if (element->CheckIfHasThisFace(pNodeB->GetIndex(), pNodeX->GetIndex()))
+                    {
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceBX = element->GetFace(element
+                                ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeX->GetIndex()));
+                        p_faceBX->ReplaceOneNodeBy(pNodeB, pNodeA);
+                        p_faceBX->ResetFaceValues();
+                    }
+                    element->GetFace(element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()))
+                            ->MarkAsDeleted();
+                    element->DeleteFace(element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                }
+                else
+                {
+                    unsigned node_X_local_index = (element->GetNodeLocalIndex(pNodeA->GetIndex()) - 1+ element->GetNumNodes()) % element->GetNumNodes();
+                    Node<SPACE_DIM>* pNodeX = element->GetNode(node_X_local_index);
+                    // note: faceXB may have already been treated, so we need to check it first!
+                    if (element->CheckIfHasThisFace(pNodeX->GetIndex(), pNodeB->GetIndex()))
+                    {
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXB = element->GetFace(element
+                                ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeB->GetIndex()));
+                        p_faceXB->ReplaceOneNodeBy(pNodeB, pNodeA);
+                        p_faceXB->ResetFaceValues();
+                    }
+                    element->GetFace(element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()))
+                            ->MarkAsDeleted();
+                    element->DeleteFace(element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
+                }
+            }
+
         }
-        else
+        else// in element only has B
         {
             // Replace node B with node A in this element
             this->mElements[*it]->UpdateNode(node_B_local_index, pNodeA);
+
+            // my changes
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                VertexElement<ELEMENT_DIM, SPACE_DIM>* element = this->mElements[*it];
+                unsigned node_X_local_index = (element->GetNodeLocalIndex(pNodeA->GetIndex()) - 1+element->GetNumNodes()) % element->GetNumNodes();
+                unsigned node_Y_local_index = (element->GetNodeLocalIndex(pNodeA->GetIndex()) + 1+element->GetNumNodes()) % element->GetNumNodes();
+                Node<SPACE_DIM>* pNodeX = element->GetNode(node_X_local_index);
+                Node<SPACE_DIM>* pNodeY = element->GetNode(node_Y_local_index);
+                // note: faceXB may have already been treated, so we need to check it first!            
+                if (element->CheckIfHasThisFace(pNodeX->GetIndex(), pNodeB->GetIndex()))
+                {
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXB = element->GetFace(element
+                            ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeB->GetIndex()));
+                    p_faceXB->ReplaceOneNodeBy(pNodeB, pNodeA);
+                    p_faceXB->ResetFaceValues();
+                }
+                // note: faceBY may have already been treated, so we need to check it first!            
+                if (element->CheckIfHasThisFace(pNodeB->GetIndex(), pNodeY->GetIndex()))
+                {
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceBY = element->GetFace(element
+                            ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeY->GetIndex()));
+                    p_faceBY->ReplaceOneNodeBy(pNodeB, pNodeA);
+                    p_faceBY->ResetFaceValues();
+                }
+            }
         }
     }
 
     assert(!(this->mNodes[node_B_index]->IsDeleted()));
     this->mNodes[node_B_index]->MarkAsDeleted();
     mDeletedNodeIndices.push_back(node_B_index);
+
+    // my changes
+    if (mOutputConciseSwapInformationWhenRemesh)
+    std::cout << "PerformNodeMerge finished." << std::endl;
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
@@ -1477,6 +1766,21 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
                                                               Node<SPACE_DIM>* pNodeB,
                                                               std::set<unsigned>& rElementsContainingNodes)
 {
+    if (mOutputConciseSwapInformationWhenRemesh)
+    {
+        std::cout << std::endl << "We are now at PerformT1Swap!" << std::endl;
+        std::cout << "Node A: Index=" << pNodeA->GetIndex() << ", Location=" 
+                << pNodeA->rGetLocation()[0] << ", " << pNodeA->rGetLocation()[1] << std::endl;
+        std::cout << "Node B: Index=" << pNodeB->GetIndex() << ", Location=" 
+                << pNodeB->rGetLocation()[0] << ", " << pNodeB->rGetLocation()[1] << std::endl;
+        std::cout << "Indices of Relevant elements:";
+        for (std::set<unsigned>::iterator iter = rElementsContainingNodes.begin(); iter != rElementsContainingNodes.end(); iter++ )
+        {
+            std::cout << ' ' << this->GetElement(*iter)->GetIndex();
+        }
+        std::cout << std::endl;
+    }
+
     // First compute and store the location of the T1 swap, which is at the midpoint of nodes A and B
     double distance_between_nodes_CD = mCellRearrangementRatio*mCellRearrangementThreshold;
 
@@ -1534,134 +1838,144 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
     std::set<unsigned> nodeA_elem_indices = pNodeA->rGetContainingElementIndices();
     std::set<unsigned> nodeB_elem_indices = pNodeB->rGetContainingElementIndices();
 
-    // my changes get error because there may only be 3, 2 elements
+    // my changes
+    // get error because there may only be 3, 2 elements
     VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element1 = nullptr; 
     VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element2 = nullptr; 
     VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element3 = nullptr; 
     VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element4 = nullptr; 
-    for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
-         it != rElementsContainingNodes.end();
-         ++it)
+
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceAB = nullptr;
+    unsigned faceXXA_local_index_in_element1 = 0;
+    unsigned faceXB_local_index_in_element3 = 0;
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYB = nullptr;
+    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYYA = nullptr;
+    unsigned faceAB_local_index_in_element2 = 0;
+    unsigned faceAB_local_index_in_element4 = 0;    
+
+    // preparation of some valuables for later face manipulation
+    if (mIfUpdateFaceElementsInMesh)
     {
-        if (nodeA_elem_indices.find(*it) == nodeA_elem_indices.end())
+        for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
+            it != rElementsContainingNodes.end();
+            ++it)
         {
-            p_element3 = this->mElements[*it];
-        }
-        else if (nodeB_elem_indices.find(*it) == nodeB_elem_indices.end())
-        {
-            p_element1 = this->mElements[*it];
-        }
-        else
-        {
-            unsigned nodeA_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeA->GetIndex());
-            unsigned nodeB_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeB->GetIndex());
-            assert(nodeA_local_index < UINT_MAX);
-            assert(nodeB_local_index < UINT_MAX);
-            unsigned nodeB_local_index_plus_one = (nodeB_local_index + 1)%(this->mElements[*it]->GetNumNodes());
-            if (nodeA_local_index == nodeB_local_index_plus_one)
+            if (nodeA_elem_indices.find(*it) == nodeA_elem_indices.end())
             {
-                p_element2 = this->mElements[*it];
+                p_element3 = this->mElements[*it];
+            }
+            else if (nodeB_elem_indices.find(*it) == nodeB_elem_indices.end())
+            {
+                p_element1 = this->mElements[*it];
             }
             else
             {
-                assert(nodeB_local_index == (nodeA_local_index + 1)%(this->mElements[*it]->GetNumNodes()));
-                p_element4 = this->mElements[*it];
+                unsigned nodeA_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeA->GetIndex());
+                unsigned nodeB_local_index = this->mElements[*it]->GetNodeLocalIndex(pNodeB->GetIndex());
+                assert(nodeA_local_index < UINT_MAX);
+                assert(nodeB_local_index < UINT_MAX);
+                unsigned nodeB_local_index_plus_one = (nodeB_local_index + 1)%(this->mElements[*it]->GetNumNodes());
+                if (nodeA_local_index == nodeB_local_index_plus_one)
+                {
+                    p_element2 = this->mElements[*it];
+                }
+                else
+                {
+                    assert(nodeB_local_index == (nodeA_local_index + 1)%(this->mElements[*it]->GetNumNodes()));
+                    p_element4 = this->mElements[*it];
+                }
             }
         }
+
+        if (p_element2 != nullptr)
+            p_faceAB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
+        else
+        {
+            if (p_element4 == nullptr)
+            {
+                std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 4 both are void!";
+            }
+            assert(p_element4!= nullptr);
+            p_faceAB = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()) );
+        }// Get faceAB
+        if (p_element1 != nullptr)
+        {
+            unsigned nodeXXGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element1->GetNumNodes())%p_element1->GetNumNodes());
+            faceXXA_local_index_in_element1 = p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXXGlobalIndex,pNodeA->GetIndex());
+        }// get faceXXA_local_index_in_element1
+        if (p_element3 != nullptr)
+        {
+            unsigned nodeXGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element3->GetNumNodes())%p_element3->GetNumNodes());
+            faceXB_local_index_in_element3 = p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXGlobalIndex, pNodeB->GetIndex());
+        }// get faceXB_local_index_in_element3
+        if (p_element3 != nullptr)
+        {
+            unsigned nodeYGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())+1)%p_element3->GetNumNodes());
+            p_faceYB = p_element3->GetFace(p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(),nodeYGlobalIndex));
+        }
+        else
+        {
+            if (p_element2 == nullptr)
+            {
+                std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 3 both are void!";
+            }
+            assert(p_element2!= nullptr);
+
+            unsigned nodeYGlobalIndex = p_element2->GetNodeGlobalIndex((p_element2->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element2->GetNumNodes())%p_element2->GetNumNodes());
+            p_faceYB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYGlobalIndex, pNodeB->GetIndex()));
+        }// get p_faceYB
+        if (p_element1 != nullptr)
+        {
+            unsigned nodeYYGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())+1)%p_element1->GetNumNodes());
+            p_faceYYA = p_element1->GetFace(p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(),nodeYYGlobalIndex));
+        }
+        else
+        {
+            if (p_element4 == nullptr)
+            {
+                std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 1 and 4 both are void!";
+            }
+            assert(p_element4!= nullptr);
+            unsigned nodeYYGlobalIndex = p_element4->GetNodeGlobalIndex((p_element4->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element4->GetNumNodes())%p_element4->GetNumNodes());
+            p_faceYYA = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYYGlobalIndex, pNodeA->GetIndex()));
+        }// get p_faceYYA
+        if (p_element2 != nullptr)
+            faceAB_local_index_in_element2 = p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex());
+        if (p_element4 != nullptr)
+            faceAB_local_index_in_element4 = p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex());
     }
 
-    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceAB = nullptr;
-    if (p_element2 != nullptr)
-        p_faceAB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
-    else
+    // output initial nodes and faces information of each element:
+    if(mOutputDetailedSwapInformationWhenRemesh)
     {
-        if (p_element4 == nullptr)
-        {
-            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 4 both are void!";
-        }
-        assert(p_element4!= nullptr);
-        p_faceAB = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()) );
-    }// Get faceAB
-    unsigned faceXXA_local_index_in_element1 = 0;
-    if (p_element1 != nullptr)
-    {
-        unsigned nodeXXGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element1->GetNumNodes())%p_element1->GetNumNodes());
-        faceXXA_local_index_in_element1 = p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXXGlobalIndex,pNodeA->GetIndex());
-    }// get faceXXA_local_index_in_element1
-    unsigned faceXB_local_index_in_element3 = 0;
-    if (p_element3 != nullptr)
-    {
-        unsigned nodeXGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element3->GetNumNodes())%p_element3->GetNumNodes());
-        faceXB_local_index_in_element3 = p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeXGlobalIndex, pNodeB->GetIndex());
-    }// get faceXB_local_index_in_element3
-    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYB = nullptr;
-    if (p_element3 != nullptr)
-    {
-        unsigned nodeYGlobalIndex = p_element3->GetNodeGlobalIndex((p_element3->GetNodeLocalIndex(pNodeB->GetIndex())+1)%p_element3->GetNumNodes());
-        p_faceYB = p_element3->GetFace(p_element3->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(),nodeYGlobalIndex));
-    }
-    else
-    {
-        if (p_element2 == nullptr)
-        {
-            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 2 and 3 both are void!";
-        }
-        assert(p_element2!= nullptr);
-
-        unsigned nodeYGlobalIndex = p_element2->GetNodeGlobalIndex((p_element2->GetNodeLocalIndex(pNodeB->GetIndex())-1+p_element2->GetNumNodes())%p_element2->GetNumNodes());
-        p_faceYB = p_element2->GetFace(p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYGlobalIndex, pNodeB->GetIndex()));
-    }// get p_faceYB
-    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceYYA = nullptr;
-    if (p_element1 != nullptr)
-    {
-        unsigned nodeYYGlobalIndex = p_element1->GetNodeGlobalIndex((p_element1->GetNodeLocalIndex(pNodeA->GetIndex())+1)%p_element1->GetNumNodes());
-        p_faceYYA = p_element1->GetFace(p_element1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(),nodeYYGlobalIndex));
-    }
-    else
-    {
-        if (p_element4 == nullptr)
-        {
-            std::cout << std::endl << "Err in MutableVertexMesh::PerformT1Swap: element 1 and 4 both are void!";
-        }
-        assert(p_element4!= nullptr);
-        unsigned nodeYYGlobalIndex = p_element4->GetNodeGlobalIndex((p_element4->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element4->GetNumNodes())%p_element4->GetNumNodes());
-        p_faceYYA = p_element4->GetFace(p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(nodeYYGlobalIndex, pNodeA->GetIndex()));
-    }// get p_faceYYA
-    unsigned faceAB_local_index_in_element2 = 0;
-    if (p_element2 != nullptr)
-        faceAB_local_index_in_element2 = p_element2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex());
-    unsigned faceAB_local_index_in_element4 = 0;    
-    if (p_element4 != nullptr)
-        faceAB_local_index_in_element4 = p_element4->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex());
-
-    // output nodes and faces information of each element:
-    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
-    std::cout << std::endl;
-    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
-    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
-    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element; 
-    for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
-         it != rElementsContainingNodes.end();
-         ++it)
-    {
-        p_element = this->mElements[*it];
-        std::cout <<  std::endl << "ElementIndex: " << p_element->GetIndex();
-        std::cout <<  std::endl << "Nodes: ";
-        for(unsigned index =0; index< p_element->GetNumNodes(); index++)
-        {
-            std::cout << index << "_" << p_element->GetNodeGlobalIndex(index) << ' ';
-        }
-        std::cout <<  std::endl << "Faces: ";
-        for(unsigned index =0; index< p_element->GetNumFaces(); index++)
-        {
-            std::cout <<  index << "_" << p_element->GetFace(index)->GetIndex();
-            std::cout << " orien_" << p_element->GetOrientation(index);
-            std::cout << " fir_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
-        }
+        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
         std::cout << std::endl;
+        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+        VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element; 
+        for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
+            it != rElementsContainingNodes.end();
+            ++it)
+        {
+            p_element = this->mElements[*it];
+            std::cout <<  std::endl << "ElementIndex: " << p_element->GetIndex();
+            std::cout <<  std::endl << "Nodes: ";
+            for(unsigned index =0; index< p_element->GetNumNodes(); index++)
+            {
+                std::cout << index << "_" << p_element->GetNodeGlobalIndex(index) << ' ';
+            }
+            std::cout <<  std::endl << "Faces: ";
+            for(unsigned index =0; index< p_element->GetNumFaces(); index++)
+            {
+                std::cout <<  index << "_" << p_element->GetFace(index)->GetIndex();
+                std::cout << " orien_" << p_element->GetOrientation(index);
+                std::cout << " fir_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl << "END: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
+        std::cout << std::endl << std::endl;
     }
-    std::cout << std::endl << "END: Nodes and Faces Information of T1 swap elements, INITIAL-----------------";
-    std::cout << std::endl << std::endl;
 
     /*--------------------Default element-nodes relationship manipulation---------------------------------*/
     for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
@@ -1744,18 +2058,57 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
 
 
     /*-----------------------------------Start of my face manipulation----------------------------------------*/
-    //p_faceAB->ResetAdhesionPara();
-    if (p_element1 != nullptr)
-        p_element1->AddFace(p_faceAB, faceXXA_local_index_in_element1);//mOrientations also need to be changed later
-    if (p_element3 != nullptr)    
-        p_element3->AddFace(p_faceAB, faceXB_local_index_in_element3);//mOrientations also need to be changed
-    p_faceYB->ReplaceOneNodeBy(pNodeB,pNodeA);
-    p_faceYYA->ReplaceOneNodeBy(pNodeA,pNodeB);
-    if (p_element2 != nullptr)
-        p_element2->DeleteFace(faceAB_local_index_in_element2);
-    if (p_element4 != nullptr)
-        p_element4->DeleteFace(faceAB_local_index_in_element4);
+    if (mIfUpdateFaceElementsInMesh)
+    {
+        p_faceAB->ResetFaceValues();//
+        if (p_element1 != nullptr)
+            p_element1->AddFace(p_faceAB, faceXXA_local_index_in_element1);//mOrientations also need to be changed later
+        if (p_element3 != nullptr)
+            p_element3->AddFace(p_faceAB, faceXB_local_index_in_element3);//mOrientations also need to be changed
+        p_faceYB->ReplaceOneNodeBy(pNodeB,pNodeA);
+        p_faceYYA->ReplaceOneNodeBy(pNodeA,pNodeB);
+        if (p_element2 != nullptr)
+            p_element2->DeleteFace(faceAB_local_index_in_element2);
+        if (p_element4 != nullptr)
+            p_element4->DeleteFace(faceAB_local_index_in_element4);
+        if (rElementsContainingNodes.size() == 2)
+            p_faceAB->MarkAsDeleted();
+        // output updated nodes and faces information of relevant elements
+        if(mOutputDetailedSwapInformationWhenRemesh)
+        {
+            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T1 swap elements, AFTER-----------------";
+            std::cout << std::endl;
+            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+            VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element; 
+            for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
+                it != rElementsContainingNodes.end();
+                ++it)
+            {
+                p_element = this->mElements[*it];
+                std::cout <<  std::endl << "ElementIndex: " << p_element->GetIndex();
+                std::cout <<  std::endl << "Nodes: ";
+                for(unsigned index =0; index< p_element->GetNumNodes(); index++)
+                {
+                    std::cout << index << "_" << p_element->GetNodeGlobalIndex(index) << ' ';
+                }
+                std::cout <<  std::endl << "Faces: ";
+                for(unsigned index =0; index< p_element->GetNumFaces(); index++)
+                {
+                    std::cout <<  index << "_" << p_element->GetFace(index)->GetIndex();
+                    std::cout << " orien_" << p_element->GetOrientation(index);
+                    std::cout << " fir_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << p_element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl << "END: Nodes and Faces Information of T1 swap elements, AFTER-----------------";
+            std::cout << std::endl << std::endl;
+        }
+            
+    }
     /*-----------------------------------End of my face manipulation----------------------------------------*/
+    if (mOutputConciseSwapInformationWhenRemesh)
+        std::cout << "PerformT1Swap finished." << std::endl;
 
 }
 
@@ -1997,6 +2350,14 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT2Swap(VertexElement<ELEM
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* pNode, unsigned elementIndex)
 {
+    // my changes
+    if (mOutputConciseSwapInformationWhenRemesh)
+    {
+        std::cout << std::endl << "We are in PerformT3Swap now.";
+        std::cout << std::endl << "Intersecting node P: Index=" << pNode->GetIndex() << ", Location: " << pNode->rGetLocation()[0] <<", "<< pNode->rGetLocation()[1];
+        std::cout << std::endl << "Intersected element: Index=" << elementIndex << ", Centroid: " << this->GetCentroidOfElement(elementIndex)[0] << ", " << this->GetCentroidOfElement(elementIndex)[1];
+        std::cout << std::endl;
+    }
     assert(SPACE_DIM == 2);                 // LCOV_EXCL_LINE - code will be removed at compile time
     assert(ELEMENT_DIM == SPACE_DIM);    // LCOV_EXCL_LINE - code will be removed at compile time
 
@@ -2020,11 +2381,6 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
     unsigned vertexA_index = p_element->GetNodeGlobalIndex(node_A_local_index);
     unsigned vertexB_index = p_element->GetNodeGlobalIndex((node_A_local_index+1)%num_nodes);
 
-    // Check these nodes are also boundary nodes if this fails then the elements have become concave and you need a smaller timestep
-    if (!this->mNodes[vertexA_index]->IsBoundaryNode() || !this->mNodes[vertexB_index]->IsBoundaryNode())
-    {
-        EXCEPTION("A boundary node has intersected a non-boundary edge; this is because the boundary element has become concave. You need to rerun the simulation with a smaller time step to prevent this.");
-    }
 
     // Get the nodes at either end of the edge to be divided and calculate intersection
     c_vector<double, SPACE_DIM> vertexA = p_element->GetNodeLocation(node_A_local_index);
@@ -2041,6 +2397,265 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
     // is called (see #2401) - we should correct this in these cases!
 
     mLocationsOfT3Swaps.push_back(intersection);
+
+    // Check these nodes are also boundary nodes if this fails then the elements have become concave and you need a smaller timestep
+    if (!this->mNodes[vertexA_index]->IsBoundaryNode() && !this->mNodes[vertexB_index]->IsBoundaryNode())
+    {
+        std::cout << std::endl << "A boundary node has intersected a non-boundary edge; this is because the boundary element has become concave. You need to rerun the simulation with a smaller time step to prevent this.";
+        std::cout << std::endl;
+        EXCEPTION("A boundary node has intersected a non-boundary edge; this is because the boundary element has become concave. You need to rerun the simulation with a smaller time step to prevent this.");
+    }
+    
+    // one internal node, one boundary node!
+    if (!this->mNodes[vertexA_index]->IsBoundaryNode() || !this->mNodes[vertexB_index]->IsBoundaryNode())
+    {
+        if (this->mNodes[vertexB_index]->IsBoundaryNode())
+        {
+            assert(pNode->GetNumContainingElements() == 1);
+            unsigned intersecting_element_index = *elements_containing_intersecting_node.begin(); 
+            VertexElement<ELEMENT_DIM, SPACE_DIM>* p_intersecting_element = this->GetElement(intersecting_element_index);
+            Node<SPACE_DIM>* p_next_node_of_node_P = p_intersecting_element->GetNode( (p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())+1)%p_intersecting_element->GetNumNodes());
+            assert(p_next_node_of_node_P->GetIndex() == vertexB_index);
+            Node<SPACE_DIM>* p_next_next_node_of_node_P = p_intersecting_element->GetNode( (p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())+2)%p_intersecting_element->GetNumNodes());
+            assert(p_next_next_node_of_node_P->GetIndex() == vertexA_index);
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "In PerformT3Swap: CASE=0(0)" << std::endl;
+            if (mOutputDetailedSwapInformationWhenRemesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl;
+                std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                for (unsigned i = 0; i != 2; ++i)
+                {
+                    if (i==0)
+                        element = p_element;
+                    else
+                        element = p_intersecting_element;
+                    std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                    std::cout <<  std::endl << "Nodes: ";
+                    for(unsigned index =0; index< element->GetNumNodes(); index++)
+                    {
+                        std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                    }
+                    std::cout <<  std::endl << "Faces: ";
+                    for(unsigned index =0; index< element->GetNumFaces(); index++)
+                    {
+                        std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                        std::cout << " orien_" << element->GetOrientation(index);
+                        std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl << std::endl;
+            }
+
+            /*
+            *   ___B           ___B
+            *      |\             |
+            *      | \P__        P|_____                   CASE = 0(0).
+            *      |    /  -->    |    /    
+            *      |   /          |   /
+            *      |  /           |  /      
+            *      | /            | /      
+            *   ___|/          ___|/   
+            *      A              A         
+            */
+
+            // // Check whether the intersection location fits into the edge and update distances and vertex positions afterwards.
+            // intersection = this->WidenEdgeOrCorrectIntersectionLocationIfNecessary(vertexA_index, vertexB_index, intersection);
+
+            // Move original node
+            pNode->rGetModifiableLocation() = intersection;
+
+            Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+            Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+            p_element->AddNode(pNode, p_element->GetNodeLocalIndex(pNodeA->GetIndex()));
+            p_intersecting_element->DeleteNode(p_intersecting_element->GetNodeLocalIndex(pNodeB->GetIndex()));
+            
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element->
+                        GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(vertexA_index, vertexB_index));
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePB = p_intersecting_element->
+                        GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), vertexB_index));
+                p_faceAB->ResetFaceValues();
+                p_facePB->ResetFaceValues();
+                p_faceAB->ReplaceOneNodeBy(pNodeB, pNode);
+                p_intersecting_element->DeleteFace(p_intersecting_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeB->GetIndex()));
+                p_element->AddFace(p_facePB, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(vertexA_index, pNode->GetIndex()));
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                    for (unsigned i = 0; i != 2; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else
+                            element = p_intersecting_element;
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
+            }
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "PerformT3Swap finished." << std::endl;
+
+            return;
+        }
+        else
+        {
+            assert(this->mNodes[vertexA_index]->IsBoundaryNode());
+            assert(pNode->GetNumContainingElements() == 1);
+            unsigned intersecting_element_index = *elements_containing_intersecting_node.begin(); 
+            VertexElement<ELEMENT_DIM, SPACE_DIM>* p_intersecting_element = this->GetElement(intersecting_element_index);
+            Node<SPACE_DIM>* p_previous_node_of_node_P = p_intersecting_element->GetNode( (p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())-1+p_intersecting_element->GetNumNodes())%p_intersecting_element->GetNumNodes());
+            assert(p_previous_node_of_node_P->GetIndex() == vertexA_index);
+            Node<SPACE_DIM>* p_previous_previous_node_of_node_P = p_intersecting_element->GetNode( (p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())-2+p_intersecting_element->GetNumNodes())%p_intersecting_element->GetNumNodes());
+            assert(p_previous_previous_node_of_node_P->GetIndex() == vertexB_index);
+
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "In PerformT3Swap: CASE=0(1)" << std::endl;
+            if (mOutputDetailedSwapInformationWhenRemesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl;
+                std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                for (unsigned i = 0; i != 2; ++i)
+                {
+                    if (i==0)
+                        element = p_element;
+                    else
+                        element = p_intersecting_element;
+                    std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                    std::cout <<  std::endl << "Nodes: ";
+                    for(unsigned index =0; index< element->GetNumNodes(); index++)
+                    {
+                        std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                    }
+                    std::cout <<  std::endl << "Faces: ";
+                    for(unsigned index =0; index< element->GetNumFaces(); index++)
+                    {
+                        std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                        std::cout << " orien_" << element->GetOrientation(index);
+                        std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl << std::endl;
+            }
+
+            /*
+            *   ___B              ___B
+            *      |\                |\
+            *      | \               | \                      CASE = 0(1).
+            *      |  \              |  \  
+            *      |   \   -->       |   \
+            *      | P__\          P |____\
+            *      | /               |
+            *   ___|/             ___| 
+            *      A                 A     
+            */
+
+            // // Check whether the intersection location fits into the edge and update distances and vertex positions afterwards.
+            // intersection = this->WidenEdgeOrCorrectIntersectionLocationIfNecessary(vertexA_index, vertexB_index, intersection);
+
+            // Move original node
+            pNode->rGetModifiableLocation() = intersection;
+
+            Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+            Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+            p_element->AddNode(pNode, p_element->GetNodeLocalIndex(pNodeA->GetIndex()));
+            p_intersecting_element->DeleteNode(p_intersecting_element->GetNodeLocalIndex(pNodeA->GetIndex()));
+            
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element->
+                        GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(vertexA_index, vertexB_index));
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAP = p_intersecting_element->
+                        GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNode->GetIndex()));
+                p_faceAB->ResetFaceValues();
+                p_faceAP->ResetFaceValues();
+                p_faceAB->ReplaceOneNodeBy(pNodeA, pNode);
+                p_intersecting_element->DeleteFace(p_intersecting_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNode->GetIndex()));
+                p_element->AddFace( p_faceAP, (p_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeB->GetIndex())-1+p_element->GetNumFaces())%p_element->GetNumFaces() );
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                    for (unsigned i = 0; i != 2; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else
+                            element = p_intersecting_element;
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
+            }
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "PerformT3Swap finished." << std::endl;
+
+            return;
+        }
+        
+    } // end of CASE 0.
 
     if (pNode->GetNumContainingElements() == 1)
     {
@@ -2091,17 +2706,67 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 }
             }
 
+            // when this->mNodes[common_vertex_index]->GetNumContainingElements() >=3, p_element_common_1 
+            // and p_element_common_2 may not be p_element and p_intersecting_element, num_common_vertices may >=2,
+            // but in this case: p_element and p_intersecting_element still have only one common vertex!
             if (num_common_vertices == 1 || this->mNodes[common_vertex_index]->GetNumContainingElements() > 2)
             {
+                // my changes:
+                if (mOutputConciseSwapInformationWhenRemesh)
+                    std::cout << "In PerformT3Swap: CASE=1" << std::endl;
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                    Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                    for (unsigned i = 0; i != 2; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else
+                            element = p_intersecting_element;
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
                 /*
-                 * This is the situation here.
+                 * This is the situation here.            CASE= 1.
                  *
-                 *  From          To
-                 *   _             _
-                 *    |  <---       |
-                 *    |  /\         |\
-                 *    | /  \        | \
-                 *   _|/____\      _|__\
+                 *   From          To
+                 *B(D)_             _
+                 *     |  <---       |
+                 *     |  /\ P       |\
+                 *     | /  \        | \
+                 *A(C)_|/____\      _|__\
+                 *
+                 * 
+                 *   From          To
+                 *B(C)_ _____       _ ___
+                 *     |\    /       |  /
+                 *     | \  /        | /
+                 *     |P \/         |/
+                 *A(D)_|            _|
                  *
                  * The edge goes from vertexA--vertexB to vertexA--pNode--vertexB
                  */
@@ -2117,8 +2782,69 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
 
                 // Check the nodes are updated correctly
                 assert(pNode->GetNumContainingElements() == 2);
+
+                // my changes:
+                if (mIfUpdateFaceElementsInMesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                    Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                                        
+                    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_faceAB = p_element
+                            ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                    // here we use C to indicate the common vertex.
+                    VertexElement<ELEMENT_DIM-1,SPACE_DIM>* p_facePC;
+                    if (common_vertex_index == vertexA_index)
+                        p_facePC = p_intersecting_element->GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                    else
+                        p_facePC = p_intersecting_element->GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                    p_faceAB->ResetFaceValues();
+                    p_facePC->ResetFaceValues();
+                    if (common_vertex_index == vertexA_index)                    
+                        p_faceAB->ReplaceOneNodeBy(pNodeA, pNode); //faceAB->facePB
+                    else
+                        p_faceAB->ReplaceOneNodeBy(pNodeB, pNode); //faceAB->facePB
+
+                    if (common_vertex_index == vertexA_index)
+                        p_element->AddFace(p_facePC, (p_element->GetFaceLocalIndex(p_faceAB->GetIndex())-1+p_element->GetNumFaces())%p_element->GetNumFaces());
+                    else
+                        p_element->AddFace(p_facePC, p_element->GetFaceLocalIndex(p_faceAB->GetIndex()));//add facePC to intersected element
+                    
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 2; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else
+                                element = p_intersecting_element;
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+                }
+                
             }
-            else if (num_common_vertices == 2)
+            else if (num_common_vertices == 2) // Here else means: num_common_vertices > 1 && this->mNodes[common_vertex_index]->GetNumContainingElements() == 2
             {
                 // The two elements must have an edge in common.  Find whether the common edge is the same as the
                 // edge that is merged onto.
@@ -2126,16 +2852,55 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 if ((common_vertex_indices[0]==vertexA_index && common_vertex_indices[1]==vertexB_index) ||
                     (common_vertex_indices[1]==vertexA_index && common_vertex_indices[0]==vertexB_index))
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=2" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                        for (unsigned i = 0; i != 2; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else
+                                element = p_intersecting_element;
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
                      * Due to a previous T3 swap the situation looks like this.
                      *
-                     *              pNode
+                     *              pNode                        CASE= 2.
                      *     \         |\    /
                      *      \        | \  /
                      *       \_______|__\/
-                     *       /A      |     B
-                     *      /         \
-                     *
+                     *       /A      |   B(Y)
+                     *      /        |
+                     *      \_______/ X
                      * A T3 Swap would merge pNode onto an edge of its own element.
                      * We prevent this by just removing pNode. By doing this we also avoid the
                      * intersecting element to be concave.
@@ -2149,23 +2914,120 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     // Mark all three nodes as deleted
                     pNode->MarkAsDeleted();
                     mDeletedNodeIndices.push_back(pNode->GetIndex());
+
+                    // my changes
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeX = this->GetNode(previous_node);
+                        Node<SPACE_DIM>* pNodeY = this->GetNode(next_node);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXP = p_intersecting_element->GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        p_faceXP->ResetFaceValues();
+                        p_faceXP->ReplaceOneNodeBy(pNode, pNodeY);
+                        unsigned face_PY_local_index = p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeY->GetIndex());
+                        p_intersecting_element->GetFace(face_PY_local_index)->MarkAsDeleted();
+                        p_intersecting_element->DeleteFace(face_PY_local_index); //delete facePY
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                            Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);                           
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 2; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else
+                                    element = p_intersecting_element;
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+
+                    }
+
                 }
                 else
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=3" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                        for (unsigned i = 0; i != 2; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else
+                                element = p_intersecting_element;
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
-                     * This is the situation here.
+                     * This is the situation here.                        
                      *
                      * C is common_vertex D is the other one.
                      *
-                     *  From          To
-                     *   _ D          _
-                     *    | <---       |
-                     *    | /\         |\
-                     *   C|/  \        | \
-                     *   _|____\      _|__\
+                     *  The edge goes from vertexC--vertexD to vertexC--pNode--vertexD
+                     *  then vertex C is removed as it is no longer needed.
                      *
-                     *  The edge goes from vertexC--vertexB to vertexC--pNode--vertexD
-                     *  then vertex B is removed as it is no longer needed.
+                     *  From          To                         CASE = 3.
+                     *   _ B(D)       _
+                     *    | <---       |
+                     *    | /\P        |\
+                     *A(C)|/  \        | \
+                     *   _|____\      _|__\
+                     *    X    Y
+                     *
+                     *  From          To
+                     *   _X_____Y     _____
+                     *    |    /       |  /
+                     *B(C)|\  /        | /
+                     *    | \/P        |/ 
+                     *   _|           _|
+                     *   A(D)
                      */
 
                     // Check whether the intersection location fits into the edge and update distances and vertex positions afterwards.
@@ -2187,19 +3049,132 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
 
                     // Check the nodes are updated correctly
                     assert(pNode->GetNumContainingElements() == 2);
+
+                    // my changes
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeC = this->mNodes[common_vertex_index];
+                        Node<SPACE_DIM>* pNodeD = nullptr;
+                        if (common_vertex_index == vertexA_index)
+                            pNodeD = this->mNodes[vertexB_index];
+                        else
+                            pNodeD = this->mNodes[vertexA_index];
+                        if (common_vertex_index == vertexA_index)
+                        {
+                            // gets error: using previous node relationship!!
+                            unsigned node_X_local_index = (p_element->GetNodeLocalIndex(pNode->GetIndex())-1+p_element->GetNumNodes())%(p_element->GetNumNodes());
+                            Node<SPACE_DIM>* pNodeX = p_element->GetNode(node_X_local_index);
+
+                            VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXC = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeC->GetIndex()));
+                            VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceCD = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeC->GetIndex(), pNodeD->GetIndex()));
+                            p_faceXC->ResetFaceValues();
+                            p_faceCD->ResetFaceValues();
+                            unsigned face_PC_local_index = p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeC->GetIndex());
+                            p_faceXC->ReplaceOneNodeBy(pNodeC, pNode);//faceXC->faceXP;
+                            p_faceCD->ReplaceOneNodeBy(pNodeC, pNode);//faceCD->facePD;
+                            p_intersecting_element->GetFace(face_PC_local_index)->MarkAsDeleted();
+                            p_intersecting_element->DeleteFace(face_PC_local_index);//delete facePC
+                        }
+                        else
+                        {
+                            unsigned node_X_local_index = (p_element->GetNodeLocalIndex(pNode->GetIndex())+1)%(p_element->GetNumNodes());
+                            Node<SPACE_DIM>* pNodeX = p_element->GetNode(node_X_local_index);
+
+                            VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXC = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeC->GetIndex(), pNodeX->GetIndex()));
+                            VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceCD = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeD->GetIndex(), pNodeC->GetIndex()));
+                            p_faceXC->ResetFaceValues();
+                            p_faceCD->ResetFaceValues();
+                            unsigned face_PC_local_index = p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeC->GetIndex(), pNode->GetIndex());
+                            p_faceXC->ReplaceOneNodeBy(pNodeC, pNode);//faceXC->faceXP;
+                            p_faceCD->ReplaceOneNodeBy(pNodeC, pNode);//faceCD->facePD;
+                            p_intersecting_element->GetFace(face_PC_local_index)->MarkAsDeleted();
+                            p_intersecting_element->DeleteFace(face_PC_local_index);//delete facePC
+                        }
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeC" << pNodeC->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeD" << pNodeD->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 2; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else
+                                    element = p_intersecting_element;
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+                    }
                 }
             }
             else if (num_common_vertices == 4)
             {
+                // my changes:
+                if (mOutputConciseSwapInformationWhenRemesh)
+                    std::cout << "In PerformT3Swap: CASE=4" << std::endl;
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                    Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                    for (unsigned i = 0; i != 2; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else
+                            element = p_intersecting_element;
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
                 /*
                  * The two elements share edges CA and BD due to previous swaps but not the edge AB
                  *
-                 *  From          To
+                 *  From          To                   CASE = 4.
                  *  D___         D___
                  *    |            |
                  *   B|\           |
                  *    | \          |
-                 *    | /          |
+                 *    | / P        |
                  *   A|/           |
                  *  C_|__        C_|__
                  *
@@ -2232,23 +3207,126 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 mDeletedNodeIndices.push_back(vertexA_index);
                 this->mNodes[vertexB_index]->MarkAsDeleted();
                 mDeletedNodeIndices.push_back(vertexB_index);
+
+                // my changes
+                if (mIfUpdateFaceElementsInMesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = p_element->GetNode(node_A_local_index);
+                    Node<SPACE_DIM>* pNodeB = p_element->GetNode(node_B_local_index);
+                    Node<SPACE_DIM>* pNodeC = p_element->GetNode((node_A_local_index-1+p_element->GetNumNodes())%(p_element->GetNumNodes()));
+                    Node<SPACE_DIM>* pNodeD = p_element->GetNode((node_B_local_index+1+p_element->GetNumNodes())%(p_element->GetNumNodes()));
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceCA = p_element
+                            ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeC->GetIndex(), pNodeA->GetIndex()));
+                    p_faceCA->ResetFaceValues();
+                    p_faceCA->ReplaceOneNodeBy(pNodeA, pNodeD);// faceCA->faceCD;
+                    // delete faceAB faceBD faceAP facePB;
+                    p_element->GetFace( p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()) )
+                            ->MarkAsDeleted();
+                    p_element->GetFace( p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeD->GetIndex()) )
+                            ->MarkAsDeleted();
+                    p_intersecting_element->GetFace( p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()) )
+                            ->MarkAsDeleted();
+                    p_intersecting_element->GetFace( p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()) )
+                            ->MarkAsDeleted();
+                    p_element->DeleteFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                    p_element->DeleteFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeD->GetIndex()));
+                    p_intersecting_element->DeleteFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeD->GetIndex(), pNodeB->GetIndex()));
+                    p_intersecting_element->DeleteFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                    p_intersecting_element->DeleteFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 2; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else
+                                element = p_intersecting_element;
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
+                }
             }
             else
             {
+                // my changes: 
+                std:: cout << std::endl << "Error in the case: pNode->GetNumContainingElements() == 1 && (VertexA or VertexB is adjacent to pNode).";
+                std::cout << std::endl;
                 // This can't happen as nodes can't be on the internal edge of 2 elements.
                 NEVER_REACHED;
             }
         }
         else
         {
+            // my changes:
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "In PerformT3Swap: CASE=5" << std::endl;
+            if (mOutputDetailedSwapInformationWhenRemesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl;
+                std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                VertexElement<ELEMENT_DIM,SPACE_DIM>* element;
+                for (unsigned i = 0; i != 2; ++i)
+                {
+                    if (i==0)
+                        element = p_element;
+                    else
+                        element = p_intersecting_element;
+                    std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                    std::cout <<  std::endl << "Nodes: ";
+                    for(unsigned index =0; index< element->GetNumNodes(); index++)
+                    {
+                        std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                    }
+                    std::cout <<  std::endl << "Faces: ";
+                    for(unsigned index =0; index< element->GetNumFaces(); index++)
+                    {
+                        std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                        std::cout << " orien_" << element->GetOrientation(index);
+                        std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl << std::endl;
+            }
+
             /*
-             *  From          To
-             *   ____        _______
-             *                 / \
-             *    /\   ^      /   \
-             *   /  \  |
-             *
              *  The edge goes from vertexA--vertexB to vertexA--new_node--pNode--vertexB
+             *
+             *   From          To                    CASE = 5.
+             * A ____ B      _______
+             *                Q/ \P
+             *    /\   ^      /   \
+             *   /  \  |     Y     X
+             *
              */
 
             // Check whether the intersection location fits into the edge and update distances and vertex positions afterwards.
@@ -2275,6 +3353,85 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             // The nodes must have been updated correctly
             assert(pNode->GetNumContainingElements() == 2);
             assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+
+            // my changes:
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                Node<SPACE_DIM>* pNodeQ = p_element->GetNode((p_element->GetNodeLocalIndex(vertexA_index)+1)%(p_element->GetNumNodes()));
+                Node<SPACE_DIM>* pNodeX = p_intersecting_element
+                        ->GetNode((p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())-1+p_intersecting_element->GetNumNodes())%(p_intersecting_element->GetNumNodes()));
+                Node<SPACE_DIM>* pNodeY = p_intersecting_element
+                        ->GetNode((p_intersecting_element->GetNodeLocalIndex(pNode->GetIndex())+2+p_intersecting_element->GetNumNodes())%(p_intersecting_element->GetNumNodes()));
+                
+                // Since the faces in the element is not changed, so we still can extract face information from the node-updated elements
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element
+                        ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePY = p_intersecting_element
+                        ->GetFace(p_intersecting_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeY->GetIndex()));
+                p_faceAB->ResetFaceValues();
+                p_faceAB->ReplaceOneNodeBy(pNodeB, pNodeQ);// faceAB->faceAQ
+                p_facePY->ReplaceOneNodeBy(pNode, pNodeQ);// facePY->faceQY
+
+                unsigned facePQ_index = this->GetNumFaces();
+                std::vector<Node<SPACE_DIM>*> nodes_facePQ;
+                nodes_facePQ.push_back(pNode);
+                nodes_facePQ.push_back(pNodeQ);
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePQ = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePQ_index, nodes_facePQ);
+                (this->mFaces).push_back(p_facePQ);
+                unsigned facePB_index = this->GetNumFaces();
+                std::vector<Node<SPACE_DIM>*> nodes_facePB;
+                nodes_facePB.push_back(pNode);
+                nodes_facePB.push_back(pNodeB);
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePB = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePB_index, nodes_facePB);
+                (this->mFaces).push_back(p_facePB);
+                
+                // Add faceQP in p_element
+                p_element->AddFace(p_facePQ, p_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeQ->GetIndex()));
+                // Add facePB in p_element
+                p_element->AddFace(p_facePB, p_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeQ->GetIndex(), pNode->GetIndex()));
+                // Add facePQ in p_intersecting_element
+                p_intersecting_element->AddFace(p_facePQ, p_intersecting_element
+                        ->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                    for (unsigned i = 0; i != 2; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else
+                            element = p_intersecting_element;
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+            
+            }            
+
         }
     }
     else if (pNode->GetNumContainingElements() == 2)
@@ -2303,19 +3460,62 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
         if ((next_node_1 == vertexA_index || previous_node_1 == vertexA_index || next_node_2 == vertexA_index || previous_node_2 == vertexA_index) &&
                 (next_node_1 == vertexB_index || previous_node_1 == vertexB_index || next_node_2 == vertexB_index || previous_node_2 == vertexB_index))
         {
+            // my changes:
+            if (mOutputConciseSwapInformationWhenRemesh)
+                std::cout << "In PerformT3Swap: CASE=6" << std::endl;
+            if (mOutputDetailedSwapInformationWhenRemesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl;
+                std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                for (unsigned i = 0; i != 3; ++i)
+                {
+                    if (i==0)
+                        element = p_element;
+                    else if (i==1)
+                        element = p_element_1;
+                    else
+                        element = p_element_2;                                    
+                    std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                    std::cout <<  std::endl << "Nodes: ";
+                    for(unsigned index =0; index< element->GetNumNodes(); index++)
+                    {
+                        std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                    }
+                    std::cout <<  std::endl << "Faces: ";
+                    for(unsigned index =0; index< element->GetNumFaces(); index++)
+                    {
+                        std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                        std::cout << " orien_" << element->GetOrientation(index);
+                        std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                std::cout << std::endl << std::endl;
+            }
+
             /*
              * Here we have
-             *        __
-             *      /|             /
-             *  __ / |     --> ___/
-             *     \ |            \
-             *      \|__           \
-             *
+             *  ________         _____
+             * |        |       |     |
+             * |     A__|X      |     |X                  CASE = 6.
+             * |    /|   \XX    |    / \XX
+             *O|__P/ |       -->|___/P  
+             *     \ |              \
+             *      \|__ Y           \Y
+             *      B   
              * Where the node on the left has overlapped the edge A B
              *
              * Move p_node to the intersection on A B and merge AB and p_node
              */
-
+            
             // Check whether the intersection location fits into the edge and update distances and vertex positions afterwards.
             intersection = this->WidenEdgeOrCorrectIntersectionLocationIfNecessary(vertexA_index, vertexB_index, intersection);
             edge_ab_unit_vector = this->GetPreviousEdgeGradientOfElementAtNode(p_element, (node_A_local_index+1)%num_nodes);
@@ -2359,6 +3559,92 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             assert(this->mNodes[vertexB_index]->GetNumContainingElements()==0);
             this->mNodes[vertexB_index]->MarkAsDeleted();
             mDeletedNodeIndices.push_back(vertexB_index);
+
+            // my changes
+            if (mIfUpdateFaceElementsInMesh)
+            {
+                Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                Node<SPACE_DIM>* pNodeX = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex()) -1+p_element->GetNumNodes())%p_element->GetNumNodes());
+                Node<SPACE_DIM>* pNodeXX = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex()) -2+p_element->GetNumNodes())%p_element->GetNumNodes());
+                Node<SPACE_DIM>* pNodeY = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex()) +1+p_element->GetNumNodes())%p_element->GetNumNodes());                
+
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePA = nullptr;
+                VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceBP = nullptr;                
+                if (next_node_1 == previous_node_2)// bottom element:1, top:2
+                {
+                    p_facePA= p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                    p_faceBP= p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                }
+                else
+                {
+                    assert(next_node_2 == previous_node_1);// bottom element:2, top:1
+
+                    p_facePA= p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                    p_faceBP= p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                }
+                p_facePA->ResetFaceValues();
+                p_faceBP->ResetFaceValues();
+                p_facePA->ReplaceOneNodeBy(pNodeA, pNodeX);
+                p_faceBP->ReplaceOneNodeBy(pNodeB, pNodeY);
+
+                if (next_node_1 == previous_node_2)// bottom element:1, top:2
+                {
+                    p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeX->GetIndex()));
+                    p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNodeB->GetIndex()));
+                }
+                else
+                {
+                    assert(next_node_2 == previous_node_1);// bottom element:2, top:1
+
+                    p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeX->GetIndex()));
+                    p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNodeB->GetIndex()));
+                }
+                p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeA->GetIndex()))->MarkAsDeleted();
+                p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()))->MarkAsDeleted();
+                p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeY->GetIndex()))->MarkAsDeleted();
+                p_element->DeleteFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeA->GetIndex()));
+                p_element->DeleteFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                p_element->DeleteFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeY->GetIndex()));
+                p_element->AddFace(p_facePA, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeXX->GetIndex(), pNodeX->GetIndex()));
+                p_element->AddFace(p_faceBP, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                    for (unsigned i = 0; i != 3; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else if (i==1)
+                            element = p_element_1;
+                        else
+                            element = p_element_2;                                    
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
+            }
         }
         else
         {
@@ -2389,15 +3675,56 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
 
                 if (num_common_vertices == 1 || this->mNodes[vertexA_index]->GetNumContainingElements() > 2)
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=7" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 3; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else if (i==1)
+                                element = p_element_1;
+                            else
+                                element = p_element_2;                                    
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
                      *  From          To
-                     *   _ B              _ B
+                     *   _ B              _ B                CASE = 7.
                      *    |  <---          |
-                     *    |   /|\          |\
+                     *    |   /|\         Q|\
                      *    |  / | \         | \
-                     *    | /  |  \        |\ \
+                     *    | /  |  \       P|\ \
                      *   _|/___|___\      _|_\_\
-                     *     A                A
+                     *     A   O    X      A  O X
                      *
                      * The edge goes from vertexA--vertexB to vertexA--pNode--new_node--vertexB
                      */
@@ -2422,13 +3749,13 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     this->GetElement(elementIndex)->AddNode(pNode, node_A_local_index);
 
                     // Add the new nodes to the original elements containing pNode (this also updates the node)
-                    if (next_node_1 == previous_node_2)
+                    if (next_node_1 == previous_node_2)// right element:1, left:2
                     {
                         p_element_1->AddNode(this->mNodes[new_node_global_index], (local_index_1 + p_element_1->GetNumNodes() - 1)%(p_element_1->GetNumNodes()));
                     }
                     else
                     {
-                        assert(next_node_2 == previous_node_1);
+                        assert(next_node_2 == previous_node_1);// right element:2, left:1
 
                         p_element_2->AddNode(this->mNodes[new_node_global_index], (local_index_2 + p_element_2->GetNumNodes() - 1)%(p_element_2->GetNumNodes()));
                     }
@@ -2436,18 +3763,171 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     // Check the nodes are updated correctly
                     assert(pNode->GetNumContainingElements() == 3);
                     assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+                    
+                    // my changes
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                        Node<SPACE_DIM>* pNodeQ = this->GetNode(new_node_global_index);
+                        Node<SPACE_DIM>* pNodeO = nullptr;
+                        Node<SPACE_DIM>* pNodeX = nullptr;
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            pNodeO = this->GetNode(next_node_1);
+                            pNodeX = p_element_1->GetNode( (p_element_1->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_1->GetNumNodes() - 1)%(p_element_1->GetNumNodes()) );
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            pNodeO = this->GetNode(next_node_2);
+                            pNodeX = p_element_2->GetNode( (p_element_2->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_2->GetNumNodes() - 1)%(p_element_2->GetNumNodes()) );
+                        }
+
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                        p_faceAB->ResetFaceValues();
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXP = nullptr;
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            p_faceXP = p_element_1
+                                    ->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            p_faceXP = p_element_2
+                                    ->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        }
+
+                        unsigned facePQ_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_facePQ;
+                        nodes_facePQ.push_back(pNode);
+                        nodes_facePQ.push_back(pNodeQ);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePQ = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePQ_index, nodes_facePQ);
+                        (this->mFaces).push_back(p_facePQ);
+
+                        unsigned faceQB_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_faceQB;
+                        nodes_faceQB.push_back(pNodeQ);
+                        nodes_faceQB.push_back(pNodeB);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceQB = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceQB_index, nodes_faceQB);
+                        (this->mFaces).push_back(p_faceQB);
+
+                        p_faceAB->ReplaceOneNodeBy(pNodeB, pNode);
+                        p_faceXP->ReplaceOneNodeBy(pNode, pNodeQ);
+                        p_element->AddFace(p_facePQ, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNode->GetIndex()));
+                        p_element->AddFace(p_faceQB, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeQ->GetIndex()));
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            p_element_1->AddFace(p_facePQ, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeQ->GetIndex()));
+                            p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()))->MarkAsDeleted();
+                            p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                            p_element_2->AddFace(p_faceAB, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                            
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            p_element_2->AddFace(p_facePQ, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeQ->GetIndex()));
+                            p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()))->MarkAsDeleted();
+                            p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                            p_element_1->AddFace(p_faceAB, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+
+                        }
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 3; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else if (i==1)
+                                    element = p_element_1;
+                                else
+                                    element = p_element_2;                                    
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+
+                    }
+
                 }
                 else if (num_common_vertices == 2)
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=8" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 3; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else if (i==1)
+                                element = p_element_1;
+                            else
+                                element = p_element_2;                                    
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
-                     *  From          To
-                     *   _ B              _ B
+                     *  From          To                             CASE = 8
+                     *   _ B            _ B
                      *    |<---          |
-                     *    | /|\          |\
-                     *    |/ | \         | \
-                     *    |  |  \        |\ \
+                     *    | /|\        Q |\
+                     *  A |/ | \         | \
+                     *    |  |  \      P |\ \
                      *   _|__|___\      _|_\_\
-                     *     A              A
+                     *   Y   O   X      Y  O  X
                      *
                      * The edge goes from vertexA--vertexB to vertexA--pNode--new_node--vertexB
                      * then vertexA is removed
@@ -2473,13 +3953,13 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     this->GetElement(elementIndex)->AddNode(pNode, node_A_local_index);
 
                     // Add the new nodes to the original elements containing pNode (this also updates the node)
-                    if (next_node_1 == previous_node_2)
+                    if (next_node_1 == previous_node_2)// right element:1, left:2
                     {
                         p_element_1->AddNode(this->mNodes[new_node_global_index], (local_index_1 + p_element_1->GetNumNodes() - 1)%(p_element_1->GetNumNodes()));
                     }
                     else
                     {
-                        assert(next_node_2 == previous_node_1);
+                        assert(next_node_2 == previous_node_1);// right element:2, left:1
                         p_element_2->AddNode(this->mNodes[new_node_global_index], (local_index_2 + p_element_2->GetNumNodes() - 1)%(p_element_2->GetNumNodes()));
                     }
 
@@ -2495,9 +3975,114 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     // Check the nodes are updated correctly
                     assert(pNode->GetNumContainingElements() == 3);
                     assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+
+                    // my changes
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                        Node<SPACE_DIM>* pNodeQ = this->GetNode(new_node_global_index);
+                        Node<SPACE_DIM>* pNodeY = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex())-1+p_element->GetNumNodes())%(p_element->GetNumNodes()));
+                        Node<SPACE_DIM>* pNodeX = nullptr;
+                        // Node<SPACE_DIM>* pNodeO = nullptr;
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            // pNodeO = this->GetNode(next_node_1);
+                            pNodeX = p_element_1->GetNode( (p_element_1->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_1->GetNumNodes() - 1)%(p_element_1->GetNumNodes()) );
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            // pNodeO = this->GetNode(next_node_2);
+                            pNodeX = p_element_2->GetNode( (p_element_2->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_2->GetNumNodes() - 1)%(p_element_2->GetNumNodes()) );
+                        }
+
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceYA = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNodeA->GetIndex()));
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                        p_faceYA->ResetFaceValues();
+                        p_faceAB->ResetFaceValues();
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceXP = nullptr;
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            p_faceXP = p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            p_faceXP = p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNode->GetIndex()));
+                        }
+                        unsigned facePQ_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_facePQ;
+                        nodes_facePQ.push_back(pNode);
+                        nodes_facePQ.push_back(pNodeQ);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePQ = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePQ_index, nodes_facePQ);
+                        (this->mFaces).push_back(p_facePQ);
+
+                        p_faceYA->ReplaceOneNodeBy(pNodeA, pNode);
+                        p_faceAB->ReplaceOneNodeBy(pNodeA, pNodeQ);
+                        p_faceXP->ReplaceOneNodeBy(pNode, pNodeQ);
+                        p_element->AddFace(p_facePQ, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNode->GetIndex()));
+                        if (next_node_1 == previous_node_2)// right element:1, left:2
+                        {
+                            p_element_1->AddFace(p_facePQ, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeQ->GetIndex()));
+                            p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()))->MarkAsDeleted();
+                            p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                            p_element_2->AddFace(p_facePQ, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeX->GetIndex(), pNodeQ->GetIndex()));
+                            p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()))->MarkAsDeleted();
+                            p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeA->GetIndex()));
+                        }
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 3; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else if (i==1)
+                                    element = p_element_1;
+                                else
+                                    element = p_element_2;                                    
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+
+                    }
+                
                 }
                 else
                 {
+                    // my changes
+                    std::cout << std::endl << "Error in PerformT3Swap, the case: pNode->GetNumContainingElements() == 2 && (VertexA is adjacent to pNode, but VertexB not).";
+                    std::cout << std::endl;
                     // This can't happen as nodes can't be on the internal edge of two elements
                     NEVER_REACHED;
                 }
@@ -2529,15 +4114,56 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
 
                 if (num_common_vertices == 1 || this->mNodes[vertexB_index]->GetNumContainingElements() > 2)
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=9" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 3; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else if (i==1)
+                                element = p_element_1;
+                            else
+                                element = p_element_2;                                    
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
-                     *  From          To
-                     *   _B_________      _B____
+                     *  From          To                           CASE = 9
+                     *   _B___O_____X     _B_O__X
                      *    |\   |   /       | / /
-                     *    | \  |  /        |/ /
+                     *    | \  |  /      P |/ /
                      *    |  \ | /         | /
-                     *    |   \|/          |/
-                     *   _|   <---        _|
-                     *    A
+                     *    |   \|/        Q |/
+                     * AA_|   <---        _|
+                     *    A                 A
                      *
                      * The edge goes from vertexA--vertexB to vertexA--new_node--pNode--vertexB
                      */
@@ -2562,31 +4188,188 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     this->GetElement(elementIndex)->AddNode(this->mNodes[new_node_global_index], node_A_local_index);
 
                     // Add the new nodes to the original elements containing pNode (this also updates the node)
-                    if (next_node_1 == previous_node_2)
+                    if (next_node_1 == previous_node_2)// right element:2, left:1
                     {
                         p_element_2->AddNode(this->mNodes[new_node_global_index], local_index_2);
                     }
                     else
                     {
-                        assert(next_node_2 == previous_node_1);
+                        assert(next_node_2 == previous_node_1);// right element:1, left:2
                         p_element_1->AddNode(this->mNodes[new_node_global_index], local_index_1);
                     }
 
                     // Check the nodes are updated correctly
                     assert(pNode->GetNumContainingElements() == 3);
                     assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+
+                    // my changes
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                        Node<SPACE_DIM>* pNodeAA = p_element->GetNode((p_element->GetNodeLocalIndex(pNodeA->GetIndex())-1+p_element->GetNumNodes())%p_element->GetNumNodes());
+                        Node<SPACE_DIM>* pNodeQ = this->GetNode(new_node_global_index);
+                        Node<SPACE_DIM>* pNodeO = nullptr;
+                        Node<SPACE_DIM>* pNodeX = nullptr;
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            pNodeO = this->GetNode(next_node_2);
+                            pNodeX = p_element_1->GetNode( (p_element_1->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_1->GetNumNodes() + 1)%(p_element_1->GetNumNodes()) );
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            pNodeO = this->GetNode(next_node_1);
+                            pNodeX = p_element_2->GetNode( (p_element_2->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_2->GetNumNodes() + 1)%(p_element_2->GetNumNodes()) );
+                        }
+
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                        p_faceAB->ResetFaceValues();
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePX = nullptr;
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            p_facePX = p_element_1
+                                    ->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            p_facePX = p_element_2
+                                    ->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        }
+
+                        unsigned faceQP_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_faceQP;
+                        nodes_faceQP.push_back(pNodeQ);
+                        nodes_faceQP.push_back(pNode);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceQP = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceQP_index, nodes_faceQP);
+                        (this->mFaces).push_back(p_faceQP);
+
+                        unsigned faceAQ_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_faceAQ;
+                        nodes_faceAQ.push_back(pNodeA);
+                        nodes_faceAQ.push_back(pNodeQ);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAQ = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceAQ_index, nodes_faceAQ);
+                        (this->mFaces).push_back(p_faceAQ);
+
+                        p_faceAB->ReplaceOneNodeBy(pNodeA, pNode);
+                        p_facePX->ReplaceOneNodeBy(pNode, pNodeQ);
+                        p_element->AddFace(p_faceAQ, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeAA->GetIndex(), pNodeA->GetIndex()));
+                        p_element->AddFace(p_faceQP, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeQ->GetIndex()));
+                        
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            p_element_1->AddFace(p_faceQP, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                            p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()))->MarkAsDeleted();
+                            p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                            unsigned local_index_face_previous_to_facePO = (p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeO->GetIndex())-1+p_element_2->GetNumFaces())%(p_element_2->GetNumFaces());
+                            p_element_2->AddFace(p_faceAB, local_index_face_previous_to_facePO);
+                            
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            p_element_2->AddFace(p_faceQP, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                            p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()))->MarkAsDeleted();
+                            p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                            unsigned local_index_face_previous_to_facePO = (p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeO->GetIndex())-1+p_element_1->GetNumFaces())%(p_element_1->GetNumFaces());
+                            p_element_1->AddFace(p_faceAB, local_index_face_previous_to_facePO);
+
+                        }
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 3; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else if (i==1)
+                                    element = p_element_1;
+                                else
+                                    element = p_element_2;                                    
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+
+                    }
+
                 }
                 else if (num_common_vertices == 2)
                 {
+                    // my changes:
+                    if (mOutputConciseSwapInformationWhenRemesh)
+                        std::cout << "In PerformT3Swap: CASE=10" << std::endl;
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 3; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else if (i==1)
+                                element = p_element_1;
+                            else
+                                element = p_element_2;                                    
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
                     /*
-                     *  From          To
-                     *   _B_______      _B____
+                     *  From          To                           CASE = 10
+                     *   _Y__O____X     _Y_O__X
                      *    |  |   /       | / /
-                     *    |  |  /        |/ /
+                     *   B|  |  /      P |/ /
                      *    |\ | /         | /
-                     *    | \|/          |/
+                     *    | \|/        Q |/
                      *   _| <---        _|
-                     *    A
+                     *    A             A    
                      *
                      * The edge goes from vertexA--vertexB to vertexA--new_node--pNode--vertexB
                      * then vertexB is removed
@@ -2634,21 +4417,166 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     // Check the nodes are updated correctly
                     assert(pNode->GetNumContainingElements() == 3);
                     assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+                    
+                    if (mIfUpdateFaceElementsInMesh)
+                    {
+                        Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                        Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                        Node<SPACE_DIM>* pNodeQ = this->GetNode(new_node_global_index);
+                        Node<SPACE_DIM>* pNodeY = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex())+1+p_element->GetNumNodes())%(p_element->GetNumNodes()));
+                        Node<SPACE_DIM>* pNodeO = nullptr;
+                        Node<SPACE_DIM>* pNodeX = nullptr;
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            pNodeO = this->GetNode(next_node_2);
+                            pNodeX = p_element_1->GetNode( (p_element_1->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_1->GetNumNodes() + 1)%(p_element_1->GetNumNodes()) );
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            pNodeO = this->GetNode(next_node_1);
+                            pNodeX = p_element_2->GetNode( (p_element_2->GetNodeLocalIndex(pNodeQ->GetIndex()) + p_element_2->GetNumNodes() + 1)%(p_element_2->GetNumNodes()) );
+                        }
+
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceBY = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeY->GetIndex()));
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element
+                                ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                        p_faceBY->ResetFaceValues();
+                        p_faceAB->ResetFaceValues();
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePX = nullptr;
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            p_facePX = p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            p_facePX = p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        }
+                        unsigned faceQP_index = this->GetNumFaces();
+                        std::vector<Node<SPACE_DIM>*> nodes_faceQP;
+                        nodes_faceQP.push_back(pNodeQ);
+                        nodes_faceQP.push_back(pNode);
+                        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceQP = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceQP_index, nodes_faceQP);
+                        (this->mFaces).push_back(p_faceQP);
+
+                        p_faceBY->ReplaceOneNodeBy(pNodeB, pNode);
+                        p_faceAB->ReplaceOneNodeBy(pNodeB, pNodeQ);
+                        p_facePX->ReplaceOneNodeBy(pNode, pNodeQ);
+                        p_element->AddFace(p_faceQP, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeQ->GetIndex()));
+                        if (next_node_2 == previous_node_1)// right element:1, left:2
+                        {
+                            p_element_1->AddFace(p_faceQP, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                            p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()))->MarkAsDeleted();
+                            p_element_2->DeleteFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                        }
+                        else
+                        {
+                            assert(next_node_1 == previous_node_2);// right element:2, left:1
+
+                            p_element_2->AddFace(p_faceQP, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                            p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()))->MarkAsDeleted();
+                            p_element_1->DeleteFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNode->GetIndex()));
+                        }
+                        if (mOutputDetailedSwapInformationWhenRemesh)
+                        {
+                            std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl;
+                            std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                            std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                            VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                            for (unsigned i = 0; i != 3; ++i)
+                            {
+                                if (i==0)
+                                    element = p_element;
+                                else if (i==1)
+                                    element = p_element_1;
+                                else
+                                    element = p_element_2;                                    
+                                std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                                std::cout <<  std::endl << "Nodes: ";
+                                for(unsigned index =0; index< element->GetNumNodes(); index++)
+                                {
+                                    std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                                }
+                                std::cout <<  std::endl << "Faces: ";
+                                for(unsigned index =0; index< element->GetNumFaces(); index++)
+                                {
+                                    std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                    std::cout << " orien_" << element->GetOrientation(index);
+                                    std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                            std::cout << std::endl << std::endl;
+                        }
+
+                    }
+
                 }
                 else
                 {
+                    // my changes
+                    std::cout << std::endl << "Error in PerformT3Swap, the case: pNode->GetNumContainingElements() == 2 && (VertexB is adjacent to pNode, but VertexA not).";
+                    std::cout << std::endl;
                     // This can't happen as nodes can't be on the internal edge of two elements
                     NEVER_REACHED;
                 }
             }
             else
             {
+                // my changes:
+                if (mOutputConciseSwapInformationWhenRemesh)
+                    std::cout << "In PerformT3Swap: CASE=11" << std::endl;
+                if (mOutputDetailedSwapInformationWhenRemesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                    Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+
+                    std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl;
+                    std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                    std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                    VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                    for (unsigned i = 0; i != 3; ++i)
+                    {
+                        if (i==0)
+                            element = p_element;
+                        else if (i==1)
+                            element = p_element_1;
+                        else
+                            element = p_element_2;                                    
+                        std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                        std::cout <<  std::endl << "Nodes: ";
+                        for(unsigned index =0; index< element->GetNumNodes(); index++)
+                        {
+                            std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                        }
+                        std::cout <<  std::endl << "Faces: ";
+                        for(unsigned index =0; index< element->GetNumFaces(); index++)
+                        {
+                            std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                            std::cout << " orien_" << element->GetOrientation(index);
+                            std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, INITIAL-----------------";
+                    std::cout << std::endl << std::endl;
+                }
+
                 /*
-                 *  From          To
-                 *   _____         _______
+                 *  From          To                   CASE = 11.
+                 * A _____B      A _M_P_N_B
                  *                  / | \
                  *    /|\   ^      /  |  \
-                 *   / | \  |
+                 *   / | \  |     X       Y
                  *
                  * The edge goes from vertexA--vertexB to vertexA--new_node_1--pNode--new_node_2--vertexB
                  */
@@ -2676,14 +4604,14 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 this->GetElement(elementIndex)->AddNode(this->mNodes[new_node_1_global_index], node_A_local_index);
 
                 // Add the new nodes to the original elements containing pNode (this also updates the node)
-                if (next_node_1 == previous_node_2)
+                if (next_node_1 == previous_node_2)// right element:1, left:2 
                 {
                     p_element_1->AddNode(this->mNodes[new_node_2_global_index], (local_index_1 + p_element_1->GetNumNodes() - 1)%(p_element_1->GetNumNodes()));
                     p_element_2->AddNode(this->mNodes[new_node_1_global_index], local_index_2);
                 }
                 else
                 {
-                    assert(next_node_2 == previous_node_1);
+                    assert(next_node_2 == previous_node_1);// right element:2, left:1
 
                     p_element_1->AddNode(this->mNodes[new_node_1_global_index], local_index_1);
                     p_element_2->AddNode(this->mNodes[new_node_2_global_index], (local_index_2 + p_element_2->GetNumNodes() - 1)%(p_element_2->GetNumNodes()));
@@ -2693,13 +4621,136 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 assert(pNode->GetNumContainingElements() == 3);
                 assert(this->mNodes[new_node_1_global_index]->GetNumContainingElements() == 2);
                 assert(this->mNodes[new_node_2_global_index]->GetNumContainingElements() == 2);
+
+                // my changes
+                if (mIfUpdateFaceElementsInMesh)
+                {
+                    Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);
+                    Node<SPACE_DIM>* pNodeB = this->GetNode(vertexB_index);
+                    Node<SPACE_DIM>* pNodeM = this->GetNode(new_node_1_global_index);
+                    Node<SPACE_DIM>* pNodeN = this->GetNode(new_node_2_global_index);
+                    Node<SPACE_DIM>* pNodeO = nullptr;                    
+                    Node<SPACE_DIM>* pNodeX = nullptr;
+                    Node<SPACE_DIM>* pNodeY = nullptr;
+                    if (next_node_1 == previous_node_2)// right element:1, left:2 
+                    {
+                        pNodeO = this->GetNode(next_node_1);
+                        pNodeX = p_element_2->GetNode((p_element_2->GetNodeLocalIndex(pNode->GetIndex())+2)%(p_element_2->GetNumNodes()));
+                        pNodeY = p_element_1->GetNode((p_element_1->GetNodeLocalIndex(pNode->GetIndex())-2+p_element_1->GetNumNodes())%(p_element_1->GetNumNodes()));
+                    }
+                    else
+                    {
+                        assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                        pNodeO = this->GetNode(next_node_2);
+                        pNodeX = p_element_1->GetNode((p_element_1->GetNodeLocalIndex(pNode->GetIndex())+2)%(p_element_1->GetNumNodes()));
+                        pNodeY = p_element_2->GetNode((p_element_2->GetNodeLocalIndex(pNode->GetIndex())-2+p_element_2->GetNumNodes())%(p_element_2->GetNumNodes()));
+                    }
+
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceAB = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+                    p_faceAB->ResetFaceValues();
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePX = nullptr;
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceYP = nullptr;
+                    if (next_node_1 == previous_node_2)// right element:1, left:2 
+                    {
+                        p_facePX = p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        p_faceYP = p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNode->GetIndex()));
+                        
+                    }
+                    else
+                    {
+                        assert(next_node_2 == previous_node_1);// right element:2, left:1
+
+                        p_facePX = p_element_1->GetFace(p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeX->GetIndex()));
+                        p_faceYP = p_element_2->GetFace(p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNode->GetIndex()));
+                    }
+                    unsigned faceMP_index = this->GetNumFaces();
+                    std::vector<Node<SPACE_DIM>*> nodes_faceMP;
+                    nodes_faceMP.push_back(pNodeM);
+                    nodes_faceMP.push_back(pNode);
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceMP = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceMP_index, nodes_faceMP);
+                    (this->mFaces).push_back(p_faceMP);
+                    unsigned facePN_index = this->GetNumFaces();
+                    std::vector<Node<SPACE_DIM>*> nodes_facePN;
+                    nodes_facePN.push_back(pNode);
+                    nodes_facePN.push_back(pNodeN);
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePN = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePN_index, nodes_facePN);
+                    (this->mFaces).push_back(p_facePN);
+                    unsigned faceNB_index = this->GetNumFaces();
+                    std::vector<Node<SPACE_DIM>*> nodes_faceNB;
+                    nodes_faceNB.push_back(pNodeN);
+                    nodes_faceNB.push_back(pNodeB);
+                    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_faceNB = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(faceNB_index, nodes_faceNB);
+                    (this->mFaces).push_back(p_faceNB);
+
+                    p_faceAB->ReplaceOneNodeBy(pNodeB, pNodeM);
+                    p_facePX->ReplaceOneNodeBy(pNode, pNodeM);
+                    p_faceYP->ReplaceOneNodeBy(pNode, pNodeN);
+                    p_element->AddFace(p_faceMP, p_element->GetFaceLocalIndex(p_faceAB->GetIndex()));
+                    p_element->AddFace(p_facePN, p_element->GetFaceLocalIndex(p_faceMP->GetIndex()));
+                    p_element->AddFace(p_faceNB, p_element->GetFaceLocalIndex(p_facePN->GetIndex()));
+
+                    if (next_node_1 == previous_node_2)// right element:1, left:2 
+                    {
+                        p_element_2->AddFace(p_faceMP, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                        p_element_1->AddFace(p_facePN, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNodeN->GetIndex()));
+                    }
+                    else
+                    {
+                        assert(next_node_2 == previous_node_1);// right element:2, left:1
+                        p_element_1->AddFace(p_faceMP, p_element_1->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeO->GetIndex(), pNode->GetIndex()));
+                        p_element_2->AddFace(p_facePN, p_element_2->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeY->GetIndex(), pNodeN->GetIndex()));
+                    }
+
+                    if (mOutputDetailedSwapInformationWhenRemesh)
+                    {
+                        std::cout <<  std::endl <<"BEGIN: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl;
+                        std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeP" << pNode->GetIndex();
+                        std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
+                        VertexElement<ELEMENT_DIM,SPACE_DIM>* element; 
+                        for (unsigned i = 0; i != 3; ++i)
+                        {
+                            if (i==0)
+                                element = p_element;
+                            else if (i==1)
+                                element = p_element_1;
+                            else
+                                element = p_element_2;                                    
+                            std::cout <<  std::endl << "ElementIndex: " << element->GetIndex();
+                            std::cout <<  std::endl << "Nodes: ";
+                            for(unsigned index =0; index< element->GetNumNodes(); index++)
+                            {
+                                std::cout << index << "_" << element->GetNodeGlobalIndex(index) << ' ';
+                            }
+                            std::cout <<  std::endl << "Faces: ";
+                            for(unsigned index =0; index< element->GetNumFaces(); index++)
+                            {
+                                std::cout <<  index << "_" << element->GetFace(index)->GetIndex();
+                                std::cout << " orien_" << element->GetOrientation(index);
+                                std::cout << " fir_node_" << element->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << element->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << std::endl << "END: Nodes and Faces Information of T3 swap elements, AFTER-----------------";
+                        std::cout << std::endl << std::endl;
+                    }
+
+                }
             }
         }
     }
     else
     {
+        // my changes
+        std::cout << std::endl << "Error in PerformT3Swap: Trying to merge a node, contained in more than 2 elements, into another element, this is not possible with the vertex mesh.";
+        std::cout << std::endl;
         EXCEPTION("Trying to merge a node, contained in more than 2 elements, into another element, this is not possible with the vertex mesh.");
     }
+
+    if (mOutputConciseSwapInformationWhenRemesh)
+        std::cout << "PerformT3Swap finished." << std::endl;
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>

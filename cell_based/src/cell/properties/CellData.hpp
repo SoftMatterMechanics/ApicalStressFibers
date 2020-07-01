@@ -105,6 +105,17 @@ public:
      */
     double GetItem(const std::string& rVariableName) const;
 
+    // my changes
+    bool HasItem(const std::string& rVariableName)
+    {
+      std::map<std::string, double>::const_iterator it = mCellData.find(rVariableName);
+      if (it == mCellData.end())
+      {
+        return false;
+      }
+      return true;
+    }
+
     /**
      * @return number of data items
      */

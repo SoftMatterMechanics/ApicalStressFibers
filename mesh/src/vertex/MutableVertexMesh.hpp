@@ -125,6 +125,12 @@ protected:
      */
     std::vector< c_vector<double, SPACE_DIM> > mLocationsOfT3Swaps;
 
+    bool mIfUpdateFaceElementsInMesh;
+
+    bool mOutputConciseSwapInformationWhenRemesh;
+
+    bool mOutputDetailedSwapInformationWhenRemesh;
+
     /**
      * Divide an element along the axis passing through two of its nodes.
      *
@@ -667,6 +673,114 @@ public:
      * \todo This method seems to be redundant; remove it? (#2401)
      */
     void ReMesh();
+
+    void SetUpdateFaceElementsInMeshBoolean(bool ifUpdateFaceElementsInMesh)
+    {
+      mIfUpdateFaceElementsInMesh = ifUpdateFaceElementsInMesh;
+    }
+
+    void SetOutputConciseSwapInformationWhenRemesh(bool outputConciseSwapInformationWhenRemesh)
+    {
+      this->mOutputConciseSwapInformationWhenRemesh = outputConciseSwapInformationWhenRemesh;
+    }
+
+    void SetOutputDetailedSwapInformationWhenRemesh(bool outputDetailedSwapInformationWhenRemesh)
+    {
+      this->mOutputDetailedSwapInformationWhenRemesh = outputDetailedSwapInformationWhenRemesh;
+    }
+
+    bool IsFaceContainedByABoundaryElement(unsigned faceIndex)
+    {
+      VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_face = this->GetFace(faceIndex);
+      if (p_face->IsDeleted())
+        std::cout << std::endl << "ERROR: method IsFaceContainedByABoundaryElement should not be used to a deleted face!" << std::endl;
+      assert(!p_face->IsDeleted());
+
+      Node<SPACE_DIM>* pNodeA = p_face->GetNode(0);
+      Node<SPACE_DIM>* pNodeB = p_face->GetNode(1);
+
+      std::set<unsigned> elements_containing_nodeA = pNodeA->rGetContainingElementIndices();
+      std::set<unsigned> elements_containing_nodeB = pNodeB->rGetContainingElementIndices();
+
+      // Find common elements
+      std::set<unsigned> shared_elements;
+      std::set_intersection(elements_containing_nodeA.begin(),
+                            elements_containing_nodeA.end(),
+                            elements_containing_nodeB.begin(),
+                            elements_containing_nodeB.end(),
+                            std::inserter(shared_elements, shared_elements.begin()));
+
+      // Check that the nodes have a common edge
+      assert(!shared_elements.empty() && shared_elements.size()<3);
+
+      for (std::set<unsigned>::iterator iter = shared_elements.begin(); iter != shared_elements.end(); iter++)
+      {
+        VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element = this->GetElement(*iter);
+        for (unsigned i=0; i<p_element->GetNumNodes(); i++)
+        {
+          if (p_element->GetNode(i)->IsBoundaryNode())
+            return true;
+        }
+      }
+      return false;
+    }
+
+    c_vector<double, SPACE_DIM> GetCentroidOfTheWholeMesh()
+    {
+      c_vector<double, SPACE_DIM> centroid_of_mesh;
+      // Loop over live elements
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {
+        centroid_of_mesh[0] += this->GetCentroidOfElement(elem_iter->GetIndex())[0];
+        centroid_of_mesh[1] += this->GetCentroidOfElement(elem_iter->GetIndex())[1];
+      }
+      centroid_of_mesh[0] /= this->GetNumElements();
+      centroid_of_mesh[1] /= this->GetNumElements();
+      return centroid_of_mesh;
+    }
+
+    bool IsFaceContainedByATopBoundaryElement(unsigned faceIndex)
+    {
+      VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_face = this->GetFace(faceIndex);
+      if (p_face->IsDeleted())
+        std::cout << std::endl << "ERROR: method IsFaceContainedByABoundaryElement should not be used to a deleted face!" << std::endl;
+      assert(!p_face->IsDeleted());
+
+      double centroid_y_of_the_whole_mesh = this->GetCentroidOfTheWholeMesh()[1];
+      if (p_face->GetNode(0)->rGetLocation()[1] < centroid_y_of_the_whole_mesh)
+        return false;
+
+      Node<SPACE_DIM>* pNodeA = p_face->GetNode(0);
+      Node<SPACE_DIM>* pNodeB = p_face->GetNode(1);
+
+      std::set<unsigned> elements_containing_nodeA = pNodeA->rGetContainingElementIndices();
+      std::set<unsigned> elements_containing_nodeB = pNodeB->rGetContainingElementIndices();
+
+      // Find common elements
+      std::set<unsigned> shared_elements;
+      std::set_intersection(elements_containing_nodeA.begin(),
+                            elements_containing_nodeA.end(),
+                            elements_containing_nodeB.begin(),
+                            elements_containing_nodeB.end(),
+                            std::inserter(shared_elements, shared_elements.begin()));
+
+      // Check that the nodes have a common edge
+      assert(!shared_elements.empty() && shared_elements.size()<3);
+
+      for (std::set<unsigned>::iterator iter = shared_elements.begin(); iter != shared_elements.end(); iter++)
+      {
+        VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element = this->GetElement(*iter);
+        for (unsigned i=0; i<p_element->GetNumNodes(); i++)
+        {
+          if (p_element->GetNode(i)->IsBoundaryNode())
+            return true;
+        }
+      }
+      return false;
+    }
+
 };
 
 #include "SerializationExportWrapper.hpp"

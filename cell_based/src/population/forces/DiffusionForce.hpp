@@ -71,6 +71,14 @@ private :
      */
     static const double msBoltzmannConstant;
 
+    // my changes
+    bool mConsiderPolarity;
+
+    bool mUseTheSameNodeRadius;
+
+    double mTheSameNodeRadius;
+
+
     /**
      * Archiving.
      */
@@ -102,6 +110,22 @@ public :
      */
     ~DiffusionForce();
 
+    // my changes
+    void SetConsiderPolarity(bool considerPolarity)
+    {
+      mConsiderPolarity = considerPolarity;
+    }
+
+    void SetUseTheSameNodeRadius(bool useTheSameNodeRadius)
+    {
+      mUseTheSameNodeRadius = useTheSameNodeRadius;
+    }
+
+    void SetTheSameNodeRadius(double theSameNodeRadius)
+    {
+      mTheSameNodeRadius = theSameNodeRadius;
+    }
+    
     /**
      * Set the absolute temperature, which affects the
      * diffusion constant.

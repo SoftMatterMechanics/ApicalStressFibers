@@ -163,9 +163,9 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
     }
 
     if (face_index != (3*numElementsUp+2)*numElementsAcross)
-        std::cout<< std::endl << "Face building got error!" ;
+        std::cout<< std::endl << "Face building got error in MyXToroidalHoneycombVertexMeshGenerator!" << std::endl;
     else
-        std::cout<< std::endl << "Number of faces: " << face_index ;
+        std::cout<< std::endl << "Successfully built " << numElementsAcross*numElementsUp << " elements and " << face_index << " faces in MyXToroidalHoneycombVertexMeshGenerator." << std::endl;
 
     assert(face_index == (3*numElementsUp+2)*numElementsAcross);
 

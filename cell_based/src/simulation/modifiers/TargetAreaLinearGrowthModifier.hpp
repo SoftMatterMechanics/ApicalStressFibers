@@ -98,6 +98,8 @@ class TargetAreaLinearGrowthModifier : public AbstractTargetAreaModifier<DIM>
      */
     double mGrowthRate;
 
+    bool mUseMyOwnRuleForUpdateTargetAreaOfCell;
+
 public:
 
     /**
@@ -140,6 +142,12 @@ public:
      * @param growthRate the new value of #mGrowthRate
      */
     void SetGrowthRate(double growthRate);
+
+    // my changes
+    void SetUseUseMyOwnRuleForUpdateTargetAreaOfCell(bool useMyOwnRuleForUpdateTargetAreaOfCell)
+    {
+      mUseMyOwnRuleForUpdateTargetAreaOfCell = useMyOwnRuleForUpdateTargetAreaOfCell;
+    }
 
     /**
      * Overridden OutputSimulationModifierParameters() method.

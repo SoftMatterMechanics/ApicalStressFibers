@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "StemCellProliferativeType.hpp"
 #include "TransitCellProliferativeType.hpp"
 #include "RandomNumberGenerator.hpp"
+#include "BernoulliTrialCellCycleModel.hpp"
 
 /**
  * A helper class for generating a vector of cells for a given mesh.
@@ -51,7 +52,19 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template<class CELL_CYCLE_MODEL, unsigned DIM>
 class CellsGenerator
 {
+private:
+
+    bool mUseARandomDivisionRule;
+    unsigned mDivideTimestepMultiple;
+    bool mUseBernoulliTrialCellCycleModel;
+    double mDivideProbability;
+    double mMinimumDivisionAge;
+
 public:
+
+    // CellsGenerator();
+
+    // ~CellsGenerator();
 
     /**
      * Fills a vector of cells with a specified cell-cycle model, to match
@@ -92,11 +105,22 @@ public:
     void GenerateGivenLocationIndices(std::vector<CellPtr>& rCells,
                                       const std::vector<unsigned> locationIndices,
                                       boost::shared_ptr<AbstractCellProperty> pCellProliferativeType=boost::shared_ptr<AbstractCellProperty>());
-    // My changes.
-    void GenerateBasicRandomWithStopProliferateTime(std::vector<CellPtr>& rCells,
-    		unsigned numCells,
-			double stopProliferateTime,
-			boost::shared_ptr<AbstractCellProperty> pCellProliferativeType=boost::shared_ptr<AbstractCellProperty>());
+    
+    void SetUseBernoulliTrialCellCycleModel(bool useBernoulliTrialCellCycleModel)
+    {
+        mUseBernoulliTrialCellCycleModel = useBernoulliTrialCellCycleModel;
+    }
+
+    void SetDivideProbability(double divideProbability)
+    {
+        mDivideProbability = divideProbability;
+    }
+
+    void SetMinimumDivisionAge(double minimumDivisionAge)
+    {
+        mMinimumDivisionAge = minimumDivisionAge;
+    }
+
 
 };
 
@@ -186,6 +210,17 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
         }
 
         p_cell->SetBirthTime(birth_time);
+
+        // my changes
+        if (mUseBernoulliTrialCellCycleModel)
+        {
+            if (dynamic_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())==nullptr)
+                std::cout << std::endl << "ERROR: Please use BernoulliTrialCellCycleModel!" << std::endl;
+            assert(dynamic_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())!=nullptr);
+            static_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())->SetDivisionProbability(mDivideProbability);
+            static_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())->SetMinimumDivisionAge(mMinimumDivisionAge);
+        }
+
         rCells.push_back(p_cell);
     }
 }
@@ -226,50 +261,5 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateGivenLocationIndices(std::vec
         rCells.push_back(p_cell);
     }
 }
-
-// My changes.
-template<class CELL_CYCLE_MODEL, unsigned DIM>
-void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandomWithStopProliferateTime(std::vector<CellPtr>& rCells,
-		unsigned numCells,
-		double stopProliferateTime,
-		boost::shared_ptr<AbstractCellProperty> pCellProliferativeType)
-{
-    rCells.clear();
-
-    rCells.reserve(numCells);
-
-    // Create cells
-    for (unsigned i=0; i<numCells; i++)
-    {
-        CELL_CYCLE_MODEL* p_cell_cycle_model = new CELL_CYCLE_MODEL;
-        p_cell_cycle_model->SetDimension(DIM);
-
-        boost::shared_ptr<AbstractCellProperty> p_state(CellPropertyRegistry::Instance()->Get<WildTypeCellMutationState>());
-        CellPtr p_cell(new Cell(p_state, p_cell_cycle_model));
-
-        if (!pCellProliferativeType)
-        {
-            p_cell->SetCellProliferativeType(CellPropertyRegistry::Instance()->Get<StemCellProliferativeType>());
-        }
-        else
-        {
-            p_cell->SetCellProliferativeType(pCellProliferativeType);
-        }
-
-        double birth_time = -p_cell_cycle_model->GetAverageStemCellCycleTime()*RandomNumberGenerator::Instance()->ranf();
-
-        if (p_cell->GetCellProliferativeType()->IsType<TransitCellProliferativeType>())
-        {
-            birth_time = -p_cell_cycle_model->GetAverageTransitCellCycleTime()*RandomNumberGenerator::Instance()->ranf();
-        }
-
-        p_cell->SetBirthTime(birth_time);
-        
-        // My changes.
-        p_cell->SetStopProliferateTime(stopProliferateTime);
-        rCells.push_back(p_cell);
-    }
-}
-
 
 #endif /* CELLSGENERATOR_HPP_ */

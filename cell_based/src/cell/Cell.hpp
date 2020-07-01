@@ -148,9 +148,7 @@ protected:
     /** Whether the cell is being tracked specially. */
     bool mIsLogged;
 
-        // My changes.
-    double mStopProliferateTime;
-    
+        // My changes.    
     double mMyosinActivity;
 
 
@@ -425,16 +423,6 @@ public:
     unsigned GetCellId() const;
 
     // My changes.
-    void SetStopProliferateTime(double stopProliferateTime)
-    {
-        mStopProliferateTime = stopProliferateTime;
-    }
-    
-    double GetStopProliferateTime()
-    {
-        return mStopProliferateTime;
-    }
-
     void SetMyosinActivity(double myosinActivity)
     {
         mMyosinActivity = myosinActivity;
@@ -444,8 +432,6 @@ public:
     {
         return mMyosinActivity;
     }
-
-
 };
 
 

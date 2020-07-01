@@ -69,14 +69,6 @@ private:
      */
     std::vector<bool> mOrientations;
 
-    // My changes
-    double mUnifiedEdgeMyosinActivty;
-
-    double mUnifiedCellCellAdhesionEnergyParameter;
-
-    double mUnifiedCellBoundaryAdhesionEnergyParameter;
-
-
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -165,7 +157,7 @@ public:
     void AddFace(VertexElement<ELEMENT_DIM-1, SPACE_DIM>* pFace);
 
     /**
-     * @param index the global index of a specified face
+     * @param index the local index of a specified face
      *
      * @return a pointer to the face
      */
@@ -179,15 +171,10 @@ public:
     bool FaceIsOrientatedClockwise(unsigned index) const;
 
     // my changes
-    double GetUnifiedCellCellAdhesionEnergyParameter()
+    bool GetOrientation(unsigned faceLocalIndex)
     {
-      return mUnifiedCellCellAdhesionEnergyParameter;
-    }//this should only be used as a face method
-
-    // VertexElement<ELEMENT_DIM-1, SPACE_DIM>* GetFaceUsingLocalIndex(unsigned index) const
-    // {
-    //   return mFaces[index];
-    // }
+      return this->mOrientations[faceLocalIndex];
+    }
 
     unsigned GetFaceLocalIndex(unsigned globalIndex) const
     {
@@ -216,7 +203,23 @@ public:
           if (this->mOrientations[face_local_index]==false)
           {
             std::cout << std::endl << "Err in VertexElement::GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex";
-            std::cout << std::endl << "Orientation value is wrong!";
+            std::cout << std::endl << "Orientation value is wrong!" << std::endl;
+            std::cout << "Details: startNodeGlobalIndex=" << startNodeGlobalIndex << " endNodeGlobalIndex=" << endNodeGlobalIndex;
+            std::cout <<  std::endl << "ElementIndex: " << this->GetIndex();
+            std::cout <<  std::endl << "Nodes: ";
+            for(unsigned index =0; index< this->GetNumNodes(); index++)
+            {
+                std::cout << "NodeLocalIndex"<< index << "_" << this->GetNodeGlobalIndex(index) << ' ';
+            }
+            std::cout <<  std::endl << "Faces: ";
+            for(unsigned index =0; index< this->GetNumFaces(); index++)
+            {
+                std::cout << "FaceLocalIndex" << index << "_" << this->GetFace(index)->GetIndex();
+                std::cout << " orien_" << this->GetOrientation(index);
+                std::cout << " fir_node_" << this->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << this->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+            }
+            std::cout << std::endl;
+
           }
           assert(this->mOrientations[face_local_index]==true);
           return face_local_index;
@@ -227,7 +230,23 @@ public:
           if (this->mOrientations[face_local_index]==true)
           {
             std::cout << std::endl << "Err in VertexElement::GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex";
-            std::cout << std::endl << "Orientation value is wrong!";
+            std::cout << std::endl << "Orientation value is wrong!" << std::endl;
+            std::cout << "Details: startNodeGlobalIndex=" << startNodeGlobalIndex << " endNodeGlobalIndex=" << endNodeGlobalIndex;
+            std::cout <<  std::endl << "ElementIndex: " << this->GetIndex();
+            std::cout <<  std::endl << "Nodes: ";
+            for(unsigned index =0; index< this->GetNumNodes(); index++)
+            {
+                std::cout << "NodeLocalIndex"<< index << "_" << this->GetNodeGlobalIndex(index) << ' ';
+            }
+            std::cout <<  std::endl << "Faces: ";
+            for(unsigned index =0; index< this->GetNumFaces(); index++)
+            {
+                std::cout << "FaceLocalIndex" << index << "_" << this->GetFace(index)->GetIndex();
+                std::cout << " orien_" << this->GetOrientation(index);
+                std::cout << " fir_node_" << this->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << this->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+            }
+            std::cout << std::endl;
+
           }
           assert(this->mOrientations[face_local_index]==false);
           return face_local_index;
@@ -236,10 +255,90 @@ public:
         if (face_local_index == this->GetNumFaces()-1)
         {
           std::cout << std::endl << "ERR: Method VertexElement::GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex";
-          std::cout << std::endl << "Not Reachable!";
+          std::cout << std::endl << "Not Reachable!" << std::endl;
+          std::cout << "Details: startNodeGlobalIndex=" << startNodeGlobalIndex << " endNodeGlobalIndex=" << endNodeGlobalIndex;
+          std::cout <<  std::endl << "ElementIndex: " << this->GetIndex();
+          std::cout <<  std::endl << "Nodes: ";
+          for(unsigned index =0; index< this->GetNumNodes(); index++)
+          {
+              std::cout << "NodeLocalIndex"<< index << "_" << this->GetNodeGlobalIndex(index) << ' ';
+          }
+          std::cout <<  std::endl << "Faces: ";
+          for(unsigned index =0; index< this->GetNumFaces(); index++)
+          {
+              std::cout << "FaceLocalIndex" << index << "_" << this->GetFace(index)->GetIndex();
+              std::cout << " orien_" << this->GetOrientation(index);
+              std::cout << " fir_node_" << this->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << this->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+          }
+          std::cout << std::endl;
+          assert(!(face_local_index == this->GetNumFaces()-1));
+
         }
       }
       return 0;
+    }
+
+    bool CheckIfHasThisFace(unsigned startNodeGlobalIndex, unsigned endNodeGlobalIndex)
+    {
+      for (unsigned face_local_index = 0; face_local_index < this->GetNumFaces(); face_local_index++ )
+      {
+        if (this->mFaces[face_local_index]->GetNodeGlobalIndex(0)==startNodeGlobalIndex && this->mFaces[face_local_index]->GetNodeGlobalIndex(1)==endNodeGlobalIndex) 
+        {
+          if (this->mOrientations[face_local_index]==false)
+          {
+            std::cout << std::endl << "Err in VertexElement::GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex";
+            std::cout << std::endl << "Orientation value is wrong!" << std::endl;
+            std::cout << "Details: startNodeGlobalIndex=" << startNodeGlobalIndex << " endNodeGlobalIndex=" << endNodeGlobalIndex;
+            std::cout <<  std::endl << "ElementIndex: " << this->GetIndex();
+            std::cout <<  std::endl << "Nodes: ";
+            for(unsigned index =0; index< this->GetNumNodes(); index++)
+            {
+                std::cout << "NodeLocalIndex"<< index << "_" << this->GetNodeGlobalIndex(index) << ' ';
+            }
+            std::cout <<  std::endl << "Faces: ";
+            for(unsigned index =0; index< this->GetNumFaces(); index++)
+            {
+                std::cout << "FaceLocalIndex" << index << "_" << this->GetFace(index)->GetIndex();
+                std::cout << " orien_" << this->GetOrientation(index);
+                std::cout << " fir_node_" << this->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << this->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+            }
+            std::cout << std::endl;
+
+          }
+          assert(this->mOrientations[face_local_index]==true);
+          return true;
+          break;
+        }
+        else if (this->mFaces[face_local_index]->GetNodeGlobalIndex(1)==startNodeGlobalIndex && this->mFaces[face_local_index]->GetNodeGlobalIndex(0)==endNodeGlobalIndex)
+        {
+          if (this->mOrientations[face_local_index]==true)
+          {
+            std::cout << std::endl << "Err in VertexElement::GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex";
+            std::cout << std::endl << "Orientation value is wrong!" << std::endl;
+            std::cout << "Details: startNodeGlobalIndex=" << startNodeGlobalIndex << " endNodeGlobalIndex=" << endNodeGlobalIndex;
+            std::cout <<  std::endl << "ElementIndex: " << this->GetIndex();
+            std::cout <<  std::endl << "Nodes: ";
+            for(unsigned index =0; index< this->GetNumNodes(); index++)
+            {
+                std::cout << "NodeLocalIndex"<< index << "_" << this->GetNodeGlobalIndex(index) << ' ';
+            }
+            std::cout <<  std::endl << "Faces: ";
+            for(unsigned index =0; index< this->GetNumFaces(); index++)
+            {
+                std::cout << "FaceLocalIndex" << index << "_" << this->GetFace(index)->GetIndex();
+                std::cout << " orien_" << this->GetOrientation(index);
+                std::cout << " fir_node_" << this->GetFace(index)->GetNodeGlobalIndex(0) << " sec_node_" << this->GetFace(index)->GetNodeGlobalIndex(1) << " || ";
+            }
+            std::cout << std::endl;
+
+          }
+          assert(this->mOrientations[face_local_index]==false);
+          return true;
+          break;
+        }
+      }
+      return false;
+
     }
 
     // Note: previous node global index should be able to be found in this element!
@@ -322,15 +421,41 @@ public:
       this->mOrientations.erase(this->mOrientations.begin()+faceLocalIndex);
     }
 
+    // For solving instantialization problem here! this should only be used as a face method!
+    double GetUnifiedEdgeMyosinActivty()
+    {
+      return 0.0;
+    }
+
+    double GetUnifiedCellCellAdhesionEnergyParameter()
+    {
+      return 0.0;
+    }
+
+    bool IsDeleted()
+    {
+      return false;
+    }
+
+    void MarkAsDeleted()
+    {
+    }
+
+    void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
+    {
+    }
+
+    void SetUnifiedCellCellAdhesionEnergyParameter(double unifiedCellCellAdhesionEnergyParameter)
+    {
+    }
+
+    void ResetFaceValues()
+    {
+    }
+
     void ReplaceOneNodeBy(Node<SPACE_DIM>* pNodeA,Node<SPACE_DIM>* pNodeB)
     {
     }
-
-    bool GetOrientation(unsigned faceLocalIndex)
-    {
-      return this->mOrientations[faceLocalIndex];
-    }
-
 };
 
 
@@ -354,6 +479,8 @@ private:
     double mUnifiedCellCellAdhesionEnergyParameter;
 
     double mUnifiedCellBoundaryAdhesionEnergyParameter;
+
+    bool mIsDeleted;
 
 public:
 
@@ -386,20 +513,75 @@ public:
 
     // My changes
     // void RegisterWithFaces();
-    // /**
-    //  * @return a set of indices of elements containing this element as a face.
-    //  */
+    // //return a set of indices of elements containing this element as a face.
     // std::set<unsigned>& rGetContainingElementIndices();
+
+    double GetUnifiedEdgeMyosinActivty()
+    {
+      return mUnifiedEdgeMyosinActivty;
+    }
 
     double GetUnifiedCellCellAdhesionEnergyParameter()
     {
       return mUnifiedCellCellAdhesionEnergyParameter;
     }
 
-    // VertexElement<1-1, SPACE_DIM>* GetFaceUsingLocalIndex(unsigned index) const
-    // {
-    //   return nullptr;
-    // }
+    bool IsDeleted()
+    {
+      return mIsDeleted;
+    }
+
+    void MarkAsDeleted()
+    {
+      mIsDeleted = true;
+    }
+
+    void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
+    {
+      this->mUnifiedEdgeMyosinActivty = unifiedEdgeMyosinActivty;
+    }
+
+    void SetUnifiedCellCellAdhesionEnergyParameter(double unifiedCellCellAdhesionEnergyParameter)
+    {
+      this->mUnifiedCellCellAdhesionEnergyParameter = unifiedCellCellAdhesionEnergyParameter;
+    }
+
+    void ResetFaceValues()
+    {
+      this->mUnifiedEdgeMyosinActivty = 1.0;
+      this->mUnifiedCellCellAdhesionEnergyParameter = 1.0;
+    }
+
+    void ReplaceOneNodeBy(Node<SPACE_DIM>* pNodeA,Node<SPACE_DIM>* pNodeB)
+    {
+      if (this->mNodes[0]->GetIndex()==pNodeA->GetIndex())
+      {
+        this->mNodes[0] = pNodeB;
+      }
+      else if (this->mNodes[1]->GetIndex()==pNodeA->GetIndex())
+      {
+        this->mNodes[1] = pNodeB;
+      }
+      else
+      {
+          std::cout << std::endl << "ERR: Method VertexElement::ReplaceOneNodeBy";
+          std::cout << std::endl << "Not Reachable!";
+      }
+    }
+
+    // For solving instantialization problem here in 1d element! this should only be used as an element method!
+    VertexElement(unsigned index,
+              const std::vector<VertexElement<1-1, SPACE_DIM>*>& rFaces,
+              const std::vector<bool>& rOrientations,
+              const std::vector<Node<SPACE_DIM>*>& rNodes)
+      : MutableElement<1, SPACE_DIM>(index, rNodes)// this statement is indispensable!
+    {      
+    }
+
+    bool GetOrientation(unsigned faceLocalIndex)
+    {
+      return true;
+    }
 
     unsigned GetFaceLocalIndex(unsigned globalIndex) const
     {
@@ -409,6 +591,11 @@ public:
     unsigned GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(unsigned startNodeGlobalIndex, unsigned endNodeGlobalIndex)
     {
       return 0;
+    }
+
+    bool CheckIfHasThisFace(unsigned startNodeGlobalIndex, unsigned endNodeGlobalIndex)
+    {
+      return true;
     }
 
     unsigned GetFaceLocalIndexUsingEndNodeGlobalIndex(unsigned endNodeGlobalIndex)
@@ -433,29 +620,6 @@ public:
     void DeleteFace(unsigned faceLocalIndex)
     {
     }
-
-    void ReplaceOneNodeBy(Node<SPACE_DIM>* pNodeA,Node<SPACE_DIM>* pNodeB)
-    {
-      if (this->mNodes[0]->GetIndex()==pNodeA->GetIndex())
-      {
-        this->mNodes[0] = pNodeB;
-      }
-      else if (this->mNodes[1]->GetIndex()==pNodeA->GetIndex())
-      {
-        this->mNodes[1] = pNodeB;
-      }
-      else
-      {
-          std::cout << std::endl << "ERR: Method VertexElement::ReplaceOneNodeBy";
-          std::cout << std::endl << "Not Reachable!";
-      }
-    }
-
-    bool GetOrientation(unsigned faceLocalIndex)
-    {
-      return true;
-    }
-
 
 };
 

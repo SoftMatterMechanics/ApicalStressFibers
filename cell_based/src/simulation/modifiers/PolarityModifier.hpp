@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef ABSTRACTTARGETAREAMODIFIER_HPP_
-#define ABSTRACTTARGETAREAMODIFIER_HPP_
+#ifndef POLARITYMODIFIER_HPP_
+#define POLARITYMODIFIER_HPP_
 
 #include "ChasteSerialization.hpp"
 #include <boost/serialization/base_object.hpp>
@@ -45,7 +45,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * It is used to implement growth in vertex-based simulations.
  */
 template<unsigned DIM>
-class AbstractTargetAreaModifier : public AbstractCellBasedSimulationModifier<DIM,DIM>
+class PolarityModifier : public AbstractCellBasedSimulationModifier<DIM,DIM>
 {
     /** Needed for serialization. */
     friend class boost::serialization::access;
@@ -60,79 +60,62 @@ class AbstractTargetAreaModifier : public AbstractCellBasedSimulationModifier<DI
     void serialize(Archive & archive, const unsigned int version)
     {
         archive & boost::serialization::base_object<AbstractCellBasedSimulationModifier<DIM,DIM> >(*this);
-        archive & mReferenceTargetArea;
+        archive & mD;
+        archive & mDt;
+        archive & mPolarityMagnitude;
     }
 
 protected:
 
-    /**
-     * A reference area. Usually this is the target area of mature cells in the population.
-     */
-    double mReferenceTargetArea;
+    double mD;
 
-    AbstractCellPopulation<DIM, DIM>* mpCellPopulation;
+    double mDt;
+
+    double mPolarityMagnitude;
+
+    double mAngleForInitialization;
 
 public:
 
     /**
      * Default constructor.
      */
-    AbstractTargetAreaModifier();
+    PolarityModifier();
 
     /**
      * Destructor.
      */
-    virtual ~AbstractTargetAreaModifier();
+    virtual ~PolarityModifier();
 
-    /**
-     * Overridden UpdateAtEndOfTimeStep() method.
-     *
-     * Specify what to do in the simulation at the end of each time step.
-     *
-     * @param rCellPopulation reference to the cell population
-     */
+    void SetD(double D)
+    {
+      mD = D;
+    }
+
+    void SetDt(double Dt)
+    {
+      mDt = Dt;
+    }
+
+    void SetPolarityMagnitude(double polarityMagnitude)
+    {
+      mPolarityMagnitude = polarityMagnitude;
+    }
+
+    void SetAngleForInitialization (double angleForInitialization)
+    {
+      mAngleForInitialization = angleForInitialization;
+    }
+
     virtual void UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
-    /**
-     * Overridden SetupSolve() method.
-     *
-     * Specify what to do in the simulation before the start of the time loop.
-     *
-     * @param rCellPopulation reference to the cell population
-     * @param outputDirectory the output directory, relative to where Chaste output is stored
-     */
     virtual void SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory);
 
-    /**
-     * Get the reference target area.
-     *
-     * @return the reference target area.
-     */
-    double GetReferenceTargetArea();
+    void InitializePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
-    /**
-     * Set the reference target area. The standard value is 1.0.
-     *
-     * @param referenceTargetArea the new value of #mReferenceTargetArea
-     */
-    void SetReferenceTargetArea(double referenceTargetArea);
-
-    /**
-     * Helper method to update the target area property of all cells in the population.
-     *
-     * @param rCellPopulation reference to the cell population
-     */
-    void UpdateTargetAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-
-    /**
-     * Helper method to update the target area property of an individual cell.
-     *
-     * As this method is pure virtual, it must be overridden
-     * in subclasses.
-     *
-     * @param pCell pointer to the cell
-     */
-    virtual void UpdateTargetAreaOfCell(const CellPtr pCell)=0;
+    void UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    
+    void SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude);
 
     /**
      * Overridden OutputSimulationModifierParameters() method.
@@ -143,6 +126,6 @@ public:
     virtual void OutputSimulationModifierParameters(out_stream& rParamsFile);
 };
 
-TEMPLATED_CLASS_IS_ABSTRACT_1_UNSIGNED(AbstractTargetAreaModifier)
+TEMPLATED_CLASS_IS_ABSTRACT_1_UNSIGNED(PolarityModifier)
 
-#endif /*ABSRACTTARGETAREAMODIFIER_HPP_*/
+#endif /*POLARITYMODIFIER_HPP_*/
