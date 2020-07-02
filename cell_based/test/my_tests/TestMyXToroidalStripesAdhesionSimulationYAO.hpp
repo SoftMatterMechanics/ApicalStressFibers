@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONRAW_HPP_
-#define TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONRAW_HPP_
+#ifndef TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
+#define TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -65,7 +65,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyXToroidalStripesAdhesionSimulationRAW : public AbstractCellBasedTestSuite
+class TestMyXToroidalStripesAdhesionSimulationYAO : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -82,7 +82,7 @@ public:
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ' ' << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        out_put_directory += "__RAW__SimulationTime=" + oss.str();
+        out_put_directory += "__YAO__SimulationTime=" + oss.str();
         
         // timestep
         double set_dt = 0.025;
@@ -538,4 +538,4 @@ public:
 
 };
 
-#endif /* TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONRAW_HPP_ */
+#endif /* TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_ */
