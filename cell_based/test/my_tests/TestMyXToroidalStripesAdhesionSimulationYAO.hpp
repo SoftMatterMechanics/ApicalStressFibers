@@ -72,9 +72,14 @@ public:
     void TestOscillation()
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
+
+        /* Temporarily changed important parameters:
+         * cell_division=1; time_one_division=2; feeback=1; dt=0.1; output_concise_swap_information_when_remesh=0;
+         * considerSubAdh=1; considerReservSubAdh=1;
+         * restrict_vertex_movement=1, use_adaptive_timestep=1, set_cell_rearrangement_threshold=0.05;
+        */
+       
         // output directory
-        // temporarily changed important parameters:
-        // feeback=1, restrict_vertex_movement=1, use_adaptive_timestep=1, dt=0.025, set_cell_rearrangement_threshold=0.01;
         std::ostringstream oss;
         std::string out_put_directory = "EpithelialBridgeSimulation/LookForMovementPatterns_StartFromJuly01/";
         time_t raw_time = time(0);   // get time now
@@ -85,17 +90,17 @@ public:
         out_put_directory += "__YAO__SimulationTime=" + oss.str();
         
         // timestep
-        double set_dt = 0.025;
+        double set_dt = 0.1;
         bool restrict_vertex_movement = true; //???????
         bool use_adaptive_timestep = true; //?????????
 
         // cell rearrangement
-        double set_cell_rearrangement_threshold = 0.01;
+        double set_cell_rearrangement_threshold = 0.05;
 
         // cell division
         bool run_with_birth =true;
         bool use_bernoulli_trial_cell_cycle_model = true;
-        double time_for_one_division_of_cell_population = 10;
+        double time_for_one_division_of_cell_population = 2;
         double growth_rate_for_target_area_after_division = 0.1;
 
         // structure
@@ -152,9 +157,11 @@ public:
         double set_rotational_diffusion_constant = 0.01;
 
         // output
-        bool output_concise_swap_information_when_remesh = true;
+        bool check_jammed_location_when_remesh = false;
+        bool output_concise_swap_information_when_remesh = false;
         bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
         bool output_information_for_nagai_honda_force = false;
+        bool check_jammed_location_when_add_force_contribution = false;
         /*-----------------------END: Frequently changed parameters-------------------------*/
 
 
@@ -180,6 +187,7 @@ public:
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);
         p_mesh->SetOutputDetailedSwapInformationWhenRemesh(output_detailed_swap_information_when_remesh);
+        p_mesh->SetCheckJammedLocationWhenRemesh(check_jammed_location_when_remesh);
         /*------------------------------END: Mesh Structure------------------------------*/
 
 
@@ -306,6 +314,7 @@ public:
         p_force->SetStripStartYLocation(strip_start_y_location);
 
         p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
+        p_force->SetCheckJammedLocationWhenAddForceContribution(check_jammed_location_when_add_force_contribution);
         simulator.AddForce(p_force);
         /*-----------------------------END: MyNagaiHondaForceWithStripesAdhesion---------------------*/
 

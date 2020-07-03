@@ -151,6 +151,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             // Add the force contribution from this cell's deformation energy (note the minus sign)
             c_vector<double, DIM> element_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
             deformation_contribution -= GetNagaiHondaDeformationEnergyParameter()*(element_areas[elem_index] - target_areas[elem_index])*element_area_gradient;
+                 
             // Get the previous and next nodes in this element
             unsigned previous_node_local_index = (num_nodes_elem+local_index-1)%num_nodes_elem;
             Node<DIM>* p_previous_node = p_element->GetNode(previous_node_local_index);
@@ -169,7 +170,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
             // Add the force contribution from cell-cell and cell-boundary adhesion (note the minus sign)
             adhesion_contribution -= previous_edge_adhesion_parameter*previous_edge_gradient + next_edge_adhesion_parameter*next_edge_gradient;
-
+            
             // Add the force contribution from this cell's membrane surface tension (note the minus sign)
             c_vector<double, DIM> element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
 
@@ -541,7 +542,9 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     bool has_substrate_adhesion_area = true;
                     if (expanded_triangle_box_bottom>reservoir_end_y_location)
                         has_substrate_adhesion_area = false;
-                    else
+                    else if (expanded_triangle_box_top <= 0.0) // note: we get errors here previously.
+                        has_substrate_adhesion_area = false;
+                    else                    
                     {
                         sample_area_top = expanded_triangle_box_top < reservoir_end_y_location ? expanded_triangle_box_top : reservoir_end_y_location;
                         sample_area_bottom = std::max(0.0, expanded_triangle_box_bottom);
@@ -556,8 +559,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
                     if (has_substrate_adhesion_area)
                     {
-                        num_across = round((sample_area_right - sample_area_left) / preferred_sample_dis);
-                        num_up = round((sample_area_top - sample_area_bottom) / preferred_sample_dis);
+                        num_across = (unsigned)round((sample_area_right - sample_area_left) / preferred_sample_dis);
+                        num_up = (unsigned)round((sample_area_top - sample_area_bottom) / preferred_sample_dis);
                         sample_num = num_across * num_up;
                         sample_area = (sample_area_top - sample_area_bottom)*(sample_area_right - sample_area_left);
                     }
@@ -650,7 +653,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             }
                             double substrate_adhesion_area_new = adhesive_sample_num/double(sample_num) * sample_area;
                             reservoir_substrate_adhesion_area_gradient += (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*small_vector;
-                        }// end ofCalculate adhesive area *changed* with small displacement of the node along the x or y axis
+                        }// end of calculate adhesive area *changed* with small displacement of the node along the x or y axis
                         
                     }// end of statement 'if (has_substrate_adhesion_area)'
 
@@ -670,6 +673,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         p_cell_population->GetNode(node_index)->AddAppliedForceContribution(force_on_node);
 
     }// end of 'Iterate over nodes(vertices) in the cell population'
+
 }
 
 template<unsigned DIM>

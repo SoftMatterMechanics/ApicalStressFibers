@@ -465,7 +465,7 @@ bool Cell::ReadyToDivide()
 CellPtr Cell::Divide()
 {
     // tmp
-    std::cout << std::endl << "In Cell::Divide()" << std::endl;
+    // std::cout << std::endl << "In Cell::Divide()" << std::endl;
     // Check we're allowed to divide
     assert(!IsDead());
     assert(mCanDivide);
@@ -520,8 +520,8 @@ CellPtr Cell::Divide()
     this->GetCellData()->SetItem("target area", 0.5*this->GetCellData()->GetItem("target area"));
     p_new_cell->GetCellData()->SetItem("target area", 0.5*p_new_cell->GetCellData()->GetItem("target area"));
     //tmp
-    std::cout << std::endl << "TargetAreaOfNewCell:" << p_new_cell->GetCellData()->GetItem("target area") << std::endl;
-    std::cout << std::endl << "Cell::Divide() finished!" << std::endl;
+    // std::cout << std::endl << "TargetAreaOfNewCell:" << p_new_cell->GetCellData()->GetItem("target area") << std::endl;
+    // std::cout << std::endl << "Cell::Divide() finished!" << std::endl;
 
     return p_new_cell;
 }

@@ -56,7 +56,7 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mRosetteResolutionProbabilityPerTimestep(rosetteResolutionProbabilityPerTimestep),
           mCheckForInternalIntersections(false),
           mDistanceForT3SwapChecking(5.0),
-          mIfUpdateFaceElementsInMesh(true),
+          mIfUpdateFaceElementsInMesh(false),
           mOutputConciseSwapInformationWhenRemesh(false),
           mOutputDetailedSwapInformationWhenRemesh(false)
 {
@@ -1067,6 +1067,8 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::RemoveDeletedNodes()
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::ReMesh(VertexElementMap& rElementMap)
 {
+    if (mCheckJammedLocationWhenRemesh)
+        std::cout << std::endl << "In ReMesh() now." << std::endl;
     // Make sure that we are in the correct dimension - this code will be eliminated at compile time
     assert(SPACE_DIM==2 || SPACE_DIM==3);     // LCOV_EXCL_LINE
     assert(ELEMENT_DIM == SPACE_DIM);         // LCOV_EXCL_LINE
@@ -1113,6 +1115,10 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::ReMesh(VertexElementMap& rElemen
 // LCOV_EXCL_STOP
         ///\todo Implement ReMesh() in 3D (see #1422)
     }
+
+    if (mCheckJammedLocationWhenRemesh)
+        std::cout << std::endl << "ReMesh() Finished." << std::endl;
+
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>

@@ -125,11 +125,14 @@ protected:
      */
     std::vector< c_vector<double, SPACE_DIM> > mLocationsOfT3Swaps;
 
+    // my changes
     bool mIfUpdateFaceElementsInMesh;
 
     bool mOutputConciseSwapInformationWhenRemesh;
 
     bool mOutputDetailedSwapInformationWhenRemesh;
+
+    bool mCheckJammedLocationWhenRemesh;
 
     /**
      * Divide an element along the axis passing through two of its nodes.
@@ -687,6 +690,11 @@ public:
     void SetOutputDetailedSwapInformationWhenRemesh(bool outputDetailedSwapInformationWhenRemesh)
     {
       this->mOutputDetailedSwapInformationWhenRemesh = outputDetailedSwapInformationWhenRemesh;
+    }
+
+    void SetCheckJammedLocationWhenRemesh(bool checkJammedLocationWhenRemesh)
+    {
+      mCheckJammedLocationWhenRemesh = checkJammedLocationWhenRemesh;
     }
 
     bool IsFaceContainedByABoundaryElement(unsigned faceIndex)

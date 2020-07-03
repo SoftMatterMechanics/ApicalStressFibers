@@ -156,6 +156,8 @@ protected:
 
     bool mOutputInformationForNagaiHondaForce;
 
+    bool mCheckJammedLocationWhenAddForceContribution;
+
 public:
 
     /**
@@ -352,6 +354,11 @@ public:
     void SetOutputInformationForNagaiHondaForce(bool outputInformationForNagaiHondaForce)
     {
       mOutputInformationForNagaiHondaForce = outputInformationForNagaiHondaForce;
+    }
+
+    void SetCheckJammedLocationWhenAddForceContribution(bool checkJammedLocationWhenAddForceContribution)
+    {
+      mCheckJammedLocationWhenAddForceContribution = checkJammedLocationWhenAddForceContribution;
     }
 
 };
