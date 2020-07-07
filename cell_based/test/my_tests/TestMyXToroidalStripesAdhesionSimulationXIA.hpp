@@ -75,12 +75,13 @@ public:
 
         /* Temporarily changed important parameters:
          * 
-         * dt=0.1; restrict=1; adaptive=1; throw_once_only=1 (1 for default); // what's their influence?
+         * dt=0.001; restrict=0; adaptive=1; throw_once_only=1 (1 for default); // what's their influence?
          * set_cell_rearrangement_threshold = 0.05;
          * feeback=0; 10,2; 0,2; form=(0),0,1,1
          * considerSubAdh=1; StripHomo=1; 1)SSA=-120; 0)SSALeadTopLeng=1.0; SSATop=-120; SSABottom=-10;
          * considerResSubAdh=1; RSA=-10; IgnoreRSATop=1;
          * cell_division=0; time_one_division=10;
+         * HasRandomForce=1;
          * p0=4.0;
          * 
         */
@@ -93,11 +94,11 @@ public:
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ' ' << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        out_put_directory += "__XIA__SimulationTime=" + oss.str();
+        out_put_directory += "__XIA__StartTime=" + oss.str();
         
         // timestep
-        double set_dt = 0.1;
-        bool restrict_vertex_movement = true;
+        double set_dt = 0.001;
+        bool restrict_vertex_movement = false;
         bool use_adaptive_timestep = true;
         bool throw_step_size_exception_once_only = true;
 
@@ -130,7 +131,7 @@ public:
             // strip substrate adhesion
         bool if_substrate_adhesion_is_homogeneous = true;
               // homogeneous
-        double set_homogeneous_substrate_adhesion_parameter = -120;//
+        double set_homogeneous_substrate_adhesion_parameter = -500;//
               // not homogeneous
         double set_substrate_adhesion_leading_top_length = 1.0;
         double set_substrate_adhesion_parameter_at_leading_top= -120.0;
@@ -163,7 +164,7 @@ public:
         double set_hill_coefficient_for_myosin_activity = 2.0;
         double set_hill_coefficient_for_adhesion = 2.0;
         
-        // polarity
+        // random force and polarity
         bool add_random_force = true;
         bool consider_polarity = true;
         bool vanishing_motility_for_node_in_the_strip_interval = true;
@@ -444,17 +445,17 @@ public:
         out_put_directory += "_|_Dt=" + oss.str();
         out_put_directory += "_ResMove=" + std::to_string(restrict_vertex_movement);
         out_put_directory += "_AdaptDt=" + std::to_string(use_adaptive_timestep);
-        out_put_directory += "_ThrExcpOnce=" + std::to_string(throw_step_size_exception_once_only);
+        out_put_directory += "_ExcpOnce=" + std::to_string(throw_step_size_exception_once_only);
         oss.str("");
         oss << std::fixed << setprecision(3) << cell_rearrangement_threshold;
         out_put_directory += "_RearThr=" + oss.str();
         out_put_directory += "_|_CellDivi=" + std::to_string(run_with_birth);
         oss.str("");
         oss << std::fixed << setprecision(3) << nagai_honda_membrane_surface_energy_parameter;
-        out_put_directory += "_|_Gamma=" + oss.str();
+        out_put_directory += "_|_Ga=" + oss.str();
         oss.str("");
         oss << std::fixed << setprecision(2) << target_shape_index;
-        out_put_directory += "_ShapeIndex=" + oss.str();
+        out_put_directory += "_p0=" + oss.str();
         oss.str("");
         oss << std::scientific << setprecision(2) << nagai_honda_cell_cell_adhesion_energy_parameter;
         out_put_directory += "_CCAdhe=" + oss.str();
@@ -466,8 +467,8 @@ public:
           out_put_directory += "_StripSubAdhIsHomo=" + std::to_string(if_substrate_adhesion_is_homogeneous);
         out_put_directory += "_|_ConsiRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
         out_put_directory += "_|_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
-        out_put_directory += "_|_AddFeedback=" + std::to_string(if_consider_feedback_of_face_values);
-        out_put_directory += "_|_AddRandForce=" + std::to_string(add_random_force);
+        out_put_directory += "_|_AddFeedb=" + std::to_string(if_consider_feedback_of_face_values);
+        out_put_directory += "_|_AddRandF=" + std::to_string(add_random_force);
         
         // detailed information:
         out_put_directory += "/_|||||";
