@@ -247,7 +247,6 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 double stripe_distance = this->mStripDistance;
                 double strip_start_x_location = this->mStripStartXLocation;
                 double strip_start_y_location = this->mStripStartYLocation;
-                double substrate_adhesion_parameter = this->mSubstrateAdhesionParameter;
                 bool if_substrate_adhesion_is_homogeneous = this->mIfSubstrateAdhesionIsHomogeneous;
                 double substrate_adhesion_leading_top_length = this->mSubstrateAdhesionLeadingTopLength;
                 bool use_fine_mesh =this->mUseFineMesh;
@@ -370,7 +369,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             adhesive_sample_num += 1.0;
                             if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                             {
-                                weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameter;
+                                weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
                             }
                             else
                                 weighted_adhesive_sample_num += 1.0;
@@ -380,7 +379,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             adhesive_sample_num += -1.0;
                             if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                             {
-                                weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameter;
+                                weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
                             }
                             else
                                 weighted_adhesive_sample_num += -1.0;
@@ -430,7 +429,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                                 adhesive_sample_num += 1.0;
                                 if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                 {
-                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameter;
+                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
                                 }
                                 else
                                     weighted_adhesive_sample_num += 1.0;
@@ -440,7 +439,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                                 adhesive_sample_num += -1.0;
                                 if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                 {
-                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameter;
+                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
                                 }
                                 else
                                     weighted_adhesive_sample_num += -1.0;
@@ -455,9 +454,9 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 }// end of statement 'if (has_substrate_adhesion_area)'
 
                 if (if_substrate_adhesion_is_homogeneous == true)
-                    area_adhesion_contribution -= substrate_adhesion_parameter*substrate_adhesion_area_gradient;
+                    area_adhesion_contribution -= mHomogeneousSubstrateAdhesionParameter*substrate_adhesion_area_gradient;
                 else
-                    area_adhesion_contribution -= substrate_adhesion_parameter*weighted_substrate_adhesion_area_gradient;
+                    area_adhesion_contribution -= mSubstrateAdhesionParameterBelowLeadingTop*weighted_substrate_adhesion_area_gradient;
                 
                 // If consider reservior substrate adhesion:
                 if (mIfConsiderReservoirSubstrateAdhesion)
@@ -466,7 +465,6 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     c_vector<double, DIM> reservoir_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
                     // Parameters
                     double reservoir_end_y_location = this->mStripStartYLocation;
-                    double reservoir_substrate_adhesion_parameter = this->mReservoirSubstrateAdhesionParameter;
 
                     double small_change = 0.02;
                     double preferred_sample_dis = 0.004;
@@ -574,11 +572,16 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         if_node_contact_to_reservoir_bottom = true;
 
                     bool node_is_at_mesh_bottom = false;
-                    if (containing_elem_indices.size()<3 && p_this_node->rGetLocation()[1]<strip_start_y_location/2.0)
+                    if (containing_elem_indices.size()<3 && p_this_node->rGetLocation()[1]<3.0/4.0*strip_start_y_location)
                         node_is_at_mesh_bottom = true;
+                    bool node_is_at_mesh_top = false;
+                    if (containing_elem_indices.size()<3 && p_this_node->rGetLocation()[1]>3.0/4.0*strip_start_y_location)
+                        node_is_at_mesh_top = true;
 
                     // Calculate reservoir_substrate_adhesion_area_gradient!
-                    if (!if_node_a_inner_node && !(mIfIgnoreReservoirSubstrateAdhesionAtBottom&&node_is_at_mesh_bottom) && !if_node_contact_to_reservoir_bottom && has_substrate_adhesion_area && (num_across>0) && (num_up>0))
+                    if (!if_node_a_inner_node && !(mIfIgnoreReservoirSubstrateAdhesionAtBottom&&node_is_at_mesh_bottom)
+                                && !(mIfIgnoreReservoirSubstrateAdhesionAtTop&&node_is_at_mesh_top) 
+                                && !if_node_contact_to_reservoir_bottom && has_substrate_adhesion_area && (num_across>0) && (num_up>0))
                     {
                         c_vector<c_vector<double, DIM>, 3> points;
                         points[0]=previous_node_location;
@@ -657,7 +660,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         
                     }// end of statement 'if (has_substrate_adhesion_area)'
 
-                    area_adhesion_contribution -= reservoir_substrate_adhesion_parameter*reservoir_substrate_adhesion_area_gradient;
+                    area_adhesion_contribution -= mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
                     
                 }// end of If consider reservior substrate adhesion
 

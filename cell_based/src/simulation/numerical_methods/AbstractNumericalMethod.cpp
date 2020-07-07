@@ -181,6 +181,11 @@ void AbstractNumericalMethod<ELEMENT_DIM,SPACE_DIM>::DetectStepSizeExceptions(un
              * to avoid cell rearrangement problems.
              */
             WARN_ONCE_ONLY(e.what());
+
+            //my changes
+            std::cout << std::endl << "Vertices are moving more than half the CellRearrangementThreshold. This could cause elements to become inverted "
+                    << "so the motion has been restricted. Use a smaller timestep to avoid these warnings.";
+            std::cout << std::endl << "Please use a smaller timestep! Suggested: " << e.GetSuggestedNewStep() << '.' <<std::endl;
         }
         else
         {

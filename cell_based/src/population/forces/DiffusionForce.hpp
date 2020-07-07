@@ -72,11 +72,18 @@ private :
     static const double msBoltzmannConstant;
 
     // my changes
-    bool mConsiderPolarity;
-
     bool mUseTheSameNodeRadius;
 
     double mTheSameNodeRadius;
+
+    bool mConsiderPolarity;
+    bool mVanishingMotilityForNodeInTheStripInterval;
+    bool mOnePeriodOnly;
+    double mReservoirTop;
+    double mStripStartLocation;
+    double mStripWidth;
+
+
 
 
     /**
@@ -111,11 +118,6 @@ public :
     ~DiffusionForce();
 
     // my changes
-    void SetConsiderPolarity(bool considerPolarity)
-    {
-      mConsiderPolarity = considerPolarity;
-    }
-
     void SetUseTheSameNodeRadius(bool useTheSameNodeRadius)
     {
       mUseTheSameNodeRadius = useTheSameNodeRadius;
@@ -126,6 +128,39 @@ public :
       mTheSameNodeRadius = theSameNodeRadius;
     }
     
+    void SetConsiderPolarity(bool considerPolarity)
+    {
+      mConsiderPolarity = considerPolarity;
+    }
+
+    void SetVanishingMotilityForNodeInTheStripInterval(bool vanishingMotilityForNodeInTheStripInterval)
+    {
+      mVanishingMotilityForNodeInTheStripInterval = vanishingMotilityForNodeInTheStripInterval;
+    }
+
+    void SetOnePeriodOnly(bool onePeriodOnly)
+    {
+      mOnePeriodOnly = onePeriodOnly;
+    }
+
+    void SetReservoirTop(double reservoirTop)
+    {
+      mReservoirTop = reservoirTop;
+    }
+
+    void SetStripStartLocation(double stripStartLocation)
+    {
+      mStripStartLocation = stripStartLocation;
+    }
+
+    void SetStripWidth(double stripWidth)
+    {
+      mStripWidth = stripWidth;
+    }
+
+
+
+
     /**
      * Set the absolute temperature, which affects the
      * diffusion constant.

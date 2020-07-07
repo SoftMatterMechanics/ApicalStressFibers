@@ -45,9 +45,9 @@ DiffusionForce<DIM>::DiffusionForce()
     : AbstractForce<DIM>(),
       mAbsoluteTemperature(296.0), // default to room temperature
       mViscosity(3.204e-6), // default to viscosity of water at room temperature in (using 10 microns and hours)
-      mConsiderPolarity(true),
       mUseTheSameNodeRadius(false),
-      mTheSameNodeRadius(10.0)
+      mTheSameNodeRadius(10.0),
+      mConsiderPolarity(true)
 {
 }
 
@@ -146,11 +146,20 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
             if (mConsiderPolarity)
             {
                 std::set<unsigned> containing_elem_indices = node_iter->rGetContainingElementIndices();
-                for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
+                // tmp!
+                bool node_is_in_strip_interval = node_iter->rGetLocation()[1]>mReservoirTop
+                        && (node_iter->rGetLocation()[0]>(mStripStartLocation+mStripWidth/2.0) || node_iter->rGetLocation()[0]<(mStripStartLocation-mStripWidth/2.0));
+                if ( !(mVanishingMotilityForNodeInTheStripInterval && node_is_in_strip_interval) )
                 {
-                    double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
-                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
-                    force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    // used in typical situation only. my assertion!
+                    assert(mOnePeriodOnly);
+                    for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
+                    {
+                        double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
+                        double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
+                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    }
+
                 }
             }
         }

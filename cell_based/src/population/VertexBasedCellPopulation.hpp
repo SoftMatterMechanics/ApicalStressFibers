@@ -108,6 +108,9 @@ private:
      */
      bool mThrowStepSizeException = true;
 
+     // my chagnes
+     bool mThrowStepSizeExceptionOnceOnly; // true for default!
+
     /**
      * Overridden WriteVtkResultsToFile() method.
      *
@@ -551,6 +554,12 @@ public:
      * @param restrictVertexMovement whether to restrict vertex movement in this simulation.
      */
     void SetRestrictVertexMovementBoolean(bool restrictVertexMovement);
+
+    // my changes
+    void SetThrowStepSizeExceptionOnceOnly(bool throwStepSizeExceptionOnceOnly)
+    {
+        mThrowStepSizeExceptionOnceOnly = throwStepSizeExceptionOnceOnly;
+    }
 };
 
 #include "SerializationExportWrapper.hpp"

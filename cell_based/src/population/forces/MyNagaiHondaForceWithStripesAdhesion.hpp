@@ -108,12 +108,28 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
+    bool mIfConsiderSubstrateAdhesion;
+
+    bool mIfSubstrateAdhesionIsHomogeneous;
+
+    double mSubstrateAdhesionParameterChangePerUnitLength;
+
+    double mHomogeneousSubstrateAdhesionParameter;
+    
     double mSubstrateAdhesionLeadingTopLength;
 
     double mSubstrateAdhesionParameterAtLeadingTop;
 
-    double mSubstrateAdhesionParameter;
+    double mSubstrateAdhesionParameterBelowLeadingTop;
 
+    bool mIfConsiderReservoirSubstrateAdhesion;
+
+    double mReservoirSubstrateAdhesionParameter;
+
+    bool mIfIgnoreReservoirSubstrateAdhesionAtTop;
+
+    bool mIfIgnoreReservoirSubstrateAdhesionAtBottom;
+    
     double mStripWidth;
 
     double mStripDistance;
@@ -128,14 +144,6 @@ protected:
 
     double mTargetShapeIndex;
 
-    bool mIfConsiderSubstrateAdhesion;
-
-    bool mIfConsiderReservoirSubstrateAdhesion;
-
-    bool mIfIgnoreReservoirSubstrateAdhesionAtBottom;
-
-    double mReservoirSubstrateAdhesionParameter;
-
     double mWidth;
 
     double mCenterOfWidth;
@@ -143,10 +151,6 @@ protected:
     bool mIfConsiderIntervalSubstrateRepulsion;
 
     bool mUseFineMesh;
-
-    bool mIfSubstrateAdhesionIsHomogeneous;
-
-    double mSubstrateAdhesionParameterChangePerUnitLength;
 
     bool mUseFixedTargetArea;
 
@@ -248,10 +252,6 @@ public:
     void OutputForceParameters(out_stream& rParamsFile);
 
     // my methods
-    void SetSubstrateAdhesionParameter(double substrateAdhesionParameter)
-    {
-      mSubstrateAdhesionParameter = substrateAdhesionParameter;
-    }
     void SetStripWidth(double stripWidth)
     {
       mStripWidth = stripWidth;
@@ -286,22 +286,6 @@ public:
     {
       mTargetShapeIndex = targetShapeIndex;
     }
-    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
-    {
-      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
-    }
-    void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
-    {
-      mIfConsiderReservoirSubstrateAdhesion = ifConsiderReservoirSubstrateAdhesion;
-    }
-    void SetIfIgnoreReservoirSubstrateAdhesionAtBottom (bool ifIgnoreReservoirSubstrateAdhesionAtBottom)
-    {
-      mIfIgnoreReservoirSubstrateAdhesionAtBottom = ifIgnoreReservoirSubstrateAdhesionAtBottom;
-    }
-    void SetReservoirSubstrateAdhesionParameter (double reservoirSubstrateAdhesionParameter)
-    {
-      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
-    }
     void SetWidth(double width)
     {
       mWidth = width;
@@ -310,30 +294,61 @@ public:
     {
       mCenterOfWidth = centerOfWidth;
     }
-    void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
-    {
-      mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
-    }
     void SetUseFineMesh(double useFineMesh)
     {
       mUseFineMesh = useFineMesh;
     }
+    // tmp
+    void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
+    {
+      mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
+    }
+
+    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
+    {
+      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
+    }
+    // SSA
     void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
     {
       mIfSubstrateAdhesionIsHomogeneous = ifSubstrateAdhesionIsHomogeneous;
     }
-
+    void SetHomogeneousSubstrateAdhesionParameter(double homogeneousSubstrateAdhesionParameter)
+    {
+      mHomogeneousSubstrateAdhesionParameter = homogeneousSubstrateAdhesionParameter;
+    }
     void SetSubstrateAdhesionParameterChangePerUnitLength(double substrateAdhesionParameterChangePerUnitLength)
     {
       mSubstrateAdhesionParameterChangePerUnitLength = substrateAdhesionParameterChangePerUnitLength;
+    }
+    void SetSubstrateAdhesionLeadingTopLength( double substrateAdhesionLeadingTopLength)
+    {
+      mSubstrateAdhesionLeadingTopLength = substrateAdhesionLeadingTopLength;
     }
     void SetSubstrateAdhesionParameterAtLeadingTop( double substrateAdhesionParameterAtLeadingTop)
     {
       mSubstrateAdhesionParameterAtLeadingTop = substrateAdhesionParameterAtLeadingTop;
     }
-    void SetSubstrateAdhesionLeadingTopLength( double substrateAdhesionLeadingTopLength)
+    void SetSubstrateAdhesionParameterBelowLeadingTop (double substrateAdhesionParameterBelowLeadingTop)
     {
-      mSubstrateAdhesionLeadingTopLength = substrateAdhesionLeadingTopLength;
+      mSubstrateAdhesionParameterBelowLeadingTop = substrateAdhesionParameterBelowLeadingTop;
+    }
+    // RSA
+    void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
+    {
+      mIfConsiderReservoirSubstrateAdhesion = ifConsiderReservoirSubstrateAdhesion;
+    }
+    void SetReservoirSubstrateAdhesionParameter (double reservoirSubstrateAdhesionParameter)
+    {
+      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
+    }
+    void SetIfIgnoreReservoirSubstrateAdhesionAtTop (bool ifIgnoreReservoirSubstrateAdhesionAtTop)
+    {
+      mIfIgnoreReservoirSubstrateAdhesionAtTop = ifIgnoreReservoirSubstrateAdhesionAtTop;
+    }
+    void SetIfIgnoreReservoirSubstrateAdhesionAtBottom (bool ifIgnoreReservoirSubstrateAdhesionAtBottom)
+    {
+      mIfIgnoreReservoirSubstrateAdhesionAtBottom = ifIgnoreReservoirSubstrateAdhesionAtBottom;
     }
 
     void SetCaseNumberOfMembraneSurfaceEnergyForm ( unsigned caseNumberOfMembraneSurfaceEnergyForm)

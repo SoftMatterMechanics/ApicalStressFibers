@@ -57,7 +57,8 @@ VertexBasedCellPopulation<DIM>::VertexBasedCellPopulation(MutableVertexMesh<DIM,
     : AbstractOffLatticeCellPopulation<DIM>(rMesh, rCells, locationIndices),
       mDeleteMesh(deleteMesh),
       mOutputCellRearrangementLocations(true),
-      mRestrictVertexMovement(true)
+      mRestrictVertexMovement(true),
+      mThrowStepSizeExceptionOnceOnly(true)
 {
     mpMutableVertexMesh = static_cast<MutableVertexMesh<DIM, DIM>* >(&(this->mrMesh));
     mpVertexBasedDivisionRule.reset(new ShortAxisVertexBasedDivisionRule<DIM>());
@@ -276,7 +277,9 @@ void VertexBasedCellPopulation<DIM>::CheckForStepSizeException(unsigned nodeInde
             // The first time we see this behaviour, throw a StepSizeException, but not more than once
             if(mThrowStepSizeException)
             {
-                mThrowStepSizeException = false;
+                // my changes
+                if (mThrowStepSizeExceptionOnceOnly)
+                    mThrowStepSizeException = false;
                 throw StepSizeException(suggested_step, message.str(), false);
             }
         }
