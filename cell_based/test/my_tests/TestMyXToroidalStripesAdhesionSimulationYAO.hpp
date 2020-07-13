@@ -103,6 +103,8 @@ public:
         bool use_adaptive_timestep = true;
         bool apply_my_change_to_make_timestep_adaptive = true;
         bool throw_step_size_exception_once_only = true;
+        bool consider_consistency_for_SSA = false;
+        double small_change_for_area_calculation = 0.05;
 
         // cell rearrangement
         double set_cell_rearrangement_threshold = 0.05;
@@ -321,6 +323,8 @@ public:
         p_force->SetSubstrateAdhesionLeadingTopLength(substrate_adhesion_leading_top_length);
         p_force->SetSubstrateAdhesionParameterAtLeadingTop(substrate_adhesion_parameter_at_leading_top);
         p_force->SetSubstrateAdhesionParameterBelowLeadingTop(substrate_adhesion_parameter_below_leading_top);
+        p_force->SetConsiderConsistencyForSSA(consider_consistency_for_SSA);
+        p_force->SetSmallChangeForAreaCalculation(small_change_for_area_calculation);
           // Reservoir Substrate Adhesion
         p_force->SetIfConsiderReservoirSubstrateAdhesion(if_consider_reservoir_substrate_adhesion);
         p_force->SetIfIgnoreReservoirSubstrateAdhesionAtTop(if_ignore_reservoir_substrate_adhesion_at_top);
@@ -451,6 +455,8 @@ public:
         oss.str("");
         oss << std::fixed << setprecision(3) << dt;
         out_put_directory += "_|_Dt=" + oss.str();
+        out_put_directory += "_MyAdaptDt=" + std::to_string(apply_my_change_to_make_timestep_adaptive);        
+        out_put_directory += "_ConsistMv=" + std::to_string(consider_consistency_for_SSA);
         out_put_directory += "_ResMove=" + std::to_string(restrict_vertex_movement);
         out_put_directory += "_AdaptDt=" + std::to_string(use_adaptive_timestep);
         out_put_directory += "_ExcpOnce=" + std::to_string(throw_step_size_exception_once_only);
@@ -509,6 +515,9 @@ public:
             oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_below_leading_top;
             out_put_directory += "_SSABelow=" + oss.str();
           }
+          oss.str("");
+          oss << std::scientific << setprecision(1) << small_change_for_area_calculation;
+          out_put_directory += "_DxyForAreaCalcu=" + oss.str();
         }
         if(if_consider_reservoir_substrate_adhesion)
         {

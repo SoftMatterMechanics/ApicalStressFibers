@@ -162,6 +162,10 @@ protected:
 
     bool mCheckJammedLocationWhenAddForceContribution;
 
+    bool mConsiderConsistencyForSSA;
+
+    double mSmallChangeForAreaCalculation;
+
 public:
 
     /**
@@ -294,7 +298,7 @@ public:
     {
       mCenterOfWidth = centerOfWidth;
     }
-    void SetUseFineMesh(double useFineMesh)
+    void SetUseFineMesh(bool useFineMesh)
     {
       mUseFineMesh = useFineMesh;
     }
@@ -374,6 +378,16 @@ public:
     void SetCheckJammedLocationWhenAddForceContribution(bool checkJammedLocationWhenAddForceContribution)
     {
       mCheckJammedLocationWhenAddForceContribution = checkJammedLocationWhenAddForceContribution;
+    }
+
+    void SetConsiderConsistencyForSSA(bool considerConsistencyForSSA)
+    {
+      mConsiderConsistencyForSSA = considerConsistencyForSSA;
+    }
+
+    void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)
+    {
+      mSmallChangeForAreaCalculation = smallChangeForAreaCalculation;
     }
 
 };

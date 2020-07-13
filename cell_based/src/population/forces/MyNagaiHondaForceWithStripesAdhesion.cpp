@@ -131,6 +131,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         c_vector<double, DIM> membrane_surface_tension_contribution = zero_vector<double>(DIM);
         c_vector<double, DIM> adhesion_contribution = zero_vector<double>(DIM);
         c_vector<double, DIM> area_adhesion_contribution = zero_vector<double>(DIM);
+        c_vector<double, DIM> averaged_inner_strip_substrate_adhesion_contribution = zero_vector<double>(DIM);
+        c_vector<double, DIM> reservoir_substrate_adhesion_contribution = zero_vector<double>(DIM);
 
         // Find the indices of the elements owned by this node
         std::set<unsigned> containing_elem_indices = p_cell_population->GetNode(node_index)->rGetContainingElementIndices();
@@ -249,15 +251,9 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 double strip_start_y_location = this->mStripStartYLocation;
                 bool if_substrate_adhesion_is_homogeneous = this->mIfSubstrateAdhesionIsHomogeneous;
                 double substrate_adhesion_leading_top_length = this->mSubstrateAdhesionLeadingTopLength;
-                bool use_fine_mesh =this->mUseFineMesh;
 
-                double small_change = 0.02;
-                double preferred_sample_dis = 0.004;
-                if (!use_fine_mesh)
-                {
-                    small_change = 0.05;
-                    preferred_sample_dis = 0.01;
-                }
+                double small_change = mSmallChangeForAreaCalculation;
+                double preferred_sample_dis = small_change/5.0;
 
                 c_vector<double, DIM> centroid = p_cell_population->rGetMesh().GetCentroidOfElement(elem_index);
                 int stripe_num = round((centroid[0] - strip_start_x_location)/stripe_distance);
@@ -395,6 +391,12 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         c_vector<double, DIM> small_vector;
                         small_vector[0] = small_change*cos(j*M_PI/2);
                         small_vector[1] = small_change*sin(j*M_PI/2);
+                        // my new changes for cosistent movement of nodes at edges of the strip.
+                        if (mConsiderConsistencyForSSA)
+                        {
+                            if (points[1][0]-stripe_right>-small_change && points[1][0]-stripe_right<small_change)
+                                small_vector[0] *= -1.0;
+                        }
 
                         c_vector<c_vector<double, DIM>, 3> new_points = points;
                         new_points[1] += small_vector;
@@ -466,13 +468,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     // Parameters
                     double reservoir_end_y_location = this->mStripStartYLocation;
 
-                    double small_change = 0.02;
-                    double preferred_sample_dis = 0.004;
-                    if (!mUseFineMesh)
-                    {
-                        small_change = 0.05;
-                        preferred_sample_dis = 0.01;
-                    }
+                    double small_change = mSmallChangeForAreaCalculation;
+                    double preferred_sample_dis = small_change/5.0;
 
                     double sample_area_bottom = 0.0;
                     double sample_area_top = 0.0;
@@ -660,7 +657,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         
                     }// end of statement 'if (has_substrate_adhesion_area)'
 
-                    area_adhesion_contribution -= mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
+                    reservoir_substrate_adhesion_contribution -= mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
                     
                 }// end of If consider reservior substrate adhesion
 
@@ -671,8 +668,149 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
         }// end of 'Iterate over these elements'
 
-        c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution;
+        c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution +reservoir_substrate_adhesion_contribution;
 
+        if (mConsiderConsistencyForSSA)
+        {
+            force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +reservoir_substrate_adhesion_contribution;
+            force_on_node[1] += area_adhesion_contribution[1];
+            double forces_x_except_SSA = force_on_node[0];
+            double adaptive_dt = SimulationTime::Instance()->GetTimeStep();
+            double node_x_location = p_this_node->rGetLocation()[0];
+            double strip_right = mStripStartXLocation+mStripWidth/2.0;
+            double strip_left = mStripStartXLocation-mStripWidth/2.0;
+            double overall_dx =0.0;
+            double overall_force_x = 0.0;
+
+            double inner_strip_small_change = mSmallChangeForAreaCalculation;
+            if (node_x_location>strip_right-mSmallChangeForAreaCalculation && node_x_location<strip_right+mSmallChangeForAreaCalculation)
+                inner_strip_small_change = std::min(mSmallChangeForAreaCalculation-(node_x_location-strip_right), mSmallChangeForAreaCalculation);
+            else if (node_x_location>mStripStartXLocation-mStripWidth/2.0-mSmallChangeForAreaCalculation && node_x_location<mStripStartXLocation-mStripWidth/2.0+mSmallChangeForAreaCalculation)
+                inner_strip_small_change = std::min(mSmallChangeForAreaCalculation+(node_x_location-strip_left), mSmallChangeForAreaCalculation);
+            averaged_inner_strip_substrate_adhesion_contribution[0] = area_adhesion_contribution[0] * mSmallChangeForAreaCalculation/inner_strip_small_change;
+            averaged_inner_strip_substrate_adhesion_contribution[1] = area_adhesion_contribution[1];
+            if (!(fabs(averaged_inner_strip_substrate_adhesion_contribution[0]) < 20.0))
+                std::cout << "There may be something wrong! averaged_inner_strip_substrate_adhesion_contribution_x=" << averaged_inner_strip_substrate_adhesion_contribution[0] << std::endl;
+            double SSA_x_inner_strip = averaged_inner_strip_substrate_adhesion_contribution[0];
+
+            // if at around strip right!
+            if (node_x_location>strip_right-mSmallChangeForAreaCalculation && node_x_location<strip_right+mSmallChangeForAreaCalculation)
+            {
+                if (node_x_location>=strip_right)
+                {
+                    if (forces_x_except_SSA>=0.0)
+                        force_on_node[0] += 0.0;
+                    else if (node_x_location+forces_x_except_SSA*adaptive_dt >= strip_right)
+                        force_on_node[0] += 0.0;
+                    else if (forces_x_except_SSA+SSA_x_inner_strip >= 0.0)
+                    {
+                        overall_dx = strip_right - node_x_location;
+                        overall_force_x = overall_dx/adaptive_dt;
+                        force_on_node[0] = overall_force_x;
+                    }
+                    else
+                    {
+                        assert(forces_x_except_SSA+SSA_x_inner_strip < 0.0);
+                        assert(adaptive_dt-(strip_right-node_x_location)/forces_x_except_SSA >= 0.0);
+                        overall_dx = strip_right - node_x_location +(adaptive_dt-(strip_right-node_x_location)/forces_x_except_SSA)*(forces_x_except_SSA+SSA_x_inner_strip);
+                        overall_force_x = overall_dx/adaptive_dt;
+                        force_on_node[0] = overall_force_x;
+                    }
+                }
+                else
+                {
+                    assert(node_x_location<strip_right);
+                    if (forces_x_except_SSA<0.0)
+                    {
+                        if (forces_x_except_SSA+SSA_x_inner_strip < 0.0)
+                            force_on_node[0] = forces_x_except_SSA + SSA_x_inner_strip;
+                        else
+                        {
+                            assert(forces_x_except_SSA+SSA_x_inner_strip >= 0.0);
+                            overall_dx = std::min((forces_x_except_SSA+SSA_x_inner_strip)*adaptive_dt, strip_right-node_x_location);
+                            overall_force_x = overall_dx/adaptive_dt;
+                            force_on_node[0] = overall_force_x;
+                        }
+                    }
+                    else
+                    {
+                        assert(forces_x_except_SSA>=0.0);
+                        if (forces_x_except_SSA+SSA_x_inner_strip <=0.0)
+                            force_on_node[0] = forces_x_except_SSA +SSA_x_inner_strip;
+                        else if ((forces_x_except_SSA+SSA_x_inner_strip)*adaptive_dt <= strip_right-node_x_location)
+                            force_on_node[0] = forces_x_except_SSA +SSA_x_inner_strip;
+                        else
+                        {
+                            assert(adaptive_dt-(strip_right-node_x_location)/(forces_x_except_SSA+SSA_x_inner_strip)>=0.0);
+                            overall_dx = strip_right - node_x_location + forces_x_except_SSA*(adaptive_dt-(strip_right-node_x_location)/(forces_x_except_SSA+SSA_x_inner_strip));
+                            overall_force_x = overall_dx/adaptive_dt;
+                            force_on_node[0] = overall_force_x;
+                        }
+                    }
+                    
+                }
+            }
+            else if (node_x_location>mStripStartXLocation-mStripWidth/2.0-mSmallChangeForAreaCalculation && node_x_location<mStripStartXLocation-mStripWidth/2.0+mSmallChangeForAreaCalculation)
+            {
+                if (node_x_location<=strip_left)
+                {
+                    if (forces_x_except_SSA<=0.0)
+                        force_on_node[0] += 0.0;
+                    else if (node_x_location+forces_x_except_SSA*adaptive_dt <= strip_left)
+                        force_on_node[0] += 0.0;
+                    else if (forces_x_except_SSA+SSA_x_inner_strip <= 0.0)
+                    {
+                        overall_dx = strip_left - node_x_location;
+                        overall_force_x = overall_dx/adaptive_dt;
+                        force_on_node[0] = overall_force_x;
+                    }
+                    else
+                    {
+                        assert(forces_x_except_SSA+SSA_x_inner_strip > 0.0);
+                        assert(adaptive_dt-(strip_left-node_x_location)/forces_x_except_SSA >= 0.0);
+                        overall_dx = strip_left - node_x_location +(adaptive_dt-(strip_left-node_x_location)/forces_x_except_SSA)*(forces_x_except_SSA+SSA_x_inner_strip);
+                        overall_force_x = overall_dx/adaptive_dt;
+                        force_on_node[0] = overall_force_x;
+                    }
+                }
+                else
+                {
+                    assert(node_x_location>strip_left);
+                    if (forces_x_except_SSA>0.0)
+                    {
+                        if (forces_x_except_SSA+SSA_x_inner_strip > 0.0)
+                            force_on_node[0] = forces_x_except_SSA + SSA_x_inner_strip;
+                        else
+                        {
+                            assert(forces_x_except_SSA+SSA_x_inner_strip <= 0.0);
+                            overall_dx = std::max((forces_x_except_SSA+SSA_x_inner_strip)*adaptive_dt, strip_left-node_x_location);
+                            overall_force_x = overall_dx/adaptive_dt;
+                            force_on_node[0] = overall_force_x;
+                        }
+                    }
+                    else
+                    {
+                        assert(forces_x_except_SSA<=0.0);
+                        if (forces_x_except_SSA+SSA_x_inner_strip >=0.0)
+                            force_on_node[0] = forces_x_except_SSA +SSA_x_inner_strip;
+                        else if ((forces_x_except_SSA+SSA_x_inner_strip)*adaptive_dt >= strip_right-node_x_location)
+                            force_on_node[0] = forces_x_except_SSA +SSA_x_inner_strip;
+                        else
+                        {
+                            assert(adaptive_dt-(strip_left-node_x_location)/(forces_x_except_SSA+SSA_x_inner_strip)>=0.0);
+                            overall_dx = strip_left - node_x_location + forces_x_except_SSA*(adaptive_dt-(strip_left-node_x_location)/(forces_x_except_SSA+SSA_x_inner_strip));
+                            overall_force_x = overall_dx/adaptive_dt;
+                            force_on_node[0] = overall_force_x;
+                        }
+                    }
+                    
+                }
+            }
+            else
+                force_on_node[0] += area_adhesion_contribution[0];
+            
+        }
+        
         p_cell_population->GetNode(node_index)->AddAppliedForceContribution(force_on_node);
 
     }// end of 'Iterate over nodes(vertices) in the cell population'
