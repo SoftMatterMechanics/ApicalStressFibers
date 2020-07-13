@@ -44,6 +44,8 @@ TimeStepper::TimeStepper(double startTime, double endTime, double dt, bool enfor
     : mStart(startTime),
       mEnd(endTime),
       mDt(dt),
+      mApplyMyChangesToMakeTimestepAdaptive(false),
+      mAdaptiveDt(dt),
       mTotalTimeStepsTaken(0),
       mAdditionalTimesReachedDeprecated(0),
       mTime(startTime),
@@ -107,6 +109,10 @@ double TimeStepper::CalculateNextTime()
 {
     double next_time = mStart + (mTotalTimeStepsTaken + 1)*mDt;
 
+    // my changes
+    if (mApplyMyChangesToMakeTimestepAdaptive)
+        next_time = mTime + mAdaptiveDt;
+
     // Does the next time bring us very close to the end time?
     // Note that the inequality in this guard matches the inversion of the guard in the enforceConstantTimeStep
     // calculation of the constructor
@@ -123,15 +129,20 @@ double TimeStepper::CalculateNextTime()
 void TimeStepper::AdvanceOneTimeStep()
 {
     mTotalTimeStepsTaken++;
-    if (mTotalTimeStepsTaken == 0)
+    if (mApplyMyChangesToMakeTimestepAdaptive)
+        mTime = mTime + mAdaptiveDt;
+    else
     {
-        EXCEPTION("Time step counter has overflowed.");
+        if (mTotalTimeStepsTaken == 0)
+        {
+            EXCEPTION("Time step counter has overflowed.");
+        }
+        if (mTime >= mNextTime)
+        {
+            EXCEPTION("TimeStepper incremented beyond end time.");
+        }
+        mTime = mNextTime;
     }
-    if (mTime >= mNextTime)
-    {
-        EXCEPTION("TimeStepper incremented beyond end time.");
-    }
-    mTime = mNextTime;
 
     mNextTime = CalculateNextTime();
 }
@@ -159,7 +170,10 @@ double TimeStepper::GetNextTimeStep()
 }
 double TimeStepper::GetIdealTimeStep()
 {
-    return mDt;
+    if (mApplyMyChangesToMakeTimestepAdaptive)
+        return mAdaptiveDt;
+    else
+        return mDt;
 }
 
 bool TimeStepper::IsTimeAtEnd() const

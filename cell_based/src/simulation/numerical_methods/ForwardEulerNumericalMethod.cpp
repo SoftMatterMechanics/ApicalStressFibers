@@ -34,6 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "ForwardEulerNumericalMethod.hpp"
+#include "MutableVertexMesh.hpp"
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::ForwardEulerNumericalMethod()
@@ -79,6 +80,63 @@ void ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::UpdateAllNodePositions(
          * This only applies to NodeBasedCellPopulationWithBuskeUpdates.
          */
         this->mpCellPopulation->UpdateNodeLocations(dt);
+    }
+}
+
+// my changes
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimestepAndUpdateAllNodePositions(double dt)
+{
+    double new_adaptive_timestep = dt;
+    double maximum_velocity = 0.0;
+    if (!this->mUseUpdateNodeLocation)
+    {
+        // Apply forces to each cell, and save a vector of net forces F
+        std::vector<c_vector<double, SPACE_DIM> > forces = this->ComputeForcesIncludingDamping();
+
+        unsigned i = 0;
+        unsigned node_global_index = 0;
+        for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                ++node_iter, ++i)
+        {
+            double velocity_abs = norm_2(forces[i]);
+            if (velocity_abs > maximum_velocity)
+                node_global_index = node_iter->GetIndex();
+            maximum_velocity = std::max(maximum_velocity, velocity_abs);
+        }
+        new_adaptive_timestep = static_cast<MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>*>(& this->mpCellPopulation->rGetMesh())->GetCellRearrangementThreshold()/2.0/maximum_velocity;
+        new_adaptive_timestep = std::min(dt, new_adaptive_timestep);
+        Node<SPACE_DIM>* p_Node = this->mpCellPopulation->rGetMesh().GetNode(node_global_index);
+        std::cout << "Timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
+        std::cout << "node_global_index=" << node_global_index << " node_location=" << p_Node->rGetLocation()[0] << ", " << p_Node->rGetLocation()[1]
+                << " maximum_velocity=" << maximum_velocity << " new_adaptive_timestep=" << new_adaptive_timestep << std::endl;
+
+        unsigned index = 0;
+        for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+             node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+             ++node_iter, ++index)
+        {
+            // Get the current node location and calculate the new location according to the forward Euler method
+            const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation();
+            c_vector<double, SPACE_DIM> displacement = new_adaptive_timestep * forces[index];
+
+            c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
+            this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
+        }
+        return new_adaptive_timestep;
+    }
+    else
+    {
+        /*
+         * If this type of cell population does not support the new numerical methods, delegate
+         * updating node positions to the population itself.
+         *
+         * This only applies to NodeBasedCellPopulationWithBuskeUpdates.
+         */
+        this->mpCellPopulation->UpdateNodeLocations(new_adaptive_timestep);
+
+        return new_adaptive_timestep;
     }
 }
 

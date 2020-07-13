@@ -75,7 +75,7 @@ public:
 
         /* Temporarily changed important parameters:
          * 
-         * dt=0.001; restrict=0; adaptive=1; throw_once_only=1 (1 for default); // what's their influence?
+         * dt=0.1; restrict=0; adaptive=1; throw_once_only=1 (1 for default); // what's their influence?
          * set_cell_rearrangement_threshold = 0.05;
          * feeback=0; 10,2; 0,2; form=(0),0,1,1
          * considerSubAdh=1; StripHomo=1; 1)SSA=-120; 0)SSALeadTopLeng=1.0; SSATop=-120; SSABottom=-10;
@@ -83,6 +83,7 @@ public:
          * cell_division=0; time_one_division=10;
          * HasRandomForce=1;
          * p0=4.0;
+         * Ga=0.1;
          * 
         */
        
@@ -97,9 +98,10 @@ public:
         out_put_directory += "__YAO__StartTime=" + oss.str();
         
         // timestep
-        double set_dt = 0.001;
+        double set_dt = 0.1; // 1.0/round(1.0/(0.01*120.0/50.0));
         bool restrict_vertex_movement = false;
         bool use_adaptive_timestep = true;
+        bool apply_my_change_to_make_timestep_adaptive = true;
         bool throw_step_size_exception_once_only = true;
 
         // cell rearrangement
@@ -131,7 +133,7 @@ public:
             // strip substrate adhesion
         bool if_substrate_adhesion_is_homogeneous = true;
               // homogeneous
-        double set_homogeneous_substrate_adhesion_parameter = -500;//
+        double set_homogeneous_substrate_adhesion_parameter = -120;//
               // not homogeneous
         double set_substrate_adhesion_leading_top_length = 1.0;
         double set_substrate_adhesion_parameter_at_leading_top= -120.0;
@@ -422,8 +424,14 @@ public:
         /*------------------------------------START: Timestep---------------------------------------*/
         double dt = set_dt;
         double sampling_timestep_multiple = round(1/dt);
+
+        simulator.SetApplyMyChangesToMakeTimestepAdaptive(apply_my_change_to_make_timestep_adaptive);
         simulator.SetDt(dt);
+
+        simulator.SetApplySamplingTimeInsteadOfSamplingTimestep(apply_my_change_to_make_timestep_adaptive);
         simulator.SetSamplingTimestepMultiple(sampling_timestep_multiple);
+        simulator.SetSamplingTime(1.0);
+
         simulator.SetEndTime(400.0);
         /*------------------------------------END: Timestep---------------------------------------*/
 
@@ -457,15 +465,15 @@ public:
         oss << std::fixed << setprecision(2) << target_shape_index;
         out_put_directory += "_p0=" + oss.str();
         oss.str("");
-        oss << std::scientific << setprecision(2) << nagai_honda_cell_cell_adhesion_energy_parameter;
+        oss << std::scientific << setprecision(1) << nagai_honda_cell_cell_adhesion_energy_parameter;
         out_put_directory += "_CCAdhe=" + oss.str();
         oss.str("");
-        oss << std::scientific << setprecision(2) << nagai_honda_cell_boundary_adhesion_energy_parameter;
+        oss << std::scientific << setprecision(1) << nagai_honda_cell_boundary_adhesion_energy_parameter;
         out_put_directory += "_CBAdhe=" + oss.str();
-        out_put_directory += "_|_ConsiSubAdh=" + std::to_string(if_consider_substrate_adhesion);
+        out_put_directory += "_|_HasSubAdh=" + std::to_string(if_consider_substrate_adhesion);
         if (if_consider_substrate_adhesion)
-          out_put_directory += "_StripSubAdhIsHomo=" + std::to_string(if_substrate_adhesion_is_homogeneous);
-        out_put_directory += "_|_ConsiRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
+          out_put_directory += "_SSAIsHomo=" + std::to_string(if_substrate_adhesion_is_homogeneous);
+        out_put_directory += "_|_HasRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
         out_put_directory += "_|_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
         out_put_directory += "_|_AddFeedb=" + std::to_string(if_consider_feedback_of_face_values);
         out_put_directory += "_|_AddRandF=" + std::to_string(add_random_force);
@@ -493,7 +501,7 @@ public:
           {
             oss.str("");
             oss << std::fixed << setprecision(1) << substrate_adhesion_leading_top_length;
-            out_put_directory += "_|_SSALeadTopLeng" + oss.str();
+            out_put_directory += "_|_SSALeadTopLeng=" + oss.str();
             oss.str("");
             oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_at_leading_top;
             out_put_directory += "_SSATop=" + oss.str();

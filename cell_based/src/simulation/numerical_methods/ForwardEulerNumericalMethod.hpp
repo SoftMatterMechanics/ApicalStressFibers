@@ -88,6 +88,9 @@ public:
      */
     void UpdateAllNodePositions(double dt);
 
+    // my changes
+    double GetNewAdaptiveTimestepAndUpdateAllNodePositions(double dt);
+
     /**
      * Overridden OutputNumericalMethodParameters() method.
      *

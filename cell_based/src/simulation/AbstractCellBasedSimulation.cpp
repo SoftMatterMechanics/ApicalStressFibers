@@ -186,6 +186,8 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::SetDt(double dt)
 {
     assert(dt > 0);
     mDt = dt;
+    // my changes
+    mAdaptiveDt = dt;
 }
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
@@ -339,6 +341,9 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         }
     }
 
+    // my changes
+    p_simulation_time->SetApplyMyChangesToMakeTimestepAdaptiveInTimeStepper(mApplyMyChangesToMakeTimestepAdaptive);
+
     if (mOutputDirectory == "")
     {
         EXCEPTION("OutputDirectory not set");
@@ -436,6 +441,8 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         // Store whether we are sampling results at the current timestep
         SimulationTime* p_time = SimulationTime::Instance();
         bool at_sampling_timestep = (p_time->GetTimeStepsElapsed()%this->mSamplingTimestepMultiple == 0);
+        if (mApplySamplingTimeInsteadOfSamplingTimestep)
+            at_sampling_timestep = (p_time->GetTime() - mSamplingTime*floor(p_time->GetTime()/mSamplingTime)) < mAdaptiveDt;
 
         /*
          * If required, store the current locations of cell centres. Note that we need to
@@ -461,8 +468,12 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         // Now write cell velocities to file if required
         if (mOutputCellVelocities && at_sampling_timestep)
         {
+            // tmp???????
             // Offset as doing this before we increase time by mDt
-            *mpCellVelocitiesFile << p_time->GetTime() + mDt<< "\t";
+            if (mApplySamplingTimeInsteadOfSamplingTimestep)
+                *mpCellVelocitiesFile << p_time->GetTime() + mAdaptiveDt<< "\t";
+            else
+                *mpCellVelocitiesFile << p_time->GetTime() + mDt<< "\t";
 
             for (typename AbstractCellPopulation<ELEMENT_DIM, SPACE_DIM>::Iterator cell_iter = mrCellPopulation.Begin();
                  cell_iter != mrCellPopulation.End();
@@ -506,18 +517,40 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
 
         // Output current results to file
         CellBasedEventHandler::BeginEvent(CellBasedEventHandler::OUTPUT);
-        if (p_simulation_time->GetTimeStepsElapsed()%mSamplingTimestepMultiple == 0)// should be at_sampling_timestep !
+        if (mApplySamplingTimeInsteadOfSamplingTimestep)
         {
-            mrCellPopulation.WriteResultsToFiles(results_directory+"/");
-
-            // Call UpdateAtEndOfOutputTimeStep() on each modifier
-            for (typename std::vector<boost::shared_ptr<AbstractCellBasedSimulationModifier<ELEMENT_DIM, SPACE_DIM> > >::iterator iter = mSimulationModifiers.begin();
-                 iter != mSimulationModifiers.end();
-                 ++iter)
+            at_sampling_timestep = (p_time->GetTime() - mSamplingTime*floor(p_time->GetTime()/mSamplingTime)) < mAdaptiveDt;
+            // // tmp 
+            // std::cout << "T=" << p_time->GetTime() << " mAdaptiveDtInTimeStepper=" << p_time->GetTimeStep() << " mAdaptiveDt=" << mAdaptiveDt << " at_sampling_timestep=" << at_sampling_timestep << std::endl;
+            if (at_sampling_timestep)// should be at_sampling_timestep !
             {
-                (*iter)->UpdateAtEndOfOutputTimeStep(this->mrCellPopulation);
+                mrCellPopulation.WriteResultsToFiles(results_directory+"/");
+
+                // Call UpdateAtEndOfOutputTimeStep() on each modifier
+                for (typename std::vector<boost::shared_ptr<AbstractCellBasedSimulationModifier<ELEMENT_DIM, SPACE_DIM> > >::iterator iter = mSimulationModifiers.begin();
+                    iter != mSimulationModifiers.end();
+                    ++iter)
+                {
+                    (*iter)->UpdateAtEndOfOutputTimeStep(this->mrCellPopulation);
+                }
             }
         }
+        else
+        {
+            if (p_simulation_time->GetTimeStepsElapsed()%mSamplingTimestepMultiple == 0)// should be at_sampling_timestep !
+            {
+                mrCellPopulation.WriteResultsToFiles(results_directory+"/");
+
+                // Call UpdateAtEndOfOutputTimeStep() on each modifier
+                for (typename std::vector<boost::shared_ptr<AbstractCellBasedSimulationModifier<ELEMENT_DIM, SPACE_DIM> > >::iterator iter = mSimulationModifiers.begin();
+                    iter != mSimulationModifiers.end();
+                    ++iter)
+                {
+                    (*iter)->UpdateAtEndOfOutputTimeStep(this->mrCellPopulation);
+                }
+            }
+        }
+        
         CellBasedEventHandler::EndEvent(CellBasedEventHandler::OUTPUT);
     }
 

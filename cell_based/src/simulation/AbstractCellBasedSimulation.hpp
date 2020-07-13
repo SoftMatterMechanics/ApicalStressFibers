@@ -111,6 +111,15 @@ protected:
     /** Time step. */
     double mDt;
 
+    // my changes
+    bool mApplyMyChangesToMakeTimestepAdaptive;
+
+    double mAdaptiveDt;
+
+    bool mApplySamplingTimeInsteadOfSamplingTimestep;
+
+    double mSamplingTime;
+
     /** Time to run the Solve() method up to. */
     double mEndTime;
 
@@ -311,6 +320,29 @@ public:
      * @param dt the timestep to use
      */
     void SetDt(double dt);
+
+    // my changes
+    void SetApplyMyChangesToMakeTimestepAdaptive(bool applyMyChangesToMakeTimestepAdaptive)
+    {
+      mApplyMyChangesToMakeTimestepAdaptive = applyMyChangesToMakeTimestepAdaptive;
+    }
+
+    void SetAdaptiveDt(double adaptiveDt)
+    {
+      mAdaptiveDt = adaptiveDt;
+      SimulationTime* p_time = SimulationTime::Instance();
+      p_time->SetAdaptiveDtInTimeStepper(adaptiveDt);
+    }
+
+    void SetApplySamplingTimeInsteadOfSamplingTimestep(bool applySamplingTimeInsteadOfSamplingTimestep)
+    {
+      mApplySamplingTimeInsteadOfSamplingTimestep = applySamplingTimeInsteadOfSamplingTimestep;
+    }
+
+    void SetSamplingTime(double samplingTime)
+    {
+      mSamplingTime = samplingTime;
+    }
 
     /**
      * Set the end time and resets the timestep to be endtime/100.

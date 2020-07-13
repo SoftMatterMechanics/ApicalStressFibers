@@ -147,6 +147,10 @@ public:
      */
     void SetStartTime(double startTime);
 
+    void SetApplyMyChangesToMakeTimestepAdaptiveInTimeStepper(bool applyMyChangesToMakeTimestepAdaptive);
+
+    void SetAdaptiveDtInTimeStepper(double adaptiveDt);
+
 protected:
     /**
      * Default simulation time constructor

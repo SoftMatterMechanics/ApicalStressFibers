@@ -119,6 +119,17 @@ public:
      */
     double GetIdealTimeStep();
 
+    // my changes
+    void SetAdaptiveDt(double adaptiveDt)
+    {
+        mAdaptiveDt = adaptiveDt;
+    }
+
+    double GetAdaptiveTimeStep()
+    {
+        return mAdaptiveDt;
+    }
+
     /**
      * @return True when GetTime == endTime.
      */
@@ -145,6 +156,12 @@ public:
      */
     void ResetTimeStep(double dt);
 
+    // my changes
+    void SetApplyMyChangesToMakeTimestepAdaptive(bool applyMyChangesToMakeTimestepAdaptive)
+    {
+      mApplyMyChangesToMakeTimestepAdaptive = applyMyChangesToMakeTimestepAdaptive;
+    }
+
 private:
 
     /** The start time. */
@@ -155,6 +172,11 @@ private:
 
     /** The size of time step. */
     double mDt;
+
+    // my changes
+    bool mApplyMyChangesToMakeTimestepAdaptive;
+
+    double mAdaptiveDt;
 
     /** The total number of time steps taken. */
     unsigned mTotalTimeStepsTaken;

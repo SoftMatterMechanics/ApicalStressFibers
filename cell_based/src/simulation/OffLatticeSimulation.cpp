@@ -101,8 +101,18 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::UpdateCellLocationsAndTopology
     CellBasedEventHandler::BeginEvent(CellBasedEventHandler::POSITION);
 
     double time_advanced_so_far = 0;
-    double target_time_step  = this->mDt;
-    double present_time_step = this->mDt;
+    double target_time_step  = 0.0;
+    if (this->mApplyMyChangesToMakeTimestepAdaptive)
+        target_time_step = this->mAdaptiveDt;// or use simulationTime?
+    else
+        target_time_step = this->mDt;
+
+    double present_time_step  = 0.0;
+    if (this->mApplyMyChangesToMakeTimestepAdaptive)
+        present_time_step = this->mAdaptiveDt;// or use simulationTime?
+    else
+        present_time_step = this->mDt;
+
 
     while (time_advanced_so_far < target_time_step)
     {
@@ -119,7 +129,19 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::UpdateCellLocationsAndTopology
         // Try to update node positions according to the numerical method
         try
         {
-            mpNumericalMethod->UpdateAllNodePositions(present_time_step);
+            // my changes
+            if (this->mApplyMyChangesToMakeTimestepAdaptive)
+            {
+                // assert( bool( dynamic_cast<VertexBasedCellPopulation<SPACE_DIM>*>(&(this->mrCellPopulation)) ) );
+                // assert(static_cast<VertexBasedCellPopulation<SPACE_DIM>*>(&(this->mrCellPopulation))->GetRestrictVertexMovementBoolean() == false);
+                // assert(dynamic_cast< ForwardEulerNumericalMethod<ELEMENT_DIM, SPACE_DIM>* >(&(*mpNumericalMethod)) != nullptr);
+                this->SetAdaptiveDt(static_cast< ForwardEulerNumericalMethod<ELEMENT_DIM, SPACE_DIM>* >(&(*mpNumericalMethod))
+                        ->GetNewAdaptiveTimestepAndUpdateAllNodePositions(this->mDt));
+                // //tmp
+                // std::cout << "NewAdaptiveTimestep=" << this->mAdaptiveDt << " mDt=" << this->mDt << std::endl;
+            }
+            else
+                mpNumericalMethod->UpdateAllNodePositions(present_time_step);
             ApplyBoundaries(old_node_locations);
 
             // Successful time step! Update time_advanced_so_far
