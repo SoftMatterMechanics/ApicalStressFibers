@@ -54,6 +54,9 @@ class ForwardEulerNumericalMethod : public AbstractNumericalMethod<ELEMENT_DIM,S
 
 private:
 
+    // my changes
+    double mMaxMovementPerTimestep;    
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
 
@@ -90,6 +93,11 @@ public:
 
     // my changes
     double GetNewAdaptiveTimestepAndUpdateAllNodePositions(double dt);
+
+    void SetMaxMovementPerTimestep(double maxMovementPerTimestep)
+    {
+      mMaxMovementPerTimestep = maxMovementPerTimestep;
+    }
 
     /**
      * Overridden OutputNumericalMethodParameters() method.

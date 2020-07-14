@@ -105,12 +105,16 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
                 node_global_index = node_iter->GetIndex();
             maximum_velocity = std::max(maximum_velocity, velocity_abs);
         }
-        new_adaptive_timestep = static_cast<MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>*>(& this->mpCellPopulation->rGetMesh())->GetCellRearrangementThreshold()/2.0/maximum_velocity;
+        // new_adaptive_timestep = static_cast<MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>*>(& this->mpCellPopulation->rGetMesh())->GetCellRearrangementThreshold()/2.0/maximum_velocity;
+        new_adaptive_timestep = this->mMaxMovementPerTimestep/maximum_velocity;
         new_adaptive_timestep = std::min(dt, new_adaptive_timestep);
         Node<SPACE_DIM>* p_Node = this->mpCellPopulation->rGetMesh().GetNode(node_global_index);
-        std::cout << "Timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
-        std::cout << "node_global_index=" << node_global_index << " node_location=" << p_Node->rGetLocation()[0] << ", " << p_Node->rGetLocation()[1]
-                << " maximum_velocity=" << maximum_velocity << " new_adaptive_timestep=" << new_adaptive_timestep << std::endl;
+        if (false)
+        {
+            std::cout << "Timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
+            std::cout << "node_global_index=" << node_global_index << " node_location=" << p_Node->rGetLocation()[0] << ", " << p_Node->rGetLocation()[1]
+                    << " maximum_velocity=" << maximum_velocity << " new_adaptive_timestep=" << new_adaptive_timestep << std::endl;
+        }
 
         unsigned index = 0;
         for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();

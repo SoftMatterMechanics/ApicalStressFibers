@@ -75,11 +75,11 @@ public:
 
         /* Temporarily changed important parameters:
          * 
-         * dt=0.1; restrict=0; adaptive=1; throw_once_only=1 (1 for default); // what's their influence?
+         * dt=0.1; my_adaptive_dt=1; restrict=0; adaptive=1; throw_once_only=1 (1 for default);
          * set_cell_rearrangement_threshold = 0.05;
          * feeback=0; 10,2; 0,2; form=(0),0,1,1
-         * considerSubAdh=1; StripHomo=1; 1)SSA=-120; 0)SSALeadTopLeng=1.0; SSATop=-120; SSABottom=-10;
-         * considerResSubAdh=1; RSA=-10; IgnoreRSATop=1;
+         * considerSubAdh=1; StripHomo=0; 1)SSA=-120; 0)SSALeadTopLeng=1.0; SSATop=-120; SSABottom=-10;
+         * considerResSubAdh=1; RSA=-10; IgnoreRSATop=0;
          * cell_division=0; time_one_division=10;
          * HasRandomForce=1;
          * p0=4.0;
@@ -99,11 +99,12 @@ public:
         
         // timestep
         double set_dt = 0.1; // 1.0/round(1.0/(0.01*120.0/50.0));
+        bool apply_my_change_to_make_timestep_adaptive = true;
+        double max_movement_per_timestep = 0.1;
+        bool consider_consistency_for_SSA = true;
         bool restrict_vertex_movement = false;
         bool use_adaptive_timestep = true;
-        bool apply_my_change_to_make_timestep_adaptive = true;
         bool throw_step_size_exception_once_only = true;
-        bool consider_consistency_for_SSA = true;
         double small_change_for_area_calculation = 0.05;
 
         // cell rearrangement
@@ -133,7 +134,7 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool set_use_fine_mesh_for_calculating_substrate_adhesion = false;
             // strip substrate adhesion
-        bool if_substrate_adhesion_is_homogeneous = true;
+        bool if_substrate_adhesion_is_homogeneous = false;
               // homogeneous
         double set_homogeneous_substrate_adhesion_parameter = -120;//
               // not homogeneous
@@ -142,7 +143,7 @@ public:
         double set_substrate_adhesion_parameter_below_leading_top = -10;
             // reservoir substrate adhesion
         bool if_consider_reservoir_substrate_adhesion = true;// true for default
-        bool if_ignore_reservoir_substrate_adhesion_at_top = true;// false for default
+        bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
         double set_reservoir_substrate_adhesion_parameter = -10.0;//
           //tmp
@@ -251,6 +252,7 @@ public:
         //But the corresponding shared_ptrs in the vectors should be the same.
         p_numerical_method->SetForceCollection(&force_collection);
         p_numerical_method->SetUseAdaptiveTimestep(use_adaptive_timestep);
+        p_numerical_method->SetMaxMovementPerTimestep(max_movement_per_timestep);
         simulator.SetNumericalMethod(p_numerical_method);
         /*---------------------------------END: Add Numerical Method-----------------------------*/
 
@@ -378,6 +380,7 @@ public:
           double angle_for_initialization = M_PI;// 0 for all upwards; PI for all directions
           p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
+          // tmp: delete this method later!
           p_polarity_modifier->SetDt(Dt);
           p_polarity_modifier->SetAngleForInitialization(angle_for_initialization);
           simulator.AddSimulationModifier(p_polarity_modifier);
@@ -456,12 +459,13 @@ public:
         oss << std::fixed << setprecision(3) << dt;
         out_put_directory += "_|_Dt=" + oss.str();
         out_put_directory += "_MyAdaptDt=" + std::to_string(apply_my_change_to_make_timestep_adaptive);        
+        oss.str("");
+        oss << std::scientific << setprecision(1) << max_movement_per_timestep;
+        out_put_directory += "_MaxMvDt=" + oss.str();
         out_put_directory += "_ConsistMv=" + std::to_string(consider_consistency_for_SSA);
         out_put_directory += "_ResMove=" + std::to_string(restrict_vertex_movement);
-        out_put_directory += "_AdaptDt=" + std::to_string(use_adaptive_timestep);
-        out_put_directory += "_ExcpOnce=" + std::to_string(throw_step_size_exception_once_only);
         oss.str("");
-        oss << std::fixed << setprecision(3) << cell_rearrangement_threshold;
+        oss << std::scientific << setprecision(1) << cell_rearrangement_threshold;
         out_put_directory += "_RearThr=" + oss.str();
         out_put_directory += "_|_CellDivi=" + std::to_string(run_with_birth);
         oss.str("");
@@ -486,6 +490,8 @@ public:
         
         // detailed information:
         out_put_directory += "/_|||||";
+        out_put_directory += "_|_AdaptDt=" + std::to_string(use_adaptive_timestep);
+        out_put_directory += "_ExcpOnce=" + std::to_string(throw_step_size_exception_once_only);
         if (run_with_birth)
         {
           oss.str("");
@@ -525,6 +531,7 @@ public:
           oss.str("");
           oss << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
           out_put_directory += "_|_RSA=" + oss.str();
+          out_put_directory += "_ConsiRSATop=" + std::to_string(!if_ignore_reservoir_substrate_adhesion_at_top);
         }
 
         // if(if_consider_compression)
