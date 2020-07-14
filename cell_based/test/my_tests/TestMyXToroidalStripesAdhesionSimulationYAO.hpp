@@ -103,7 +103,7 @@ public:
         bool use_adaptive_timestep = true;
         bool apply_my_change_to_make_timestep_adaptive = true;
         bool throw_step_size_exception_once_only = true;
-        bool consider_consistency_for_SSA = false;
+        bool consider_consistency_for_SSA = true;
         double small_change_for_area_calculation = 0.05;
 
         // cell rearrangement
