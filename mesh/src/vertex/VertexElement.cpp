@@ -43,7 +43,8 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
                                                      const std::vector<Node<SPACE_DIM>*>& rNodes)
     : MutableElement<ELEMENT_DIM, SPACE_DIM>(index, rNodes),
       mFaces(rFaces),
-      mOrientations(rOrientations)
+      mOrientations(rOrientations),
+      mGroupNumber(0)
 {
     // This constructor should only be used in 3D
     assert(SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2));    // LCOV_EXCL_LINE - code will be removed at compile time

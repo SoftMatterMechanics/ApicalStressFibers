@@ -134,6 +134,8 @@ protected:
 
     bool mCheckJammedLocationWhenRemesh;
 
+    unsigned mTheLargestGroupNumberNow;
+
     /**
      * Divide an element along the axis passing through two of its nodes.
      *
@@ -787,6 +789,67 @@ public:
         }
       }
       return false;
+    }
+
+    void SetTheLargestGroupNumberNow(unsigned theLargestGroupNumberNow)
+    {
+      mTheLargestGroupNumberNow = theLargestGroupNumberNow;
+    }
+
+    unsigned GetTheLargestGroupNumberNow()
+    {
+      return mTheLargestGroupNumberNow;
+    }
+
+    void PartialTheGroupByHeight(unsigned groupNumber, double height, bool groupNumberUnchangedBelow)
+    {
+      std::cout << "We are now at method: PartialTheGroupByHeight!" << " mTheLargestGroupNumberNow=" << mTheLargestGroupNumberNow << std::endl;
+      std::cout << "groupNumber=" << groupNumber << ", height=" << height << ", groupNumberUnchangedBelow" << groupNumberUnchangedBelow << std::endl;
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {        
+        if (elem_iter->GetGroupNumber()==groupNumber) 
+        {
+          if (groupNumberUnchangedBelow)
+          {
+            if (this->GetCentroidOfElement(elem_iter->GetIndex())[1]>height)
+            {
+              elem_iter->SetGroupNumber(mTheLargestGroupNumberNow+1);
+            }
+          }
+          else
+          {
+            if (this->GetCentroidOfElement(elem_iter->GetIndex())[1]<height)
+            {
+              elem_iter->SetGroupNumber(mTheLargestGroupNumberNow+1);
+            }
+          }
+        }
+      }
+      SetTheLargestGroupNumberNow(mTheLargestGroupNumberNow+1);
+    }
+
+    double GetLeadingTopOfTheGroup(unsigned groupNumber)
+    {
+      double leading_top = -10.0;
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {
+        if (elem_iter->GetGroupNumber()==groupNumber) 
+        {
+          for (unsigned i=0; i < elem_iter->GetNumNodes(); i++)
+          {
+            if (elem_iter->GetNode(i)->rGetLocation()[1]>leading_top)
+              leading_top = elem_iter->GetNode(i)->rGetLocation()[1];
+          }
+        }
+      }
+      // assert(leading_top!=-10.0);
+      if (leading_top == -10.0)
+        std::cout << std::endl << "In method GetLeadingTopOfTheGroup, there is no element that belongs to group: " << groupNumber << std::endl;
+      return leading_top;
     }
 
 };

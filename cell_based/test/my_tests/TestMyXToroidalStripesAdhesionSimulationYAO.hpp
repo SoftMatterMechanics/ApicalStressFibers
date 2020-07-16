@@ -77,11 +77,12 @@ public:
          * 
          * dt=0.1; my_adaptive_dt=1; restrict=0; adaptive=1; throw_once_only=1 (1 for default);
          * set_cell_rearrangement_threshold = 0.05;
-         * max_movement_per_timestep = 0.1;
+         * max_movement_per_timestep = 0.05;
          * small_change_for_area_calculation = 0.15;
          * feeback=0; 10,2; 0,2; form=(0),0,1,1
-         * considerSubAdh=1; StripHomo=1; 1)SSA=-6; 0)SSATop=-6; SSABottom=-0.5; SSALeadTopLeng=1.0;
+         * considerSubAdh=1; StripHomo=0; 1)SSA=-6; 0)SSATop=-6; SSABottom=-0.5; SSALeadTopLeng=3.0;
          * considerResSubAdh=1; RSA=-10; IgnoreRSATop=0;
+         * use_my_detach_pattern_method = 1;
          * cell_division=0; time_one_division=10;
          * HasRandomForce=0;
          * p0=4.0;
@@ -102,7 +103,7 @@ public:
         // timestep
         double set_dt = 0.1; // 1.0/round(1.0/(0.01*120.0/50.0));
         bool apply_my_change_to_make_timestep_adaptive = true;
-        double max_movement_per_timestep = 0.1;
+        double max_movement_per_timestep = 0.05;
         bool consider_consistency_for_SSA = true;
         bool restrict_vertex_movement = false;
         bool use_adaptive_timestep = true;
@@ -136,13 +137,15 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool set_use_fine_mesh_for_calculating_substrate_adhesion = false;
             // strip substrate adhesion
-        bool if_substrate_adhesion_is_homogeneous = true;
+        bool if_substrate_adhesion_is_homogeneous = false;
               // homogeneous
         double set_homogeneous_substrate_adhesion_parameter = -6.0;//
               // not homogeneous
-        double set_substrate_adhesion_leading_top_length = 1.0;
+        double set_substrate_adhesion_leading_top_length = 3.0;
         double set_substrate_adhesion_parameter_at_leading_top= -6.0;
         double set_substrate_adhesion_parameter_below_leading_top = -0.5;
+                // detach pattern:
+        bool use_my_detach_pattern_method = true;
             // reservoir substrate adhesion
         bool if_consider_reservoir_substrate_adhesion = true;// true for default
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
@@ -182,8 +185,8 @@ public:
         bool check_jammed_location_when_remesh = false;
         bool output_concise_swap_information_when_remesh = false;
         bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
-        bool output_information_for_nagai_honda_force = true;
-        bool set_output_numerical_method_information = true;
+        bool output_information_for_nagai_honda_force = false;
+        bool set_output_numerical_method_information = false;
         /*-----------------------END: Frequently changed parameters-------------------------*/
 
 
@@ -343,6 +346,8 @@ public:
         p_force->SetStripDistance(strip_distance);
         p_force->SetStripStartXLocation(strip_start_x_location);
         p_force->SetStripStartYLocation(strip_start_y_location);
+          // method for detachment behavior
+        p_force->SetUseMyDetachPatternMethod(use_my_detach_pattern_method);
 
         p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
         simulator.AddForce(p_force);
@@ -426,6 +431,8 @@ public:
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
         p_face_value_and_stress_state_modifier->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);        
         p_face_value_and_stress_state_modifier->SetOutputModifierInformationBoolean(false);
+
+        p_face_value_and_stress_state_modifier->SetWriteGroupNumberToCell(use_my_detach_pattern_method);
         simulator.AddSimulationModifier(p_face_value_and_stress_state_modifier);
         /*-----------------------END: !!!!!!Feedback: FaceValueAndStressStateModifier: need modification---------------*/
 

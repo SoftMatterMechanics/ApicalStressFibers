@@ -61,7 +61,8 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mIfCalculateStressState(true),
       mIfConsiderFeedbackOfFaceValues(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
-      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false)
+      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
+      mWriteGroupNumberToCell(false)
 {
 }
 
@@ -74,6 +75,9 @@ template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
     UpdateFaceValuesAndStressStates(rCellPopulation);
+    UpdateCellAreas(rCellPopulation);
+    if (mWriteGroupNumberToCell)
+        UpdateGroupNumbers(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -84,7 +88,64 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM
      * fully initialised by the time we enter the main time loop.
      */
     UpdateFaceValuesAndStressStates(rCellPopulation);
+    UpdateCellAreas(rCellPopulation);
+    if (mWriteGroupNumberToCell)
+        UpdateGroupNumbers(rCellPopulation);
 }
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        UpdateCellAreaOfCell(rCellPopulation, *cell_iter);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    double cell_area = p_mesh->GetVolumeOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+    pCell->GetCellData()->SetItem("cell area", cell_area);
+}
+
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        UpdateGroupNumberOfCell(rCellPopulation, *cell_iter);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    unsigned group_number = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )->GetGroupNumber();
+    pCell->GetCellData()->SetItem("group number", group_number);
+}
+
 
 template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation)

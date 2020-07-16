@@ -89,6 +89,7 @@ protected:
     bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
     bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
 
+    bool mWriteGroupNumberToCell;
 
 
 public:
@@ -220,6 +221,16 @@ public:
 
     void UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
+    void SetWriteGroupNumberToCell(bool writeGroupNumberToCell)
+    {
+      mWriteGroupNumberToCell = writeGroupNumberToCell;
+    }
+
+    void UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    void UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+    void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
 
     /**
      * Overridden OutputSimulationModifierParameters() method.

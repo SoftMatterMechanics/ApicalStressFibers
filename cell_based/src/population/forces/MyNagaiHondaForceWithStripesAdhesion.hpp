@@ -164,6 +164,8 @@ protected:
 
     double mSmallChangeForAreaCalculation;
 
+    bool mUseMyDetachPatternMethod;
+
 public:
 
     /**
@@ -381,6 +383,11 @@ public:
     void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)
     {
       mSmallChangeForAreaCalculation = smallChangeForAreaCalculation;
+    }
+
+    void SetUseMyDetachPatternMethod(bool useMyDetachPatternMethod)
+    {
+      mUseMyDetachPatternMethod = useMyDetachPatternMethod;
     }
 
 };

@@ -69,6 +69,9 @@ private:
      */
     std::vector<bool> mOrientations;
 
+    // my changes
+    unsigned mGroupNumber;
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -171,6 +174,16 @@ public:
     bool FaceIsOrientatedClockwise(unsigned index) const;
 
     // my changes
+    void SetGroupNumber(unsigned groupNumber)
+    {
+      mGroupNumber = groupNumber;
+    }
+
+    unsigned GetGroupNumber()
+    {
+      return mGroupNumber;
+    }
+
     bool GetOrientation(unsigned faceLocalIndex)
     {
       return this->mOrientations[faceLocalIndex];
@@ -618,6 +631,15 @@ public:
     }
 
     void DeleteFace(unsigned faceLocalIndex)
+    {
+    }
+
+    unsigned GetGroupNumber()
+    {
+      return 0;
+    }
+
+    void SetGroupNumber(unsigned groupNumber)
     {
     }
 

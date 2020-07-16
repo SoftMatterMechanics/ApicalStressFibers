@@ -58,7 +58,8 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mDistanceForT3SwapChecking(5.0),
           mIfUpdateFaceElementsInMesh(false),
           mOutputConciseSwapInformationWhenRemesh(false),
-          mOutputDetailedSwapInformationWhenRemesh(false)
+          mOutputDetailedSwapInformationWhenRemesh(false),
+          mTheLargestGroupNumberNow(0)
 {
     // Threshold parameters must be strictly positive
     assert(cellRearrangementThreshold > 0.0);
@@ -2059,6 +2060,20 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
         {
             pNodeB->SetAsBoundaryNode(true);
         }
+    }
+
+    // my changes, may be wrong
+    if (pNodeA->GetNumContainingElements() == 1 ) // node A, B have detached!
+    {
+        assert(pNodeB->GetNumContainingElements() == 1);
+        // double time_now = SimulationTime::Instance()->GetTime();
+        // unsigned timesteps_eclipsed = SimulationTime::Instance()->GetTimeStepsElapsed();
+        // std::cout << "At time: " << time_now << ", timesteps elipsed=" << timesteps_eclipsed << ", a detachment hapenned!" << std::endl;
+        std::cout << std::endl << "A detachment happened!" << std::endl;
+        unsigned original_group_number = this->GetElement(* pNodeA->rGetContainingElementIndices().begin())->GetGroupNumber();
+        double height = nodeA_location[1] + 0.5*vector_AB[1];
+        bool group_number_unchanged_below = true;
+        this->PartialTheGroupByHeight(original_group_number, height, group_number_unchanged_below);
     }
     /*--------------------End of default element-nodes relationship manipulation---------------------------*/
 

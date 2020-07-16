@@ -109,6 +109,12 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             y_coord_leading_edge= p_this_node->rGetLocation()[1];
     }
 
+    unsigned largest_group_number = p_cell_population->rGetMesh().GetTheLargestGroupNumberNow();
+    std::vector<double> leading_tops_of_groups(largest_group_number+1);
+    for (unsigned i=0; i<largest_group_number+1; i++)
+    {
+        leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
+    }
 
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
@@ -243,6 +249,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             /*---------------------------------Start of substrate adhesion contribution---------------------------------*/
             if (mIfConsiderSubstrateAdhesion)
             {
+                assert( !(mUseMyDetachPatternMethod&&mIfSubstrateAdhesionIsHomogeneous) );
                 c_vector<double, DIM> substrate_adhesion_area_gradient = zero_vector<double>(DIM);
                 c_vector<double, DIM> weighted_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
                 // Parameters
@@ -340,6 +347,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     c_vector<double, DIM> vec1 = this_node_location-previous_node_location;
                     c_vector<double, DIM> vec2 = next_node_location-this_node_location;                    
 
+                    unsigned group_number_of_node = p_element->GetGroupNumber();
+                    double leading_top_of_the_group = leading_tops_of_groups[group_number_of_node];
                     // Calculate initial adhesive area
                     double adhesive_sample_num = 0.0;
                     double weighted_adhesive_sample_num = 0.0;
@@ -364,23 +373,49 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         }
                         if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                         {
-                            adhesive_sample_num += 1.0;
-                            if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                            if (!mUseMyDetachPatternMethod) // default
                             {
-                                weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                adhesive_sample_num += 1.0;
+                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                }
+                                else
+                                    weighted_adhesive_sample_num += 1.0;
                             }
-                            else
-                                weighted_adhesive_sample_num += 1.0;
+                            else // in the case that use my detach pattern method:
+                            {
+                                adhesive_sample_num += 1.0;
+                                if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                }
+                                else
+                                    weighted_adhesive_sample_num += 1.0;
+                            }
                         }
                         else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                         {
-                            adhesive_sample_num += -1.0;
-                            if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                            if (!mUseMyDetachPatternMethod) // default
                             {
-                                weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                adhesive_sample_num += -1.0;
+                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                }
+                                else
+                                    weighted_adhesive_sample_num += -1.0;
                             }
-                            else
-                                weighted_adhesive_sample_num += -1.0;
+                            else // in the case that use my detach pattern method:
+                            {
+                                adhesive_sample_num += -1.0;
+                                if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                }
+                                else
+                                    weighted_adhesive_sample_num += -1.0;
+                            }
                         }
 
                     }
@@ -440,48 +475,56 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             }
                             if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                             {
-                                adhesive_sample_num += 1.0;
-                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                if (!mUseMyDetachPatternMethod) // default
                                 {
-                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    adhesive_sample_num += 1.0;
+                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    }
+                                    else
+                                        weighted_adhesive_sample_num += 1.0;
                                 }
-                                else
-                                    weighted_adhesive_sample_num += 1.0;
+                                else // in the case that use my detach pattern method:
+                                {
+                                    adhesive_sample_num += 1.0;
+                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    }
+                                    else
+                                        weighted_adhesive_sample_num += 1.0;
+                                }
                             }
                             else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                             {
-                                adhesive_sample_num += -1.0;
-                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                if (!mUseMyDetachPatternMethod) // default
                                 {
-                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    adhesive_sample_num += -1.0;
+                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    }
+                                    else
+                                        weighted_adhesive_sample_num += -1.0;
                                 }
-                                else
-                                    weighted_adhesive_sample_num += -1.0;
+                                else // in the case that use my detach pattern method:
+                                {
+                                    adhesive_sample_num += -1.0;
+                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    }
+                                    else
+                                        weighted_adhesive_sample_num += -1.0;
+                                }
                             }
                         }
                         double substrate_adhesion_area_new = adhesive_sample_num/double(sample_num) * sample_area;
                         double weighted_substrate_adhesion_area_new = weighted_adhesive_sample_num/double(sample_num) * sample_area;
-                        c_vector<double, DIM> substrate_adhesion_area_gradient_element = (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
-                        substrate_adhesion_area_gradient += substrate_adhesion_area_gradient_element;
-                        c_vector<double, DIM> weighted_substrate_adhesion_area_gradient_element = (weighted_substrate_adhesion_area_new - weighted_substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
-                        weighted_substrate_adhesion_area_gradient += weighted_substrate_adhesion_area_gradient_element;
-
-                        if (mOutputInformationForNagaiHondaForce)
-                        {
-                            if (fabs(p_this_node->rGetLocation()[1]-y_coord_leading_edge) < 1e-10)
-                            {
-                                if (j==0)
-                                {
-                                    std::cout << "Small change in x, " << "adhesive_sample_num=" << adhesive_sample_num << ", sample_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
-                                            << ", SAAreaGradientx=" << substrate_adhesion_area_gradient_element[0] << std::endl;
-                                }
-                                else
-                                {
-                                    std::cout << "Small change in y, " << "adhesive_sample_num=" << adhesive_sample_num << ", sample_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
-                                            << ", SAAreaGradienty=" << substrate_adhesion_area_gradient_element[1] << std::endl;
-                                }
-                            }
-                        }
+                        
+                        substrate_adhesion_area_gradient += (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
+                        weighted_substrate_adhesion_area_gradient += (weighted_substrate_adhesion_area_new - weighted_substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
                             
                     }// end of calculation of gradient after considering small displacement of the node along the x or y axis
 
@@ -722,8 +765,11 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             averaged_inner_strip_substrate_adhesion_contribution[0] = area_adhesion_contribution[0] * mSmallChangeForAreaCalculation/inner_strip_small_change;
             averaged_inner_strip_substrate_adhesion_contribution[1] = area_adhesion_contribution[1];
             double SSA_x_inner_strip = averaged_inner_strip_substrate_adhesion_contribution[0];
-            if (!(fabs(SSA_x_inner_strip) < 100.0))
-                std::cout << "There may be something wrong! SSA_x_inner_strip=" << SSA_x_inner_strip << std::endl;
+            if (!(fabs(SSA_x_inner_strip) < 100.0) && inner_strip_small_change/mSmallChangeForAreaCalculation>0.1)
+            {
+                std::cout << "SSA_x_inner_strip is too large! SSA_x_inner_strip=" << SSA_x_inner_strip << std::endl;
+                std::cout << "area_adhesion_contribution[0]=" << area_adhesion_contribution[0] << ", inner_strip_small_change/mSmallChange=" << inner_strip_small_change/mSmallChangeForAreaCalculation << std::endl;
+            }
 
             if (inner_strip_small_change>0.2*mSmallChangeForAreaCalculation)
             {
