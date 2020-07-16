@@ -77,11 +77,13 @@ public:
          * 
          * dt=0.1; my_adaptive_dt=1; restrict=0; adaptive=1; throw_once_only=1 (1 for default);
          * set_cell_rearrangement_threshold = 0.05;
+         * max_movement_per_timestep = 0.1;
+         * small_change_for_area_calculation = 0.15;
          * feeback=0; 10,2; 0,2; form=(0),0,1,1
-         * considerSubAdh=1; StripHomo=0; 1)SSA=-120; 0)SSALeadTopLeng=1.0; SSATop=-120; SSABottom=-10;
+         * considerSubAdh=1; StripHomo=1; 1)SSA=-6; 0)SSATop=-6; SSABottom=-0.5; SSALeadTopLeng=1.0;
          * considerResSubAdh=1; RSA=-10; IgnoreRSATop=0;
          * cell_division=0; time_one_division=10;
-         * HasRandomForce=1;
+         * HasRandomForce=0;
          * p0=4.0;
          * Ga=0.1;
          * 
@@ -105,7 +107,7 @@ public:
         bool restrict_vertex_movement = false;
         bool use_adaptive_timestep = true;
         bool throw_step_size_exception_once_only = true;
-        double small_change_for_area_calculation = 0.05;
+        double small_change_for_area_calculation = 0.15;
 
         // cell rearrangement
         double set_cell_rearrangement_threshold = 0.05;
@@ -134,18 +136,18 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool set_use_fine_mesh_for_calculating_substrate_adhesion = false;
             // strip substrate adhesion
-        bool if_substrate_adhesion_is_homogeneous = false;
+        bool if_substrate_adhesion_is_homogeneous = true;
               // homogeneous
-        double set_homogeneous_substrate_adhesion_parameter = -120;//
+        double set_homogeneous_substrate_adhesion_parameter = -6.0;//
               // not homogeneous
         double set_substrate_adhesion_leading_top_length = 1.0;
-        double set_substrate_adhesion_parameter_at_leading_top= -120.0;
-        double set_substrate_adhesion_parameter_below_leading_top = -10;
+        double set_substrate_adhesion_parameter_at_leading_top= -6.0;
+        double set_substrate_adhesion_parameter_below_leading_top = -0.5;
             // reservoir substrate adhesion
         bool if_consider_reservoir_substrate_adhesion = true;// true for default
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
-        double set_reservoir_substrate_adhesion_parameter = -10.0;//
+        double set_reservoir_substrate_adhesion_parameter = -0.5;//
           //tmp
         bool if_set_strip_start_y_location_artificially = false;//false for default
         double set_strip_start_y_location_artificially = 1.5*8*1/sqrt(3)*sqrt(M_PI/(sqrt(3)/2));
@@ -170,7 +172,7 @@ public:
         double set_hill_coefficient_for_adhesion = 2.0;
         
         // random force and polarity
-        bool add_random_force = true;
+        bool add_random_force = false;
         bool consider_polarity = true;
         bool vanishing_motility_for_node_in_the_strip_interval = true;
         double set_polarity_magnitude = 0.2;
@@ -180,8 +182,8 @@ public:
         bool check_jammed_location_when_remesh = false;
         bool output_concise_swap_information_when_remesh = false;
         bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
-        bool output_information_for_nagai_honda_force = false;
-        bool check_jammed_location_when_add_force_contribution = false;
+        bool output_information_for_nagai_honda_force = true;
+        bool set_output_numerical_method_information = true;
         /*-----------------------END: Frequently changed parameters-------------------------*/
 
 
@@ -253,6 +255,7 @@ public:
         p_numerical_method->SetForceCollection(&force_collection);
         p_numerical_method->SetUseAdaptiveTimestep(use_adaptive_timestep);
         p_numerical_method->SetMaxMovementPerTimestep(max_movement_per_timestep);
+        p_numerical_method->SetOutputNumericalMethodInformation(set_output_numerical_method_information);
         simulator.SetNumericalMethod(p_numerical_method);
         /*---------------------------------END: Add Numerical Method-----------------------------*/
 
@@ -342,7 +345,6 @@ public:
         p_force->SetStripStartYLocation(strip_start_y_location);
 
         p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
-        p_force->SetCheckJammedLocationWhenAddForceContribution(check_jammed_location_when_add_force_contribution);
         simulator.AddForce(p_force);
         /*-----------------------------END: MyNagaiHondaForceWithStripesAdhesion---------------------*/
 

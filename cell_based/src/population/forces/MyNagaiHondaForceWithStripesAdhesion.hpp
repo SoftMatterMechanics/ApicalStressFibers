@@ -160,8 +160,6 @@ protected:
 
     bool mOutputInformationForNagaiHondaForce;
 
-    bool mCheckJammedLocationWhenAddForceContribution;
-
     bool mConsiderConsistencyForSSA;
 
     double mSmallChangeForAreaCalculation;
@@ -373,11 +371,6 @@ public:
     void SetOutputInformationForNagaiHondaForce(bool outputInformationForNagaiHondaForce)
     {
       mOutputInformationForNagaiHondaForce = outputInformationForNagaiHondaForce;
-    }
-
-    void SetCheckJammedLocationWhenAddForceContribution(bool checkJammedLocationWhenAddForceContribution)
-    {
-      mCheckJammedLocationWhenAddForceContribution = checkJammedLocationWhenAddForceContribution;
     }
 
     void SetConsiderConsistencyForSSA(bool considerConsistencyForSSA)

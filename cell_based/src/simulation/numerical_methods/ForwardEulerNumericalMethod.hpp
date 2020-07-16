@@ -57,6 +57,8 @@ private:
     // my changes
     double mMaxMovementPerTimestep;    
 
+    bool mOutputNumericalMethodInformation;
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
 
@@ -97,6 +99,11 @@ public:
     void SetMaxMovementPerTimestep(double maxMovementPerTimestep)
     {
       mMaxMovementPerTimestep = maxMovementPerTimestep;
+    }
+
+    void SetOutputNumericalMethodInformation(bool outputNumericalMethodInformation)
+    {
+      mOutputNumericalMethodInformation = outputNumericalMethodInformation;
     }
 
     /**

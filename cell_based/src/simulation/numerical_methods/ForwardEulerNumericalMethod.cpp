@@ -109,11 +109,12 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
         new_adaptive_timestep = this->mMaxMovementPerTimestep/maximum_velocity;
         new_adaptive_timestep = std::min(dt, new_adaptive_timestep);
         Node<SPACE_DIM>* p_Node = this->mpCellPopulation->rGetMesh().GetNode(node_global_index);
-        if (false)
+        if (mOutputNumericalMethodInformation)
         {
-            std::cout << "Timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
+            std::cout << "_____UpdateNodes: timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
             std::cout << "node_global_index=" << node_global_index << " node_location=" << p_Node->rGetLocation()[0] << ", " << p_Node->rGetLocation()[1]
                     << " maximum_velocity=" << maximum_velocity << " new_adaptive_timestep=" << new_adaptive_timestep << std::endl;
+            std::cout << std::endl;
         }
 
         unsigned index = 0;

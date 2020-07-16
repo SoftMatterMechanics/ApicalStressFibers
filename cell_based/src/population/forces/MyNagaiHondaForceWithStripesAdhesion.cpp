@@ -387,21 +387,31 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     double substrate_adhesion_area = adhesive_sample_num/double(sample_num) * sample_area;
                     double weighted_substrate_adhesion_area = weighted_adhesive_sample_num/double(sample_num) * sample_area;
 
+                    if (mOutputInformationForNagaiHondaForce)
+                    {
+                        if (fabs(p_this_node->rGetLocation()[1]-y_coord_leading_edge) < 1e-10)
+                        {
+                            std::cout << "______AddForceContribution: for the top node, node index= " << p_this_node->GetIndex() << std::endl;
+                            std::cout << "The adhesive_sample_num=" << adhesive_sample_num << ", smaple_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
+                                    << ", substrate_adhesion_area=" << substrate_adhesion_area<< ", sample_area=" << sample_area << std::endl;
+                        }
+                    }
+
                     // Calculate adhesive area *changed* with small displacement of the node along the x or y axis
                     for (unsigned j = 0; j<2; j++)
                     {
-                        c_vector<double, DIM> small_vector;
-                        small_vector[0] = small_change*cos(j*M_PI/2);
-                        small_vector[1] = small_change*sin(j*M_PI/2);
+                        c_vector<double, DIM> unit_vector_in_small_change_direction;
+                        unit_vector_in_small_change_direction[0] = cos(j*M_PI/2);
+                        unit_vector_in_small_change_direction[1] = sin(j*M_PI/2);
                         // my new changes for cosistent movement of nodes at edges of the strip.
                         if (mConsiderConsistencyForSSA)
                         {
                             if (points[1][0]-stripe_right>-small_change && points[1][0]-stripe_right<small_change)
-                                small_vector[0] *= -1.0;
+                                unit_vector_in_small_change_direction[0] *= -1.0;
                         }
 
                         c_vector<c_vector<double, DIM>, 3> new_points = points;
-                        new_points[1] += small_vector;
+                        new_points[1] += small_change*unit_vector_in_small_change_direction;
 
                         double adhesive_sample_num = 0.0;
                         double weighted_adhesive_sample_num = 0.0;
@@ -451,8 +461,28 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         }
                         double substrate_adhesion_area_new = adhesive_sample_num/double(sample_num) * sample_area;
                         double weighted_substrate_adhesion_area_new = weighted_adhesive_sample_num/double(sample_num) * sample_area;
-                        substrate_adhesion_area_gradient += (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*small_vector;
-                        weighted_substrate_adhesion_area_gradient += (weighted_substrate_adhesion_area_new - weighted_substrate_adhesion_area)/small_change*small_vector;
+                        c_vector<double, DIM> substrate_adhesion_area_gradient_element = (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
+                        substrate_adhesion_area_gradient += substrate_adhesion_area_gradient_element;
+                        c_vector<double, DIM> weighted_substrate_adhesion_area_gradient_element = (weighted_substrate_adhesion_area_new - weighted_substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
+                        weighted_substrate_adhesion_area_gradient += weighted_substrate_adhesion_area_gradient_element;
+
+                        if (mOutputInformationForNagaiHondaForce)
+                        {
+                            if (fabs(p_this_node->rGetLocation()[1]-y_coord_leading_edge) < 1e-10)
+                            {
+                                if (j==0)
+                                {
+                                    std::cout << "Small change in x, " << "adhesive_sample_num=" << adhesive_sample_num << ", sample_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
+                                            << ", SAAreaGradientx=" << substrate_adhesion_area_gradient_element[0] << std::endl;
+                                }
+                                else
+                                {
+                                    std::cout << "Small change in y, " << "adhesive_sample_num=" << adhesive_sample_num << ", sample_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
+                                            << ", SAAreaGradienty=" << substrate_adhesion_area_gradient_element[1] << std::endl;
+                                }
+                            }
+                        }
+                            
                     }// end of calculation of gradient after considering small displacement of the node along the x or y axis
 
                 }// end of statement 'if (has_substrate_adhesion_area)'
@@ -620,12 +650,12 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         // Calculate adhesive area *changed* with small displacement of the node along the x or y axis
                         for (unsigned j = 0; j<2; j++)
                         {
-                            c_vector<double, DIM> small_vector;
-                            small_vector[0] = small_change*cos(j*M_PI/2);
-                            small_vector[1] = small_change*sin(j*M_PI/2);
+                            c_vector<double, DIM> unit_vector_in_small_change_direction;
+                            unit_vector_in_small_change_direction[0] = cos(j*M_PI/2);
+                            unit_vector_in_small_change_direction[1] = sin(j*M_PI/2);
 
                             c_vector<c_vector<double, DIM>, 3> new_points = points;
-                            new_points[1] += small_vector;
+                            new_points[1] += small_change*unit_vector_in_small_change_direction;
 
                             double adhesive_sample_num = 0.0;
 
@@ -654,7 +684,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                                     adhesive_sample_num += -1.0;
                             }
                             double substrate_adhesion_area_new = adhesive_sample_num/double(sample_num) * sample_area;
-                            reservoir_substrate_adhesion_area_gradient += (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*small_vector;
+                            reservoir_substrate_adhesion_area_gradient += (substrate_adhesion_area_new - substrate_adhesion_area)/small_change*unit_vector_in_small_change_direction;
                         }// end of calculate adhesive area *changed* with small displacement of the node along the x or y axis
                         
                     }// end of statement 'if (has_substrate_adhesion_area)'
