@@ -132,8 +132,6 @@ protected:
 
     bool mOutputDetailedSwapInformationWhenRemesh;
 
-    bool mCheckJammedLocationWhenRemesh;
-
     unsigned mTheLargestGroupNumberNow;
 
     /**
@@ -692,11 +690,6 @@ public:
     void SetOutputDetailedSwapInformationWhenRemesh(bool outputDetailedSwapInformationWhenRemesh)
     {
       this->mOutputDetailedSwapInformationWhenRemesh = outputDetailedSwapInformationWhenRemesh;
-    }
-
-    void SetCheckJammedLocationWhenRemesh(bool checkJammedLocationWhenRemesh)
-    {
-      mCheckJammedLocationWhenRemesh = checkJammedLocationWhenRemesh;
     }
 
     bool IsFaceContainedByABoundaryElement(unsigned faceIndex)

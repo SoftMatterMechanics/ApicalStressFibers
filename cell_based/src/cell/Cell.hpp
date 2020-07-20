@@ -151,6 +151,8 @@ protected:
         // My changes.    
     double mMyosinActivity;
 
+    bool mUseMyDivisionRuleAlongWithModifier;
+
 
 
 public:
@@ -431,6 +433,16 @@ public:
     double GetMyosinActivity()
     {
         return mMyosinActivity;
+    }
+
+    void SetUseMyDivisionRuleAlongWithModifier(bool useMyDivisionRuleAlongWithModifier)
+    {
+        mUseMyDivisionRuleAlongWithModifier = useMyDivisionRuleAlongWithModifier;
+    }
+
+    void SetCanDivide(bool canDivide)
+    {
+        mCanDivide = canDivide;
     }
 };
 

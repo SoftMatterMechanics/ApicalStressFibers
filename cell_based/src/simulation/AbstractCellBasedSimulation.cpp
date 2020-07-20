@@ -552,7 +552,7 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         }
         
         CellBasedEventHandler::EndEvent(CellBasedEventHandler::OUTPUT);
-    }
+    }// end of the main time loop
 
     LOG(1, "--END TIME = " << p_simulation_time->GetTime() << "\n");
 

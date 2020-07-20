@@ -76,6 +76,7 @@ protected:
     double mFeedbackStrengthForMyosinActivity;
     double mHillCoefficientForMyosinActivity;
     double mEdgeLengthAtRest;
+    bool mIfUpdateUnifiedCellCellAdhesionOfFace;
     double mFeedbackStrengthForAdhesion;
     double mHillCoefficientForAdhesion;
     bool mEMADontDecreaseWhenEdgeShrink;
@@ -90,6 +91,9 @@ protected:
     bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
 
     bool mWriteGroupNumberToCell;
+
+    bool mUseMyDivisionRuleAlongWithModifier;
+    double mDivisionTime;
 
 
 public:
@@ -153,6 +157,11 @@ public:
       this->mEdgeLengthAtRest = edgeLengthAtRest;
     }
 
+    void SetUpdateUnifiedCellCellAdhesionOfFace(bool ifUpdateUnifiedCellCellAdhesionOfFace)
+    {
+      mIfUpdateUnifiedCellCellAdhesionOfFace = ifUpdateUnifiedCellCellAdhesionOfFace;
+    }
+    
     void SetFeedbackStrengthForAdhesion(double feedbackStrengthForAdhesion)
     {
       mFeedbackStrengthForAdhesion = feedbackStrengthForAdhesion;
@@ -232,6 +241,18 @@ public:
     void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
 
+    void SetUseMyDivisionRuleAlongWithModifier(bool useMyDivisionRuleAlongWithModifier)
+    {
+      mUseMyDivisionRuleAlongWithModifier = useMyDivisionRuleAlongWithModifier;
+    }
+
+    void SetDivisionTime(double divisionTime)
+    {
+      mDivisionTime = divisionTime;
+    }
+
+    void SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    void UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     /**
      * Overridden OutputSimulationModifierParameters() method.
      * Output any simulation modifier parameters to file.

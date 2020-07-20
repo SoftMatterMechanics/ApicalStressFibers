@@ -150,8 +150,6 @@ protected:
 
     bool mIfConsiderIntervalSubstrateRepulsion;
 
-    bool mUseFineMesh;
-
     bool mUseFixedTargetArea;
 
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
@@ -297,10 +295,6 @@ public:
     void SetCenterOfWidth(double centerOfWidth)
     {
       mCenterOfWidth = centerOfWidth;
-    }
-    void SetUseFineMesh(bool useFineMesh)
-    {
-      mUseFineMesh = useFineMesh;
     }
     // tmp
     void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)

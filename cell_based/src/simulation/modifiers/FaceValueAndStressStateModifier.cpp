@@ -78,6 +78,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPop
     UpdateCellAreas(rCellPopulation);
     if (mWriteGroupNumberToCell)
         UpdateGroupNumbers(rCellPopulation);
+    if (mUseMyDivisionRuleAlongWithModifier)
+        UpdateForCellDivision(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -91,6 +93,35 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM
     UpdateCellAreas(rCellPopulation);
     if (mWriteGroupNumberToCell)
         UpdateGroupNumbers(rCellPopulation);
+    if (mUseMyDivisionRuleAlongWithModifier)
+        SetupSolveForCellDivision(rCellPopulation);
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        (*cell_iter)->SetUseMyDivisionRuleAlongWithModifier(true);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+        SimulationTime* p_time = SimulationTime::Instance();
+        bool at_division_time = (p_time->GetTime() -mDivisionTime/2.0 - mDivisionTime*floor((p_time->GetTime()-mDivisionTime/2.0)/mDivisionTime)) < p_time->GetTimeStep();
+        if (at_division_time)
+        {
+            unsigned division_element_index = (unsigned)floor(RandomNumberGenerator::Instance()->ranf()*( (double)(rCellPopulation.GetNumAllCells())-0.01 ));
+            assert(division_element_index < rCellPopulation.GetNumAllCells());
+            std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+            for (unsigned i=0; i< division_element_index; i++)
+                cell_iter++;
+            (*cell_iter)->SetCanDivide(true);
+        }
 }
 
 template<unsigned DIM>
@@ -183,7 +214,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                             {
                                 this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
 
-                                this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
+                                if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                                    this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                             }
 
                         }
@@ -191,7 +223,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                         {
                             this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
 
-                            this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
+                            if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                                this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                         }
                         
                     }
@@ -199,8 +232,9 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                 else
                 {
                     this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
-
-                    this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
+                    
+                    if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                        this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                 }
             }
         }
