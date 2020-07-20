@@ -98,8 +98,8 @@ public:
         double set_feedback_strength_for_myosin_activity = 1.0;
         if (if_consider_feedback_of_face_values == false)
           set_feedback_strength_for_myosin_activity = 0.0;
-        double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
-        double set_polarity_magnitude = 0.2;
+        double set_target_shape_index = 0.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
+        double set_polarity_magnitude = 0.0;
 
        
         // output directory

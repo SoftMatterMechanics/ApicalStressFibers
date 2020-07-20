@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
-#define TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
+#ifndef TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO2_HPP_
+#define TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO2_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -65,7 +65,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyXToroidalStripesAdhesionSimulationYAO : public AbstractCellBasedTestSuite
+class TestMyXToroidalStripesAdhesionSimulationYAO2 : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -99,7 +99,7 @@ public:
         if (if_consider_feedback_of_face_values == false)
           set_feedback_strength_for_myosin_activity = 0.0;
         double set_target_shape_index = 2.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
-        double set_polarity_magnitude = 0.0;
+        double set_polarity_magnitude = 0.2;
 
        
         // output directory
@@ -110,7 +110,7 @@ public:
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ' ' << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        out_put_directory += "__YAO__StartTime=" + oss.str();
+        out_put_directory += "__YAO2__StartTime=" + oss.str();
         out_put_directory += "__PHASE_DIAGRAM_";
         oss.str("");
         oss << std::scientific << setprecision(1) << set_feedback_strength_for_myosin_activity;
@@ -610,4 +610,4 @@ public:
 
 };
 
-#endif /* TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_ */
+#endif /* TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO2_HPP_ */
