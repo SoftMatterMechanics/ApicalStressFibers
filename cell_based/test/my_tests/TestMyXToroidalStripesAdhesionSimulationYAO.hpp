@@ -94,7 +94,7 @@ public:
         */
 
         // phase diagram:
-        bool if_consider_feedback_of_face_values = false; // !feedback!
+        bool if_consider_feedback_of_face_values = true; // !feedback!
         double set_feedback_strength_for_myosin_activity = 1;
         double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
         double set_polarity_magnitude = 0.2;
@@ -102,7 +102,7 @@ public:
        
         // output directory
         std::ostringstream oss;
-        std::string out_put_directory = "EpithelialBridgeSimulation/LookForMovementPatterns_StartFromJuly01/";
+        std::string out_put_directory = "EpithelialBridgeSimulation/LookForMovementPatterns_StartFromJuly20/";
         time_t raw_time = time(0);   // get time now
         struct tm * now = localtime(& raw_time);
         oss.str("");
