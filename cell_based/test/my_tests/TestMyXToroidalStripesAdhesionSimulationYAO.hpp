@@ -95,7 +95,9 @@ public:
 
         // phase diagram:
         bool if_consider_feedback_of_face_values = true; // !feedback!
-        double set_feedback_strength_for_myosin_activity = 1;
+        double set_feedback_strength_for_myosin_activity = 1.0;
+        if (if_consider_feedback_of_face_values == false)
+          set_feedback_strength_for_myosin_activity = 0.0;
         double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
         double set_polarity_magnitude = 0.2;
 
@@ -109,6 +111,16 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ' ' << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
         out_put_directory += "__YAO__StartTime=" + oss.str();
+        out_put_directory += "__PHASE_DIAGRAM_";
+        oss.str("");
+        oss << std::scientific << setprecision(1) << set_feedback_strength_for_myosin_activity;
+        out_put_directory += "_MyoFeStr=" + oss.str();
+        oss.str("");
+        oss << std::fixed << setprecision(2) << set_target_shape_index;
+        out_put_directory += "_p0=" + oss.str();
+        oss.str("");
+        oss << std::scientific << setprecision(2) << set_polarity_magnitude;
+        out_put_directory += "_fp=" + oss.str();
         
         // timestep
         double set_dt = 0.1; // 1.0/round(1.0/(0.01*120.0/50.0));
@@ -458,7 +470,7 @@ public:
         // concise information
         oss.str("");
         oss << std::fixed << setprecision(3) << dt;
-        out_put_directory += "_|_Dt=" + oss.str();
+        out_put_directory += "/Dt=" + oss.str();
         out_put_directory += "_MyAdaptDt=" + std::to_string(apply_my_change_to_make_timestep_adaptive);        
         out_put_directory += "_ResMv=" + std::to_string(restrict_vertex_movement);
         out_put_directory += "_ConsistMv=" + std::to_string(consider_consistency_for_SSA);
