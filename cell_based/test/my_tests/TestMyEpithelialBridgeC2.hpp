@@ -73,10 +73,10 @@ public:
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // PHASE DIAGRAM SEARCH:
-        double set_feedback_strength_for_myosin_activity = 0.0;
+        double set_feedback_strength_for_myosin_activity = 0.1;
         double set_feedback_strength_for_adhesion = 0.0;
-        double set_target_shape_index = 1.75; // 3.7224 for default
-        double set_polarity_magnitude = 0.3;
+        double set_target_shape_index = 1.0; // 3.7224 for default
+        double set_polarity_magnitude = 0.0;
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -434,7 +434,7 @@ public:
         oss.str("");
         oss << "_MyoFeStr=" << std::fixed << setprecision(2) << set_feedback_strength_for_myosin_activity
             << "_p0=" << std::fixed << setprecision(2) << set_target_shape_index
-            << "_fp=" << std::scientific << setprecision(2) << set_polarity_magnitude;
+            << "_fp=" << ((polarity_magnitude>=0.01)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         output_directory += oss.str();
         time_t raw_time = time(0);
         struct tm * now = localtime(& raw_time);
@@ -450,18 +450,18 @@ public:
         oss << std::fixed << setprecision(3) << dt;
         output_directory += "/Dt=" + oss.str();
         oss.str("");
-        oss << std::scientific << setprecision(1) << cell_rearrangement_threshold;
+        oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
         output_directory += "_RearThr=" + oss.str();
         if (apply_my_change_to_make_timestep_adaptive)
         {
           oss.str("");
-          oss << std::scientific << setprecision(1) << max_movement_per_timestep;
+          oss << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(2) << max_movement_per_timestep;
           output_directory += "_MaxMvDt=" + oss.str();
         }
         if (if_consider_substrate_adhesion)
         {
           oss.str("");
-          oss << std::scientific << setprecision(1) << small_change_for_area_calculation;
+          oss << ((small_change_for_area_calculation>=0.01)? std::fixed : std::scientific) << setprecision(2) << small_change_for_area_calculation;
           output_directory += "_Dxy=" + oss.str();
         }
         if (!apply_my_change_to_make_timestep_adaptive)
@@ -475,18 +475,18 @@ public:
         output_directory += "_AddFeedb=" + std::to_string(if_consider_feedback_of_face_values);
         output_directory += "_AddRandF=" + std::to_string(add_random_force);
         output_directory += "_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
-        oss.str("");
-        oss << std::fixed << setprecision(3) << nagai_honda_membrane_surface_energy_parameter;
         
+        oss.str("");
+        oss << std::fixed << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
         output_directory += "_|Ga=" + oss.str();
         oss.str("");
         oss << std::fixed << setprecision(2) << target_shape_index;
         output_directory += "_p0=" + oss.str();
         oss.str("");
-        oss << std::scientific << setprecision(1) << nagai_honda_cell_cell_adhesion_energy_parameter;
+        oss << ((fabs(nagai_honda_cell_cell_adhesion_energy_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << nagai_honda_cell_cell_adhesion_energy_parameter;
         output_directory += "_CCAdhe=" + oss.str();
         oss.str("");
-        oss << std::scientific << setprecision(1) << nagai_honda_cell_boundary_adhesion_energy_parameter;
+        oss << ((nagai_honda_cell_boundary_adhesion_energy_parameter==0.0)? std::fixed : std::scientific) << setprecision(1) << nagai_honda_cell_boundary_adhesion_energy_parameter;
         output_directory += "_CBAdhe=" + oss.str();
         
         output_directory += "_|HasSA=" + std::to_string(if_consider_substrate_adhesion);
@@ -513,22 +513,22 @@ public:
         if (if_consider_feedback_of_face_values)
         {
           oss.str("");
-          oss << std::scientific << setprecision(1) << feedback_strength_for_myosin_activity ;
+          oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity ;
           output_directory += "_|MyoFeStr=" + oss.str();
           oss.str("");
-          oss << std::fixed << setprecision(0) << hill_coefficient_for_myosin_activity ;
+          oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity ;
           output_directory += "_MyoHill=" + oss.str();
           if (if_update_unified_cell_cell_adhesion_of_face)
           {
             oss.str("");
-            oss << std::scientific << setprecision(1) << feedback_strength_for_adhesion;
+            oss << ((feedback_strength_for_adhesion<=100.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_adhesion;
             output_directory += "_AdhFeStr=" + oss.str();
             oss.str("");
-            oss << std::fixed << setprecision(0) << hill_coefficient_for_adhesion;
+            oss << std::fixed << setprecision(1) << hill_coefficient_for_adhesion;
             output_directory += "_AdhHill=" + oss.str();
           }
           if (EMA_dont_decrease==false && if_update_unified_cell_cell_adhesion_of_face==false)
-            output_directory += "_DefaultFe";
+            output_directory += "_DefaultFeedb";
           else
           {
             output_directory += "_EMACanIn=1";
@@ -538,7 +538,7 @@ public:
             if (CCA_dont_inrease_until_shorter_than_a_threshold)  
             {
               oss.str("");
-              oss << std::fixed << setprecision(1) << CCA_dont_increase_until_shorter_than_this_value;          
+              oss << std::fixed << setprecision(2) << CCA_dont_increase_until_shorter_than_this_value;          
               output_directory += "_CCAInrThresh=" + oss.str();
             }
           }
@@ -552,10 +552,10 @@ public:
           if (consider_polarity)
           {
             oss.str("");
-            oss << std::scientific << setprecision(2) << polarity_magnitude;
+            oss << ((polarity_magnitude>=0.01)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
             output_directory += "_fp=" + oss.str();
             oss.str("");
-            oss << std::scientific << setprecision(2) << rotational_diffusion_constant;
+            oss << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
             output_directory += "_Dr=" + oss.str();
             if (vanishing_motility_for_node_in_the_strip_interval)
               output_directory += "_MotiInterval=0";
