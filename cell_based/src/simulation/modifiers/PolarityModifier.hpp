@@ -61,15 +61,12 @@ class PolarityModifier : public AbstractCellBasedSimulationModifier<DIM,DIM>
     {
         archive & boost::serialization::base_object<AbstractCellBasedSimulationModifier<DIM,DIM> >(*this);
         archive & mD;
-        archive & mDt;
         archive & mPolarityMagnitude;
     }
 
 protected:
 
     double mD;
-
-    double mDt;
 
     double mPolarityMagnitude;
 
@@ -90,11 +87,6 @@ public:
     void SetD(double D)
     {
       mD = D;
-    }
-
-    void SetDt(double Dt)
-    {
-      mDt = Dt;
     }
 
     void SetPolarityMagnitude(double polarityMagnitude)

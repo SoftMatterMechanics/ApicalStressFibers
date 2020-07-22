@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
-#define TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_
+#ifndef TESTMYEPITHELIALBRIDGEC1_HPP_
+#define TESTMYEPITHELIALBRIDGEC1_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -65,65 +65,22 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyXToroidalStripesAdhesionSimulationYAO : public AbstractCellBasedTestSuite
+class TestMyEpithelialBridgeC1 : public AbstractCellBasedTestSuite
 {
 public:
 
     void TestOscillation()
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
+        // PHASE DIAGRAM SEARCH:
+        double set_feedback_strength_for_myosin_activity = 0.0;
+        double set_feedback_strength_for_adhesion = 0.0;
+        double set_target_shape_index = 1.75; // 3.7224 for default
+        double set_polarity_magnitude = 0.175;
 
-        /* Temporarily changed important parameters:
-         * 
-         * dt=0.1; my_adaptive_dt=1; consider_consistency_for_SSA = 1; max_movement_per_timestep = 0.05;
-         * set_cell_rearrangement_threshold = 0.05;
-         * small_change_for_area_calculation = 0.2; // 0.15 default
-         * 
-         * considerSubAdh=1; StripHomo=0 (default); 0)(default)SSATop=-3; SSABottom=-0.5; SSALeadTopLeng=3.0; 1)SSA=-3;
-         * considerResSubAdh=1; RSA=-0.5; IgnoreRSATop=0;
-         * 
-         * cell_division=1; time_one_division=25;
-         * Ga=0.1;
-         * 
-         * use_my_detach_pattern_method = 1;
-         * 
-         * feeback=1; 1,8; 0,8; form=(0),0,1,1
-         * p0=4.0;
-         * HasRandomForce=1; fp=0.2; Dr=0.01;
-         * 
-        */
-
-        // phase diagram:
-        bool if_consider_feedback_of_face_values = false; // !feedback!
-        double set_feedback_strength_for_myosin_activity = 1.0;
-        if (if_consider_feedback_of_face_values == false)
-          set_feedback_strength_for_myosin_activity = 0.0;
-        double set_target_shape_index = 1.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
-        double set_polarity_magnitude = 0.0;
-
-       
-        // output directory
-        std::ostringstream oss;
-        std::string out_put_directory = "EpithelialBridgeSimulation/LookForMovementPatterns_StartFromJuly20/";
-        time_t raw_time = time(0);   // get time now
-        struct tm * now = localtime(& raw_time);
-        oss.str("");
-        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
-            << ' ' << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        out_put_directory += "__YAO__StartTime=" + oss.str();
-        out_put_directory += "__PHASE_DIAGRAM_";
-        oss.str("");
-        oss << std::scientific << setprecision(1) << set_feedback_strength_for_myosin_activity;
-        out_put_directory += "_MyoFeStr=" + oss.str();
-        oss.str("");
-        oss << std::fixed << setprecision(2) << set_target_shape_index;
-        out_put_directory += "_p0=" + oss.str();
-        oss.str("");
-        oss << std::scientific << setprecision(2) << set_polarity_magnitude;
-        out_put_directory += "_fp=" + oss.str();
-        
+        /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
-        double set_dt = 0.1; // 1.0/round(1.0/(0.01*120.0/50.0));
+        double set_dt = 0.1;
         bool apply_my_change_to_make_timestep_adaptive = true;
         bool consider_consistency_for_SSA = true;
         double max_movement_per_timestep = 0.05;
@@ -152,44 +109,52 @@ public:
         // energy parameter
         double set_nagai_honda_membrane_surface_energy_parameter = 0.1;
         bool set_use_fixed_target_area = false;
-        // double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.72
+        // double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
           // substrate adhesion
         bool if_consider_substrate_adhesion = true;
             // strip substrate adhesion
         bool if_substrate_adhesion_is_homogeneous = false;
               // if homogeneous
-        double set_homogeneous_substrate_adhesion_parameter = -3.0;//
+        double set_homogeneous_substrate_adhesion_parameter = -3.0;
               // if not homogeneous
         double set_substrate_adhesion_leading_top_length = 3.0;
         double set_substrate_adhesion_parameter_at_leading_top= -3.0;
         double set_substrate_adhesion_parameter_below_leading_top = -0.5;
                 // detach pattern:
         bool use_my_detach_pattern_method = true;
+        if (use_my_detach_pattern_method)
+          assert(if_substrate_adhesion_is_homogeneous == false);
             // reservoir substrate adhesion
         bool if_consider_reservoir_substrate_adhesion = true;// true for default
+        if (!if_consider_substrate_adhesion)
+          assert(if_consider_reservoir_substrate_adhesion==false);
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
         double set_reservoir_substrate_adhesion_parameter = -0.5;//
         
         // feedback
-        // bool if_consider_feedback_of_face_values = true; // !feedback!
+        bool if_consider_feedback_of_face_values = true; // !feedback!
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true;
-        bool if_update_unified_cell_cell_adhesion_of_face = false;//false for default feedback without AdhesionFeedback!
+        bool if_update_unified_cell_cell_adhesion_of_face = true;//false for default feedback without AdhesionFeedback!
         int case_number_of_membrane_surface_energy_form = 2; // 2 for new membr_surf_energy form1, 3 for form2.
-        if (if_consider_feedback_of_face_values)
-          assert(case_number_of_membrane_surface_energy_form != 0);
-        else
-          case_number_of_membrane_surface_energy_form = 0;
         bool set_EMA_dont_decrease = false;// false for default feedback without AdhesionFeedback!
         bool set_CCA_dont_increase = true;// true for default feedback without AdhesionFeedback!
         bool set_CCA_dont_decrease = true;// true for default feedback without AdhesionFeedback!
         bool set_CCA_dont_inrease_until_shorter_than_a_threshold = true;
         double set_CCA_dont_increase_until_shorter_than_this_length = 0.2;
-        // double set_feedback_strength_for_myosin_activity = 1;
+        // double set_feedback_strength_for_myosin_activity = 0;
         double set_hill_coefficient_for_myosin_activity = 8.0;
-        double set_feedback_strength_for_adhesion = 0;
+        // double set_feedback_strength_for_adhesion = 0;
         double set_hill_coefficient_for_adhesion = 8.0;
+        if (set_feedback_strength_for_myosin_activity == 0.0)
+          if_consider_feedback_of_face_values = false; // typically, we must have myosin feedback first.
+        if (set_feedback_strength_for_adhesion == 0.0)
+          if_update_unified_cell_cell_adhesion_of_face = false;
+        if (if_consider_feedback_of_face_values)
+          assert(case_number_of_membrane_surface_energy_form != 0);
+        else
+          case_number_of_membrane_surface_energy_form = 0;        
         
         // random force and polarity
         bool add_random_force = true;
@@ -232,7 +197,6 @@ public:
         /*------------------------------START: Cells and Cell population--------------------------*/
         std::vector<CellPtr> cells;
         MAKE_PTR(TransitCellProliferativeType, p_transit_type);
-        // CellsGenerator<UniformG1GenerationalCellCycleModel, 2> cells_generator;
         CellsGenerator<BernoulliTrialCellCycleModel, 2> cells_generator;
         bool use_bernoulli_trial_cell_cycle_model = true;
         cells_generator.SetUseBernoulliTrialCellCycleModel(use_bernoulli_trial_cell_cycle_model);
@@ -265,9 +229,9 @@ public:
         /*---------------------------------START: Add Numerical Method-----------------------------*/
         boost::shared_ptr<ForwardEulerNumericalMethod<2,2>> p_numerical_method(new ForwardEulerNumericalMethod<2,2>());
         p_numerical_method->SetCellPopulation(&cell_population);
-        std::vector< boost::shared_ptr<AbstractForce<2, 2>> > force_collection = simulator.rGetForceCollection();
         //Note: Here the address of std::vector of force collections are different from that in simulator!
         //But the corresponding shared_ptrs in the vectors should be the same.
+        std::vector< boost::shared_ptr<AbstractForce<2, 2>> > force_collection = simulator.rGetForceCollection();
         p_numerical_method->SetForceCollection(&force_collection);
         p_numerical_method->SetMaxMovementPerTimestep(max_movement_per_timestep);
         p_numerical_method->SetOutputNumericalMethodInformation(set_output_numerical_method_information);
@@ -383,13 +347,8 @@ public:
           MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
           polarity_magnitude = set_polarity_magnitude;
           rotational_diffusion_constant = set_rotational_diffusion_constant;
-          double Dt = set_dt;
-          double angle_for_initialization = M_PI;// 0 for all upwards; PI for all directions
           p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
-          // tmp: delete this method later!
-          p_polarity_modifier->SetDt(Dt);
-          p_polarity_modifier->SetAngleForInitialization(angle_for_initialization);
           simulator.AddSimulationModifier(p_polarity_modifier);
         }
         /*-----------------------------END: RandomForce and PolarityModifier---------------------------*/
@@ -467,29 +426,57 @@ public:
         
 
         /*-------------------------------START: Output Directory---------------------------------*/
+        // output directory
+        std::ostringstream oss;
+        std::string out_put_directory = 
+            "EpithelialBridgeSimulation/LookForMovementPatterns_StartFromJuly22/PHASE-DIAGRAM";
+
+        oss.str("");
+        oss << "_MyoFeStr=" << std::fixed << setprecision(2) << set_feedback_strength_for_myosin_activity
+            << "_p0=" << std::fixed << setprecision(2) << set_target_shape_index
+            << "_fp=" << std::scientific << setprecision(2) << set_polarity_magnitude;
+        out_put_directory += oss.str();
+        time_t raw_time = time(0);
+        struct tm * now = localtime(& raw_time);
+        oss.str("");
+        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
+            << ", " << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        out_put_directory += "_TimeStamp=" + oss.str();
+        
         // concise information
         oss.str("");
         oss << std::fixed << setprecision(3) << dt;
         out_put_directory += "/Dt=" + oss.str();
-        out_put_directory += "_MyAdaptDt=" + std::to_string(apply_my_change_to_make_timestep_adaptive);        
-        out_put_directory += "_ResMv=" + std::to_string(restrict_vertex_movement);
-        out_put_directory += "_ConsistMv=" + std::to_string(consider_consistency_for_SSA);
         oss.str("");
-        oss << std::scientific << setprecision(1) << max_movement_per_timestep;
-        out_put_directory += "_MaxMvDt=" + oss.str();
+        oss << std::scientific << setprecision(1) << cell_rearrangement_threshold;
+        out_put_directory += "_RearThr=" + oss.str();
+        if (apply_my_change_to_make_timestep_adaptive)
+        {
+          oss.str("");
+          oss << std::scientific << setprecision(1) << max_movement_per_timestep;
+          out_put_directory += "_MaxMvDt=" + oss.str();
+        }
         if (if_consider_substrate_adhesion)
         {
           oss.str("");
           oss << std::scientific << setprecision(1) << small_change_for_area_calculation;
           out_put_directory += "_Dxy=" + oss.str();
         }
-        oss.str("");
-        oss << std::scientific << setprecision(1) << cell_rearrangement_threshold;
-        out_put_directory += "_RearThr=" + oss.str();
-        out_put_directory += "_|_Divi=" + std::to_string(run_with_birth);
+        if (!apply_my_change_to_make_timestep_adaptive)
+          out_put_directory += "_MyAdaptDt=0";
+        if (!restrict_vertex_movement)
+          out_put_directory += "_ResMv=0";
+        if (!consider_consistency_for_SSA)
+          out_put_directory += "_ConsistMv=0";
+
+        out_put_directory += "_|Divi=" + std::to_string(run_with_birth);
+        out_put_directory += "_AddFeedb=" + std::to_string(if_consider_feedback_of_face_values);
+        out_put_directory += "_AddRandF=" + std::to_string(add_random_force);
+        out_put_directory += "_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
         oss.str("");
         oss << std::fixed << setprecision(3) << nagai_honda_membrane_surface_energy_parameter;
-        out_put_directory += "_|_Ga=" + oss.str();
+        
+        out_put_directory += "_|Ga=" + oss.str();
         oss.str("");
         oss << std::fixed << setprecision(2) << target_shape_index;
         out_put_directory += "_p0=" + oss.str();
@@ -499,16 +486,16 @@ public:
         oss.str("");
         oss << std::scientific << setprecision(1) << nagai_honda_cell_boundary_adhesion_energy_parameter;
         out_put_directory += "_CBAdhe=" + oss.str();
-        out_put_directory += "_|_HasSA=" + std::to_string(if_consider_substrate_adhesion);
+        
+        out_put_directory += "_|HasSA=" + std::to_string(if_consider_substrate_adhesion);
         if (if_consider_substrate_adhesion)
+        {
           out_put_directory += "_HomoSSA=" + std::to_string(if_substrate_adhesion_is_homogeneous);
-        out_put_directory += "_|_HasRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
-        out_put_directory += "_|_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
-        out_put_directory += "_|_AddFeedb=" + std::to_string(if_consider_feedback_of_face_values);
-        out_put_directory += "_|_AddRandF=" + std::to_string(add_random_force);
+          out_put_directory += "_HasRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
+        }
         
         // detailed information:
-        out_put_directory += "/||";
+        out_put_directory += "/";
         if (run_with_birth)
         {
           oss.str("");
@@ -519,35 +506,6 @@ public:
           out_put_directory += "_GrRate=" + oss.str();
           if (use_my_division_rule_along_with_modifier)
             out_put_directory += "_DiviDtFixed=1";
-        }
-        if(if_consider_substrate_adhesion)
-        {
-          if (if_substrate_adhesion_is_homogeneous)
-          {
-            oss.str("");
-            oss << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
-            out_put_directory += "_|HomoSSA=" + oss.str();
-          }
-          else
-          {
-            oss.str("");
-            oss << std::fixed << setprecision(1) << substrate_adhesion_leading_top_length;
-            out_put_directory += "_|SSALeadLeng=" + oss.str();
-            oss.str("");
-            oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_at_leading_top;
-            out_put_directory += "_SSATop=" + oss.str();
-            oss.str("");
-            oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_below_leading_top;
-            out_put_directory += "_SSABelow=" + oss.str();
-          }
-        }
-        if(if_consider_reservoir_substrate_adhesion)
-        {
-          // out_put_directory += "_IgnRSABottom=" + std::to_string(if_ignore_reservoir_substrate_adhesion_at_bottom);
-          oss.str("");
-          oss << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
-          out_put_directory += "_|_RSA=" + oss.str();
-          out_put_directory += "_ConsiRSATop=" + std::to_string(!if_ignore_reservoir_substrate_adhesion_at_top);
         }
 
         if (if_consider_feedback_of_face_values)
@@ -567,7 +525,6 @@ public:
             oss << std::fixed << setprecision(0) << hill_coefficient_for_adhesion;
             out_put_directory += "_AdhHill=" + oss.str();
           }
-          
           if (EMA_dont_decrease==false && if_update_unified_cell_cell_adhesion_of_face==false)
             out_put_directory += "_DefaultFe";
           else
@@ -584,6 +541,7 @@ public:
             }
           }
         }
+
         if (add_random_force)
         {
           oss.str("");
@@ -597,12 +555,46 @@ public:
             oss.str("");
             oss << std::scientific << setprecision(2) << rotational_diffusion_constant;
             out_put_directory += "_Dr=" + oss.str();
-            out_put_directory += "_MotiInterval=" + std::to_string(!vanishing_motility_for_node_in_the_strip_interval);
+            if (vanishing_motility_for_node_in_the_strip_interval)
+              out_put_directory += "_MotiInterval=0";
+          }
+        }   
+
+        if(if_consider_substrate_adhesion)
+        {
+          if (if_substrate_adhesion_is_homogeneous)
+          {
+            oss.str("");
+            oss << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
+            out_put_directory += "_|HomoSSA=" + oss.str();
+          }
+          else
+          {
+            oss.str("");
+            oss << std::fixed << setprecision(1) << substrate_adhesion_leading_top_length;
+            out_put_directory += "_|SSA:LeadLeng=" + oss.str();
+            oss.str("");
+            oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_at_leading_top;
+            out_put_directory += "_Top=" + oss.str();
+            oss.str("");
+            oss << std::fixed << setprecision(1) << substrate_adhesion_parameter_below_leading_top;
+            out_put_directory += "_Below=" + oss.str();
+          }
+          if(if_consider_reservoir_substrate_adhesion)
+          {
+            oss.str("");
+            oss << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+            out_put_directory += "_RSA=" + oss.str();
+            if (if_ignore_reservoir_substrate_adhesion_at_top)
+              out_put_directory += "_ConsiRSATop=0";
+            if (if_ignore_reservoir_substrate_adhesion_at_bottom)
+              out_put_directory += "_ConsiRSABott=0";
+
           }
         }
 
         simulator.SetOutputDirectory(out_put_directory);
-        std::cout << std::endl << "OutputDirectory: " << out_put_directory << std::endl;
+        std::cout << std::endl << "OutputDirectoryIsSet: " << out_put_directory << std::endl;
         /*-------------------------------END: Output Directory---------------------------------*/
 
         simulator.Solve();
@@ -610,4 +602,4 @@ public:
 
 };
 
-#endif /* TESTMYXTOROIDALSTRIPESADHESIONSIMULATIONYAO_HPP_ */
+#endif /* TESTMYEPITHELIALBRIDGEC1_HPP_ */

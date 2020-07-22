@@ -41,7 +41,6 @@ template<unsigned DIM>
 PolarityModifier<DIM>::PolarityModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
       mD(0.1),
-      mDt(0.1),
       mPolarityMagnitude(0.1),
       mAngleForInitialization(M_PI)
 {
