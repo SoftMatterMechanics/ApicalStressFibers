@@ -1,3 +1,10 @@
 my_tests/TestMyEpithelialBridgeA.hpp
-my_tests/TestMyEpithelialBridgeC.hpp
-my_tests/TestMyEpithelialBridgeF.hpp
+my_tests/TestMyEpithelialBridgeC1.hpp
+my_tests/TestMyEpithelialBridgeC2.hpp
+my_tests/TestMyEpithelialBridgeC3.hpp
+my_tests/TestMyEpithelialBridgeF1.hpp
+my_tests/TestMyEpithelialBridgeF2.hpp
+my_tests/TestMyEpithelialBridgeF3.hpp
+my_tests/TestMyEpithelialBridgeF4.hpp
+my_tests/TestMyEpithelialBridgeF5.hpp
+my_tests/TestMyEpithelialBridgeF6.hpp
