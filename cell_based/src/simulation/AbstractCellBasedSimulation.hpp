@@ -111,15 +111,6 @@ protected:
     /** Time step. */
     double mDt;
 
-    // my changes
-    bool mApplyMyChangesToMakeTimestepAdaptive;
-
-    double mAdaptiveDt;
-
-    bool mApplySamplingTimeInsteadOfSamplingTimestep;
-
-    double mSamplingTime;
-
     /** Time to run the Solve() method up to. */
     double mEndTime;
 
@@ -179,6 +170,21 @@ protected:
      * of timesteps at which results are written to file.
      */
     unsigned mSamplingTimestepMultiple;
+
+    // my changes
+    bool mApplyMyChangesToMakeTimestepAdaptive;
+
+    double mAdaptiveDt;
+
+    bool mApplySamplingTimeInsteadOfSamplingTimestep;
+
+    double mSamplingTime;
+
+    bool mOmitFileNameResultsFromTimeX;
+
+    bool mOutputSimulationInformationToFile;
+
+    std::string mSimulationInformation;
 
     /**
      * Writes out special information about the mesh to the visualizer.
@@ -342,6 +348,21 @@ public:
     void SetSamplingTime(double samplingTime)
     {
       mSamplingTime = samplingTime;
+    }
+
+    void SetOmitFileNameResultsFromTimeX(bool omitFileNameResultsFromTimeX)
+    {
+      mOmitFileNameResultsFromTimeX = omitFileNameResultsFromTimeX;
+    }
+
+    void SetOutputSimulationInformationToFile(bool outputSimulationInformationToFile)
+    {
+      mOutputSimulationInformationToFile = outputSimulationInformationToFile;
+    }
+
+    void InputSimulationInformation(std::string simulationInformation)
+    {
+      mSimulationInformation = simulationInformation;
     }
 
     /**

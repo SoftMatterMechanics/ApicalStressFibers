@@ -62,7 +62,9 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mNumDeaths(0),
       mOutputDivisionLocations(false),
       mOutputCellVelocities(false),
-      mSamplingTimestepMultiple(1)
+      mSamplingTimestepMultiple(1),
+      mOmitFileNameResultsFromTimeX(false),
+      mOutputSimulationInformationToFile(false)
 {
     // Set a random seed of 0 if it wasn't specified earlier
     RandomNumberGenerator::Instance();
@@ -354,6 +356,8 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
     time_string << time_now;
 
     std::string results_directory = mOutputDirectory +"/results_from_time_" + time_string.str();
+    if (mOmitFileNameResultsFromTimeX)
+        results_directory = mOutputDirectory;
     mSimulationOutputDirectory = results_directory;
 
     // Set up simulation
@@ -678,6 +682,15 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::OutputSimulationSetup()
         ExecutableSupport::GetBuildInfo(build_info);
         *build_info_file << build_info;
         build_info_file->close();
+
+        // my tmp changes
+        if (mOutputSimulationInformationToFile)
+        {
+            out_stream simulation_info_file = output_file_handler.OpenOutputFile("simulation.info");        
+            std::string simulation_info = mSimulationInformation;
+            *simulation_info_file << simulation_info;
+            simulation_info_file->close();
+        }
 
         // Output simulation parameter and setup details
         out_stream parameter_file = output_file_handler.OpenOutputFile("results.parameters");
