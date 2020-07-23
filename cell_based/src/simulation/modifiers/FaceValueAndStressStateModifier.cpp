@@ -38,31 +38,37 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template<unsigned DIM>
 FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
+      mIfConsiderFeedbackOfFaceValues(false),
+      mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
+      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
+      mIfConsiderFeedbackOfCellCellAdhesion(false),
+
+      mEMADontDecreaseWhenEdgeShrink(false),
+      mCCADontDecreaseWhenEdgeExpand(false),
+      mCCAIncreasingHasAThresholdOfEdgeLength(false),
+      mCCAIncreasingThresholdOfEdgeLengthPercentage(0.5),
+
+      mEdgeLengthAtRest(sqrt(M_PI/(6*sqrt(3)/4))),
+      mFeedbackStrengthForMyosinActivity(1.0),
+      mHillCoefficientForMyosinActivity(8.0),
+      mFeedbackStrengthForAdhesion(1.0),
+      mHillCoefficientForAdhesion(8.0),
+
+      mIfCalculateStressState(true),
+      mCaseNumberOfMembraneSurfaceEnergyForm(0),
+      mFixedTargetArea(M_PI),
+      mFixedTargetPerimeter(6*sqrt(M_PI/(6*sqrt(3)/4))),
       mNagaiHondaDeformationEnergyParameter(1.0),
       mNagaiHondaMembraneSurfaceEnergyParameter(0.1),
       mNagaiHondaCellCellAdhesionEnergyParameter(0.0),
       mNagaiHondaCellBoundaryAdhesionEnergyParameter(0.0),
 
-      mCaseNumberOfMembraneSurfaceEnergyForm(0),
-      mFixedTargetArea(M_PI),
-      mFixedTargetPerimeter(6*sqrt(M_PI/(6*sqrt(3)/4))),
+      mUseMyDivisionRuleAlongWithModifier(false),
+      mDivisionTime(DOUBLE_UNSET),
 
-      mFeedbackStrengthForMyosinActivity(1.0),
-      mHillCoefficientForMyosinActivity(2.0),
-      mEdgeLengthAtRest(sqrt(M_PI/(6*sqrt(3)/4))),
-      mFeedbackStrengthForAdhesion(1.0),
-      mHillCoefficientForAdhesion(2.0),
-      mEMADontDecreaseWhenEdgeShrink(true),
-      mCCADontDecreaseWhenEdgeExpand(true),
-      mCCADontInreaseWhenEdgeShrink(false),
-      mCCADontInreaseUntilShorterThanAThreshold(false),
-      mCCADontInreaseUntilShorterThanThisValue(0.2),
-      mIfOutputModifierInformation(false),
-      mIfCalculateStressState(true),
-      mIfConsiderFeedbackOfFaceValues(false),
-      mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
-      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
-      mWriteGroupNumberToCell(false)
+      mWriteGroupNumberToCell(false),
+
+      mIfOutputModifierInformation(false)
 {
 }
 
@@ -76,10 +82,10 @@ void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPop
 {
     UpdateFaceValuesAndStressStates(rCellPopulation);
     UpdateCellAreas(rCellPopulation);
-    if (mWriteGroupNumberToCell)
-        UpdateGroupNumbers(rCellPopulation);
     if (mUseMyDivisionRuleAlongWithModifier)
         UpdateForCellDivision(rCellPopulation);
+    if (mWriteGroupNumberToCell)
+        UpdateGroupNumbers(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -91,92 +97,11 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM
      */
     UpdateFaceValuesAndStressStates(rCellPopulation);
     UpdateCellAreas(rCellPopulation);
-    if (mWriteGroupNumberToCell)
-        UpdateGroupNumbers(rCellPopulation);
     if (mUseMyDivisionRuleAlongWithModifier)
         SetupSolveForCellDivision(rCellPopulation);
+    if (mWriteGroupNumberToCell)
+        UpdateGroupNumbers(rCellPopulation);
 }
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
-{
-    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
-        cell_iter != rCellPopulation.rGetCells().end();
-        ++cell_iter)
-    {
-        (*cell_iter)->SetUseMyDivisionRuleAlongWithModifier(true);
-    }
-}
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
-{
-        SimulationTime* p_time = SimulationTime::Instance();
-        bool at_division_time = (p_time->GetTime() -mDivisionTime/2.0 - mDivisionTime*floor((p_time->GetTime()-mDivisionTime/2.0)/mDivisionTime)) < p_time->GetTimeStep();
-        if (at_division_time)
-        {
-            unsigned division_element_index = (unsigned)floor(RandomNumberGenerator::Instance()->ranf()*( (double)(rCellPopulation.GetNumAllCells())-0.01 ));
-            assert(division_element_index < rCellPopulation.GetNumAllCells());
-            std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
-            for (unsigned i=0; i< division_element_index; i++)
-                cell_iter++;
-            (*cell_iter)->SetCanDivide(true);
-        }
-}
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
-{
-    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
-    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
-        cell_iter != rCellPopulation.rGetCells().end();
-        ++cell_iter)
-    {
-        UpdateCellAreaOfCell(rCellPopulation, *cell_iter);
-    }
-}
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
-{
-    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
-    {
-        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
-    }
-
-    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
-
-    double cell_area = p_mesh->GetVolumeOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
-    pCell->GetCellData()->SetItem("cell area", cell_area);
-}
-
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
-{
-    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
-    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
-        cell_iter != rCellPopulation.rGetCells().end();
-        ++cell_iter)
-    {
-        UpdateGroupNumberOfCell(rCellPopulation, *cell_iter);
-    }
-}
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
-{
-    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
-    {
-        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
-    }
-
-    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
-
-    unsigned group_number = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )->GetGroupNumber();
-    pCell->GetCellData()->SetItem("group number", group_number);
-}
-
 
 template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
@@ -214,7 +139,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                             {
                                 this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
 
-                                if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                                if (mIfConsiderFeedbackOfCellCellAdhesion)
                                     this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                             }
 
@@ -223,7 +148,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                         {
                             this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
 
-                            if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                            if (mIfConsiderFeedbackOfCellCellAdhesion)
                                 this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                         }
                         
@@ -233,84 +158,12 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                 {
                     this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
                     
-                    if (mIfUpdateUnifiedCellCellAdhesionOfFace)
+                    if (mIfConsiderFeedbackOfCellCellAdhesion)
                         this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                 }
             }
         }
     }
-}
-
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
-{
-    double dt = SimulationTime::Instance()->GetTimeStep();
-    double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
-    double n = this->mHillCoefficientForMyosinActivity;
-    double edge_length_at_rest = this->mEdgeLengthAtRest;
-    double alpha = 2.0*feedback_strength;
-    double beta = 1.0*feedback_strength;
-    double KL = 1.0;
-
-    VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
-    double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
-    double lambda = edge_length/ edge_length_at_rest;//(1.0*sqrt(M_PI/(6*sqrt(3)/4)));
-
-    // // tmp
-    // std::cout << "lambda=" << lambda << std::endl;
-    double unified_edge_myosin_activty = p_face->GetUnifiedEdgeMyosinActivty();
-    double changing_rate = alpha*pow(lambda,n)/(KL+pow(lambda,n))-beta*unified_edge_myosin_activty;
-    if (mEMADontDecreaseWhenEdgeShrink && lambda<1.0)
-    {
-        changing_rate = 0.0;
-    }
-    unified_edge_myosin_activty += dt*changing_rate;
-    p_face->SetUnifiedEdgeMyosinActivty(unified_edge_myosin_activty);
-    if (mIfOutputModifierInformation && random()%100000==0)
-    {
-        std::cout << std::endl<< "In FaceValueAndStressStateModifier::UpdateUnifiedEdgeMyosinActivityOfFace: the new UnifiedEdgeMyosinActivty=";
-        std::cout << p_face->GetUnifiedEdgeMyosinActivty();
-        std::cout << std::endl<< "feedback_strength=" << feedback_strength << " alpha=" << alpha << " beta=" <<beta << " KL=" << KL;
-        std::cout << " n=" << n << " edge_length_at_rest=" << edge_length_at_rest << " the edge length=" << edge_length << " lambda=" << lambda;
-        std::cout << " changing_rate=" << changing_rate;
-    }
-}
-
-template<unsigned DIM>
-void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
-{
-    double dt = SimulationTime::Instance()->GetTimeStep();
-    double feedback_strength = this->mFeedbackStrengthForAdhesion;
-    double n = this->mHillCoefficientForAdhesion;
-    double edge_length_at_rest = this->mEdgeLengthAtRest;
-    double alpha = 2.0*feedback_strength;
-    double beta = 1.0*feedback_strength;
-    double KL = 1.0;
-
-    VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
-    double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
-    double lambda = edge_length/ edge_length_at_rest;//(1.0*sqrt(M_PI/(6*sqrt(3)/4)));
-    // // tmp
-    // std::cout << "lambda=" << lambda << std::endl;
-    double corresponding_lambda = 2.0-lambda;
-    double unified_cell_cell_adhesion_energy_parameter = p_face->GetUnifiedCellCellAdhesionEnergyParameter();
-    double changing_rate = alpha*pow(corresponding_lambda,n)/(KL+pow(corresponding_lambda,n))-beta*unified_cell_cell_adhesion_energy_parameter;
-    if (mCCADontDecreaseWhenEdgeExpand && lambda>1.0)
-    {
-        changing_rate = 0.0;
-    }
-    if (mCCADontInreaseUntilShorterThanAThreshold && lambda>mCCADontInreaseUntilShorterThanThisValue)
-    {
-        changing_rate = 0.0;
-    }
-    if (mCCADontInreaseWhenEdgeShrink && lambda<1.0)
-    {
-        changing_rate = 0.0;
-    }
-
-    unified_cell_cell_adhesion_energy_parameter += changing_rate*dt;
-    p_face->SetUnifiedCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
 }
 
 template<unsigned DIM>
@@ -403,6 +256,151 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
     pCell->GetCellData()->SetItem("Stress1", stress_1);
     pCell->GetCellData()->SetItem("Stress2", stress_2);
 
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
+{
+    double dt = SimulationTime::Instance()->GetTimeStep();
+    double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
+    double n = this->mHillCoefficientForMyosinActivity;
+    double edge_length_at_rest = this->mEdgeLengthAtRest;
+    double alpha = 2.0*feedback_strength;
+    double beta = 1.0*feedback_strength;
+    double KL = 1.0;
+
+    VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
+    double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
+    double lambda = edge_length/ edge_length_at_rest;//(1.0*sqrt(M_PI/(6*sqrt(3)/4)));
+
+    // // tmp
+    // std::cout << "lambda=" << lambda << std::endl;
+    double unified_edge_myosin_activty = p_face->GetUnifiedEdgeMyosinActivty();
+    double changing_rate = alpha*pow(lambda,n)/(KL+pow(lambda,n))-beta*unified_edge_myosin_activty;
+    if (mEMADontDecreaseWhenEdgeShrink && lambda<1.0)
+    {
+        changing_rate = 0.0;
+    }
+    unified_edge_myosin_activty += dt*changing_rate;
+    p_face->SetUnifiedEdgeMyosinActivty(unified_edge_myosin_activty);
+    if (mIfOutputModifierInformation && random()%100000==0)
+    {
+        std::cout << std::endl<< "In FaceValueAndStressStateModifier::UpdateUnifiedEdgeMyosinActivityOfFace: the new UnifiedEdgeMyosinActivty=";
+        std::cout << p_face->GetUnifiedEdgeMyosinActivty();
+        std::cout << std::endl<< "feedback_strength=" << feedback_strength << " alpha=" << alpha << " beta=" <<beta << " KL=" << KL;
+        std::cout << " n=" << n << " edge_length_at_rest=" << edge_length_at_rest << " the edge length=" << edge_length << " lambda=" << lambda;
+        std::cout << " changing_rate=" << changing_rate;
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
+{
+    double dt = SimulationTime::Instance()->GetTimeStep();
+    double feedback_strength = this->mFeedbackStrengthForAdhesion;
+    double n = this->mHillCoefficientForAdhesion;
+    double edge_length_at_rest = this->mEdgeLengthAtRest;
+    double alpha = 2.0*feedback_strength;
+    double beta = 1.0*feedback_strength;
+    double KL = 1.0;
+
+    VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
+    double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
+    double lambda = edge_length/ edge_length_at_rest;//(1.0*sqrt(M_PI/(6*sqrt(3)/4)));
+    // // tmp
+    // std::cout << "lambda=" << lambda << std::endl;
+    double corresponding_lambda = 2.0-lambda;
+    double unified_cell_cell_adhesion_energy_parameter = p_face->GetUnifiedCellCellAdhesionEnergyParameter();
+    double changing_rate = alpha*pow(corresponding_lambda,n)/(KL+pow(corresponding_lambda,n))-beta*unified_cell_cell_adhesion_energy_parameter;
+    if (mCCADontDecreaseWhenEdgeExpand && lambda>1.0)
+    {
+        changing_rate = 0.0;
+    }
+    if (mCCAIncreasingHasAThresholdOfEdgeLength && lambda>mCCAIncreasingThresholdOfEdgeLengthPercentage)
+    {
+        changing_rate = 0.0;
+    }
+    unified_cell_cell_adhesion_energy_parameter += changing_rate*dt;
+    p_face->SetUnifiedCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        UpdateCellAreaOfCell(rCellPopulation, *cell_iter);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    double cell_area = p_mesh->GetVolumeOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+    pCell->GetCellData()->SetItem("cell area", cell_area);
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        (*cell_iter)->SetUseMyDivisionRuleAlongWithModifier(true);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+        SimulationTime* p_time = SimulationTime::Instance();
+        bool at_division_time = (p_time->GetTime() -mDivisionTime/2.0 - mDivisionTime*floor((p_time->GetTime()-mDivisionTime/2.0)/mDivisionTime)) < p_time->GetTimeStep();
+        if (at_division_time)
+        {
+            unsigned division_element_index = (unsigned)floor(RandomNumberGenerator::Instance()->ranf()*( (double)(rCellPopulation.GetNumAllCells())-0.01 ));
+            assert(division_element_index < rCellPopulation.GetNumAllCells());
+            std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+            for (unsigned i=0; i< division_element_index; i++)
+                cell_iter++;
+            (*cell_iter)->SetCanDivide(true);
+        }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        UpdateGroupNumberOfCell(rCellPopulation, *cell_iter);
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    unsigned group_number = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )->GetGroupNumber();
+    pCell->GetCellData()->SetItem("group number", group_number);
 }
 
 template<unsigned DIM>

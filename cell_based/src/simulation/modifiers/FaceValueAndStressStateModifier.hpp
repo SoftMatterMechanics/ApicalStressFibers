@@ -65,36 +65,37 @@ class FaceValueAndStressStateModifier : public AbstractCellBasedSimulationModifi
 
 protected:
 
+    bool mIfConsiderFeedbackOfFaceValues;
+    bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
+    bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
+    bool mIfConsiderFeedbackOfCellCellAdhesion;
+
+    bool mEMADontDecreaseWhenEdgeShrink;
+    bool mCCADontDecreaseWhenEdgeExpand;
+    bool mCCAIncreasingHasAThresholdOfEdgeLength;
+    double mCCAIncreasingThresholdOfEdgeLengthPercentage;
+
+    double mEdgeLengthAtRest;
+    double mFeedbackStrengthForMyosinActivity;
+    double mHillCoefficientForMyosinActivity;
+    double mFeedbackStrengthForAdhesion;
+    double mHillCoefficientForAdhesion;
+
+    bool mIfCalculateStressState;
+    unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
+    double mFixedTargetArea;
+    double mFixedTargetPerimeter;
     double mNagaiHondaDeformationEnergyParameter;
     double mNagaiHondaMembraneSurfaceEnergyParameter;
     double mNagaiHondaCellCellAdhesionEnergyParameter;
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
-    unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
-    double mFixedTargetArea;
-    double mFixedTargetPerimeter;
-    double mFeedbackStrengthForMyosinActivity;
-    double mHillCoefficientForMyosinActivity;
-    double mEdgeLengthAtRest;
-    bool mIfUpdateUnifiedCellCellAdhesionOfFace;
-    double mFeedbackStrengthForAdhesion;
-    double mHillCoefficientForAdhesion;
-    bool mEMADontDecreaseWhenEdgeShrink;
-    bool mCCADontDecreaseWhenEdgeExpand;
-    bool mCCADontInreaseWhenEdgeShrink;
-    bool mCCADontInreaseUntilShorterThanAThreshold;
-    double mCCADontInreaseUntilShorterThanThisValue;
-    bool mIfOutputModifierInformation;
-    bool mIfCalculateStressState;
-    bool mIfConsiderFeedbackOfFaceValues;
-    bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
-    bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
-
-    bool mWriteGroupNumberToCell;
-
     bool mUseMyDivisionRuleAlongWithModifier;
     double mDivisionTime;
 
+    bool mWriteGroupNumberToCell;
+
+    bool mIfOutputModifierInformation;
 
 public:
 
@@ -112,6 +113,108 @@ public:
 
     virtual void SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory);
     
+    // my chagnes
+    void UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
+    void UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
+
+    void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
+
+    void UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+    
+    void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    
+    void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+    void UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    
+    void UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+    void SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
+    void UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
+    // feedback form:
+    void SetConsiderFeedbackOfFaceValues(bool ifConsiderFeedbackOfFaceValues)
+    {
+      mIfConsiderFeedbackOfFaceValues = ifConsiderFeedbackOfFaceValues;
+    }
+
+    void SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(bool ifConsiderFeedbackOfFaceValuesOnlyForBoundaryCells)
+    {
+      mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells = ifConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
+    }
+
+    void SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(bool ifConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells)
+    {
+      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells = ifConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
+    }
+
+    void SetConsiderFeedbackOfCellCellAdhesion(bool ifConsiderFeedbackOfCellCellAdhesion)
+    {
+      mIfConsiderFeedbackOfCellCellAdhesion = ifConsiderFeedbackOfCellCellAdhesion;
+    }
+
+    // if feedback includes only strengthening or not
+    void SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
+        bool EMADontDecrease,
+        bool CCADontDecrease,
+        bool CCAIncreasingHasAThresholdOfEdgeLength,
+        double CCAIncreasingThresholdOfEdgeLengthPercentage)
+    {
+      mEMADontDecreaseWhenEdgeShrink = EMADontDecrease;
+      mCCADontDecreaseWhenEdgeExpand = CCADontDecrease;
+      mCCAIncreasingHasAThresholdOfEdgeLength = CCAIncreasingHasAThresholdOfEdgeLength;
+      mCCAIncreasingThresholdOfEdgeLengthPercentage = CCAIncreasingThresholdOfEdgeLengthPercentage;
+    }
+
+    // detailed feedback information:
+    void SetEdgeLengthAtRest(double edgeLengthAtRest)
+    {
+      this->mEdgeLengthAtRest = edgeLengthAtRest;
+    }
+
+    void SetFeedbackStrengthForMyosinActivity(double feedbackStrengthForMyosinActivity)
+    {
+      this->mFeedbackStrengthForMyosinActivity = feedbackStrengthForMyosinActivity;
+    }
+
+    void SetHillCoefficientForMyosinActivity(double hillCoefficientForMyosinActivity)
+    {
+      this->mHillCoefficientForMyosinActivity = hillCoefficientForMyosinActivity;
+    }
+
+    void SetFeedbackStrengthForAdhesion(double feedbackStrengthForAdhesion)
+    {
+      mFeedbackStrengthForAdhesion = feedbackStrengthForAdhesion;
+    }
+    
+    void SetHillCoefficientForAdhesion(double hillCoefficientForAdhesion)
+    {
+      mHillCoefficientForAdhesion = hillCoefficientForAdhesion;
+    }
+
+    // stress state
+    void SetCalculateStressStateBoolean(bool ifCalculateStressState)
+    {
+      mIfCalculateStressState = ifCalculateStressState;
+    }
+
+    void SetFixedTargetArea(double fixedTargetArea)
+    {
+      this->mFixedTargetArea = fixedTargetArea;
+    }
+
+    void SetFixedTargetPerimeter(double fixedTargetPerimeter)
+    {
+      this->mFixedTargetPerimeter = fixedTargetPerimeter;
+    }
+
+    void SetCaseNumberOfMembraneSurfaceEnergyForm(double caseNumberOfMembraneSurfaceEnergyForm)
+    {
+      this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
+    }
+
     void SetNagaiHondaDeformationEnergyParameter(double nagaiHondaDeformationEnergyParameter)
     {
       this->mNagaiHondaDeformationEnergyParameter = nagaiHondaDeformationEnergyParameter;
@@ -132,115 +235,13 @@ public:
       this->mNagaiHondaCellBoundaryAdhesionEnergyParameter = nagaiHondaCellBoundaryAdhesionEnergyParameter;
     }
     
-    void SetFixedTargetArea(double fixedTargetArea)
-    {
-      this->mFixedTargetArea = fixedTargetArea;
-    }
-
-    void SetFixedTargetPerimeter(double fixedTargetPerimeter)
-    {
-      this->mFixedTargetPerimeter = fixedTargetPerimeter;
-    }
-
-    void SetFeedbackStrengthForMyosinActivity(double feedbackStrengthForMyosinActivity)
-    {
-      this->mFeedbackStrengthForMyosinActivity = feedbackStrengthForMyosinActivity;
-    }
-
-    void SetHillCoefficientForMyosinActivity(double hillCoefficientForMyosinActivity)
-    {
-      this->mHillCoefficientForMyosinActivity = hillCoefficientForMyosinActivity;
-    }
-
-    void SetEdgeLengthAtRest(double edgeLengthAtRest)
-    {
-      this->mEdgeLengthAtRest = edgeLengthAtRest;
-    }
-
-    void SetUpdateUnifiedCellCellAdhesionOfFace(bool ifUpdateUnifiedCellCellAdhesionOfFace)
-    {
-      mIfUpdateUnifiedCellCellAdhesionOfFace = ifUpdateUnifiedCellCellAdhesionOfFace;
-    }
-    
-    void SetFeedbackStrengthForAdhesion(double feedbackStrengthForAdhesion)
-    {
-      mFeedbackStrengthForAdhesion = feedbackStrengthForAdhesion;
-    }
-    
-    void SetHillCoefficientForAdhesion(double hillCoefficientForAdhesion)
-    {
-      mHillCoefficientForAdhesion = hillCoefficientForAdhesion;
-    }
-
-    void SetCaseNumberOfMembraneSurfaceEnergyForm(double caseNumberOfMembraneSurfaceEnergyForm)
-    {
-      this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
-    }
-
-    void SetEMADontDecreaseWhenEdgeShrink_CCADontDecreaseWhenEdgeExpand_CCADontInreaseWhenEdgeShrink(
-      bool EMADontDecreaseWhenEdgeShrink,
-      bool CCADontDecreaseWhenEdgeExpand,
-      bool CCADontInreaseWhenEdgeShrink)
-    {
-      this->mEMADontDecreaseWhenEdgeShrink=EMADontDecreaseWhenEdgeShrink;
-      this->mCCADontDecreaseWhenEdgeExpand=CCADontDecreaseWhenEdgeExpand;
-      this->mCCADontInreaseWhenEdgeShrink=CCADontInreaseWhenEdgeShrink;
-    }
-
-    void SetCCADontInreaseUntilShorterThanAThreshold(bool CCADontInreaseUntilShorterThanAThreshold)
-    {
-      this->mCCADontInreaseUntilShorterThanAThreshold = CCADontInreaseUntilShorterThanAThreshold;
-    }
-      
-    void SetCCADontInreaseUntilShorterThanThisValue(double CCADontInreaseUntilShorterThanThisValue)
-    {
-      this->mCCADontInreaseUntilShorterThanThisValue = CCADontInreaseUntilShorterThanThisValue;
-    }
-
-    void SetOutputModifierInformationBoolean(bool ifOutputModifierInformation)
-    {
-      this->mIfOutputModifierInformation = ifOutputModifierInformation;
-    }
-
-    void SetCalculateStressStateBoolean(bool ifCalculateStressState)
-    {
-      mIfCalculateStressState = ifCalculateStressState;
-    }
-
-    void SetConsiderFeedbackOfFaceValues(bool ifConsiderFeedbackOfFaceValues)
-    {
-      mIfConsiderFeedbackOfFaceValues = ifConsiderFeedbackOfFaceValues;
-    }
-
-    void SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(bool ifConsiderFeedbackOfFaceValuesOnlyForBoundaryCells)
-    {
-      mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells = ifConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
-    }
-
-    void SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(bool ifConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells)
-    {
-      mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells = ifConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
-    }
-
-    void UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
-
-    void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
-
-    void UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
-
-    void UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-
+    // group number
     void SetWriteGroupNumberToCell(bool writeGroupNumberToCell)
     {
       mWriteGroupNumberToCell = writeGroupNumberToCell;
     }
 
-    void UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-    void UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
-
-    void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-    void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
-
+    // cell division
     void SetUseMyDivisionRuleAlongWithModifier(bool useMyDivisionRuleAlongWithModifier)
     {
       mUseMyDivisionRuleAlongWithModifier = useMyDivisionRuleAlongWithModifier;
@@ -251,8 +252,12 @@ public:
       mDivisionTime = divisionTime;
     }
 
-    void SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-    void UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    // output information
+    void SetOutputModifierInformationBoolean(bool ifOutputModifierInformation)
+    {
+      mIfOutputModifierInformation = ifOutputModifierInformation;
+    }
+
     /**
      * Overridden OutputSimulationModifierParameters() method.
      * Output any simulation modifier parameters to file.
