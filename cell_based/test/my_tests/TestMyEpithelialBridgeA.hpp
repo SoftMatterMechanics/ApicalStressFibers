@@ -75,20 +75,20 @@ public:
         // PHASE DIAGRAM SEARCH:
         //                       OPTIONS:
         // double feedback_strength_for_myosin_activity = 0.0;
-        // double set_substrate_adhesion_parameter_at_leading_top= -10.0;
-        // double set_substrate_adhesion_parameter_below_leading_top = -1.0;
-        // double set_reservoir_substrate_adhesion_parameter = -1.0;
+        // double substrate_adhesion_parameter_at_leading_top= -10.0;
+        // double substrate_adhesion_parameter_below_leading_top = -1.0;
+        // double reservoir_substrate_adhesion_parameter = -1.0;
         // double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
-        // double set_target_shape_index = 4.0; // 3.7224 for default
+        // double target_shape_index = 4.0; // 3.7224 for default
         // double set_polarity_magnitude = 0.5;
 
         double feedback_strength_for_myosin_activity = 0.0;
         double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
-        double set_target_shape_index = 4.0; // 3.7224 for default
+        double target_shape_index = 4.0; // 3.7224 for default
 
-        double set_substrate_adhesion_parameter_at_leading_top= -10.0;
-        double set_substrate_adhesion_parameter_below_leading_top = -1.0;
-        double set_reservoir_substrate_adhesion_parameter = -1.0;
+        double substrate_adhesion_parameter_at_leading_top= -10.0;
+        double substrate_adhesion_parameter_below_leading_top = -1.0;
+        double reservoir_substrate_adhesion_parameter = -1.0;
 
         double set_polarity_magnitude = 0.5;
 
@@ -123,17 +123,17 @@ public:
         // energy parameter
         // double set_nagai_honda_membrane_surface_energy_parameter = 0.1;
         bool set_use_fixed_target_area = false;
-        // double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
+        // double target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
           // substrate adhesion
         bool if_consider_substrate_adhesion = true;
             // strip substrate adhesion
         bool if_substrate_adhesion_is_homogeneous = false;
               // if homogeneous
-        double set_homogeneous_substrate_adhesion_parameter = -3.0;
+        double homogeneous_substrate_adhesion_parameter = -3.0;
               // if not homogeneous
-        double set_substrate_adhesion_leading_top_length = 3.0;
-        // double set_substrate_adhesion_parameter_at_leading_top= -3.0;
-        // double set_substrate_adhesion_parameter_below_leading_top = -0.5;
+        double substrate_adhesion_leading_top_length = 3.0;
+        // double substrate_adhesion_parameter_at_leading_top= -3.0;
+        // double substrate_adhesion_parameter_below_leading_top = -0.5;
                 // detach pattern:
         bool use_my_detach_pattern_method = true;
         if (use_my_detach_pattern_method)
@@ -143,8 +143,8 @@ public:
         if (!if_consider_substrate_adhesion)
           assert(if_consider_reservoir_substrate_adhesion==false);
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
-        bool if_ignore_reservoir_substrate_adhesion_at_bottom = true;// false for default
-        // double set_reservoir_substrate_adhesion_parameter = -0.5;
+        bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
+        // double reservoir_substrate_adhesion_parameter = -0.5;
         
         // feedback
         bool is_default_feedback_form = true;
@@ -184,7 +184,7 @@ public:
         bool output_concise_swap_information_when_remesh = false;
         bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
         bool output_information_for_nagai_honda_force = false;
-        bool set_output_numerical_method_information = false;
+        bool output_numerical_method_information = false;
         /*-----------------------END: Frequently changed parameters-------------------------*/
 
 
@@ -251,7 +251,7 @@ public:
         std::vector< boost::shared_ptr<AbstractForce<2, 2>> > force_collection = simulator.rGetForceCollection();
         p_numerical_method->SetForceCollection(&force_collection);
         p_numerical_method->SetMaxMovementPerTimestep(max_movement_per_timestep);
-        p_numerical_method->SetOutputNumericalMethodInformation(set_output_numerical_method_information);
+        p_numerical_method->SetOutputNumericalMethodInformation(output_numerical_method_information);
         simulator.SetNumericalMethod(p_numerical_method);
         /*---------------------------------END: Add Numerical Method-----------------------------*/
 
@@ -268,21 +268,16 @@ public:
         double nagai_honda_membrane_surface_energy_parameter = set_nagai_honda_membrane_surface_energy_parameter;
                 
         // LAMBDA: Use equation form: 0.5*Gamma*P^2, target perimeter being 0!
-        double target_shape_index = set_target_shape_index;
         double nagai_honda_cell_cell_adhesion_energy_parameter = -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_target_area_for_modifier));
         if (use_fixed_target_area)
           nagai_honda_cell_cell_adhesion_energy_parameter = -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(fixed_target_area));
-        double nagai_honda_cell_boundary_adhesion_energy_parameter = 0; //nagai_honda_cell_cell_adhesion_energy_parameter;
+        double nagai_honda_cell_boundary_adhesion_energy_parameter = 0.0;
+        bool consider_consistency_of_the_influence_of_CBAdhe = true;
+        if (consider_consistency_of_the_influence_of_CBAdhe) // note: 0.1 is a magic number.
+          nagai_honda_cell_boundary_adhesion_energy_parameter = nagai_honda_cell_cell_adhesion_energy_parameter
+              + 0.1*target_shape_index*sqrt(use_fixed_target_area? fixed_target_area : reference_target_area_for_modifier);
         bool if_use_face_element_to_get_adhesion_parameter = if_consider_feedback_of_face_values;
 
-        // Strip Substrate Adhesion Parameter
-        double homogeneous_substrate_adhesion_parameter = set_homogeneous_substrate_adhesion_parameter;
-        double substrate_adhesion_leading_top_length = set_substrate_adhesion_leading_top_length;
-        double substrate_adhesion_parameter_at_leading_top= set_substrate_adhesion_parameter_at_leading_top;
-        double substrate_adhesion_parameter_below_leading_top = set_substrate_adhesion_parameter_below_leading_top;
-        // Reservoir Substrate Adhesion Parameter
-        double reservoir_substrate_adhesion_parameter = set_reservoir_substrate_adhesion_parameter;
-        
         // Strips structure of substrate adhesion
         double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
@@ -502,7 +497,7 @@ public:
         oss << ((fabs(nagai_honda_cell_cell_adhesion_energy_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << nagai_honda_cell_cell_adhesion_energy_parameter;
         output_directory += "_CCAdhe=" + oss.str();
         oss.str("");
-        oss << ((nagai_honda_cell_boundary_adhesion_energy_parameter==0.0)? std::fixed : std::scientific) << setprecision(1) << nagai_honda_cell_boundary_adhesion_energy_parameter;
+        oss << ((fabs(nagai_honda_cell_boundary_adhesion_energy_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << nagai_honda_cell_boundary_adhesion_energy_parameter;
         output_directory += "_CBAdhe=" + oss.str();
         
         output_directory += "_|HasSubAdh=" + std::to_string(if_consider_substrate_adhesion);

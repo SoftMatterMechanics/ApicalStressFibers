@@ -422,16 +422,6 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     double substrate_adhesion_area = adhesive_sample_num/double(sample_num) * sample_area;
                     double weighted_substrate_adhesion_area = weighted_adhesive_sample_num/double(sample_num) * sample_area;
 
-                    if (mOutputInformationForNagaiHondaForce)
-                    {
-                        if (fabs(p_this_node->rGetLocation()[1]-y_coord_leading_edge) < 1e-10)
-                        {
-                            std::cout << "______AddForceContribution: for the top node, node index= " << p_this_node->GetIndex() << std::endl;
-                            std::cout << "The adhesive_sample_num=" << adhesive_sample_num << ", smaple_num=" << sample_num << ", ratio=" << adhesive_sample_num/sample_num
-                                    << ", substrate_adhesion_area=" << substrate_adhesion_area<< ", sample_area=" << sample_area << std::endl;
-                        }
-                    }
-
                     // Calculate adhesive area *changed* with small displacement of the node along the x or y axis
                     for (unsigned j = 0; j<2; j++)
                     {
@@ -894,6 +884,29 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         }
         
         p_cell_population->GetNode(node_index)->AddAppliedForceContribution(force_on_node);
+
+        // tmp
+        if (mOutputInformationForNagaiHondaForce)
+        {
+            if (norm_2(force_on_node)>20.0)
+            {
+                std::cout << "Weird! Force is too large! Node Index: " << p_this_node->GetIndex() << std::endl;
+                std::cout << "X direction:" << std::endl;
+                std::cout << "force on node=" << force_on_node[0]
+                        << " deformation_contribution=" << deformation_contribution[0]
+                        << " membrane_surface_tension_contribution=" << membrane_surface_tension_contribution[0]
+                        << " adhesion_contribution=" << adhesion_contribution[0]
+                        << " area_adhesion_contribution=" << area_adhesion_contribution[0]
+                        << " reservoir_substrate_adhesion_contribution=" << reservoir_substrate_adhesion_contribution[0] << std::endl;
+                std::cout << "Y direction:" << std::endl;
+                std::cout << "force on node=" << force_on_node[1]
+                        << " deformation_contribution=" << deformation_contribution[1]
+                        << " membrane_surface_tension_contribution=" << membrane_surface_tension_contribution[1]
+                        << " adhesion_contribution=" << adhesion_contribution[1]
+                        << " area_adhesion_contribution=" << area_adhesion_contribution[1]
+                        << " reservoir_substrate_adhesion_contribution=" << reservoir_substrate_adhesion_contribution[1] << std::endl;
+            }
+        }
 
     }// end of 'Iterate over nodes(vertices) in the cell population'
 
