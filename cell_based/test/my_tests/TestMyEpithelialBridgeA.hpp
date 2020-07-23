@@ -73,12 +73,24 @@ public:
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // PHASE DIAGRAM SEARCH:
-        bool is_default_feedback = true;
-        double feedback_strength_for_myosin_activity = 0.1;
-        double feedback_strength_for_adhesion = 0.0;
-        double set_substrate_adhesion_parameter_at_leading_top= -3.0;
-        double set_target_shape_index = 1.0; // 3.7224 for default
-        double set_polarity_magnitude = 0.0;
+        //                       OPTIONS:
+        // double feedback_strength_for_myosin_activity = 0.0;
+        // double set_substrate_adhesion_parameter_at_leading_top= -10.0;
+        // double set_substrate_adhesion_parameter_below_leading_top = -1.0;
+        // double set_reservoir_substrate_adhesion_parameter = -1.0;
+        // double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
+        // double set_target_shape_index = 4.0; // 3.7224 for default
+        // double set_polarity_magnitude = 0.5;
+
+        double feedback_strength_for_myosin_activity = 0.0;
+        double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
+        double set_target_shape_index = 4.0; // 3.7224 for default
+
+        double set_substrate_adhesion_parameter_at_leading_top= -10.0;
+        double set_substrate_adhesion_parameter_below_leading_top = -1.0;
+        double set_reservoir_substrate_adhesion_parameter = -1.0;
+
+        double set_polarity_magnitude = 0.5;
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -109,7 +121,7 @@ public:
         bool use_longer_mesh = false;
         
         // energy parameter
-        double set_nagai_honda_membrane_surface_energy_parameter = 0.1;
+        // double set_nagai_honda_membrane_surface_energy_parameter = 0.1;
         bool set_use_fixed_target_area = false;
         // double set_target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
           // substrate adhesion
@@ -121,7 +133,7 @@ public:
               // if not homogeneous
         double set_substrate_adhesion_leading_top_length = 3.0;
         // double set_substrate_adhesion_parameter_at_leading_top= -3.0;
-        double set_substrate_adhesion_parameter_below_leading_top = -0.5;
+        // double set_substrate_adhesion_parameter_below_leading_top = -0.5;
                 // detach pattern:
         bool use_my_detach_pattern_method = true;
         if (use_my_detach_pattern_method)
@@ -131,11 +143,11 @@ public:
         if (!if_consider_substrate_adhesion)
           assert(if_consider_reservoir_substrate_adhesion==false);
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
-        bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
-        double set_reservoir_substrate_adhesion_parameter = -0.5;//
+        bool if_ignore_reservoir_substrate_adhesion_at_bottom = true;// false for default
+        // double set_reservoir_substrate_adhesion_parameter = -0.5;
         
         // feedback
-        // bool is_default_feedback = true;
+        bool is_default_feedback_form = true;
         int case_number_of_membrane_surface_energy_form = 2; // 2, for default, 2 for new membr_surf_energy form1, 3 for form2.
         bool if_consider_feedback_of_face_values = true;
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
@@ -147,7 +159,7 @@ public:
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
         // double feedback_strength_for_myosin_activity = 0;
         double hill_coefficient_for_myosin_activity = 8.0;
-        // double feedback_strength_for_adhesion = 0;
+        double feedback_strength_for_adhesion = 0;
         double hill_coefficient_for_adhesion = 8.0;
           // for consistency
         if (feedback_strength_for_myosin_activity == 0.0)
@@ -158,8 +170,8 @@ public:
           assert(case_number_of_membrane_surface_energy_form != 0);
         else
           case_number_of_membrane_surface_energy_form = 0;
-        if (is_default_feedback)
-          assert(if_consider_feedback_of_face_values && !if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
+        if (is_default_feedback_form)
+          assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
         
         // random force and polarity
         bool add_random_force = true;
@@ -430,8 +442,11 @@ public:
 
         oss.str("");
         oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
-            // << "SSATop=" << std::fixed << setprecision(1) << substrate_adhesion_parameter_at_leading_top
-            << "_p0=" << std::fixed << setprecision(2) << set_target_shape_index
+            << "_p0=" << std::fixed << setprecision(2) << target_shape_index
+            << "_Ga=" << std::fixed << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
+            << "_SSATop=" << std::fixed << setprecision(1) << substrate_adhesion_parameter_at_leading_top
+            << "_Bott=" << std::fixed << setprecision(1) << substrate_adhesion_parameter_below_leading_top
+            << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter
             << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         output_directory += oss.str();
         time_t raw_time = time(0);
@@ -470,7 +485,7 @@ public:
           output_directory += "_ConsistMv=0";
 
         output_directory += "_|Divi=" + std::to_string(run_with_birth);
-        if (if_consider_feedback_of_face_values && is_default_feedback)
+        if (if_consider_feedback_of_face_values && is_default_feedback_form)
           output_directory += "_HasDefaultFeedb";
         else
           output_directory += "_HasFeedb=" + std::to_string(if_consider_feedback_of_face_values);
@@ -496,7 +511,7 @@ public:
           if (if_substrate_adhesion_is_homogeneous)
             output_directory += "_SSAIsHomo";
           else
-            output_directory += "_NonHomoSSA";         
+            output_directory += "_NonHomoSSA";       
           output_directory += "_HasRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
         }
         
@@ -522,7 +537,7 @@ public:
         {
           // feedback form
           output_directory += "_|FeedbackForm:";
-          if (is_default_feedback)
+          if (is_default_feedback_form)
             output_directory += "Default";
           else
           {
