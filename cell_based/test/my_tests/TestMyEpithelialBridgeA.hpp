@@ -95,7 +95,7 @@ public:
 
         // for test new SSS distribution rule
         bool use_new_SSA_distribution_rule = true;
-        double lamellipodium_maturation_rate = 0.075;
+        double lamellipodium_maturation_rate = 0.1;
         double lamellipodium_destruction_rate = 0.1;        
         double basic_SSA = -1.0;
         double SSA_for_mature_lamellipodium = -15.0;
@@ -103,7 +103,8 @@ public:
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
-        double set_dt = 0.1;
+        double dt = 0.1;
+        double sampling_time = 0.1;
         bool apply_my_change_to_make_timestep_adaptive = true;
         bool consider_consistency_for_SSA = true;
         double max_movement_per_timestep = 0.05;
@@ -215,6 +216,8 @@ public:
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001);
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
+        p_mesh->SetIfClassifyElementsWithGroupNumbers(use_my_detach_pattern_method || use_new_SSA_distribution_rule);
+        p_mesh->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);
         p_mesh->SetOutputDetailedSwapInformationWhenRemesh(output_detailed_swap_information_when_remesh);
         /*------------------------------END: Mesh Structure------------------------------*/
@@ -421,7 +424,6 @@ public:
 
 
         /*------------------------------------START: Timestep---------------------------------------*/
-        double dt = set_dt;
         double sampling_timestep_multiple = round(1/dt);
 
         simulator.SetApplyMyChangesToMakeTimestepAdaptive(apply_my_change_to_make_timestep_adaptive);
@@ -429,7 +431,7 @@ public:
 
         simulator.SetApplySamplingTimeInsteadOfSamplingTimestep(apply_my_change_to_make_timestep_adaptive);
         simulator.SetSamplingTimestepMultiple(sampling_timestep_multiple);
-        simulator.SetSamplingTime(1.0);
+        simulator.SetSamplingTime(sampling_time);
 
         simulator.SetEndTime(400.0);
         /*------------------------------------END: Timestep---------------------------------------*/

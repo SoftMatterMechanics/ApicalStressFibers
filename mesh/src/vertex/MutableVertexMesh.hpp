@@ -132,7 +132,11 @@ protected:
 
     bool mOutputDetailedSwapInformationWhenRemesh;
 
-    unsigned mTheLargestGroupNumberNow;
+    bool mIfClassifyElementsWithGroupNumbers;
+
+    unsigned mNumberOfGroups;
+
+    bool mIfUseNewSSADistributionRule;
 
     /**
      * Divide an element along the axis passing through two of its nodes.
@@ -150,6 +154,11 @@ protected:
                            unsigned nodeAIndex,
                            unsigned nodeBIndex,
                            bool placeOriginalElementBelow=false);
+
+    // my changes:
+    void CheckForT4Swaps();
+
+    void PerformT4Swap(Node<SPACE_DIM>* pNode, unsigned elementIndex);
 
     /**
      * Helper method for ReMesh().
@@ -784,20 +793,41 @@ public:
       return false;
     }
 
-    void SetTheLargestGroupNumberNow(unsigned theLargestGroupNumberNow)
+    void SetIfClassifyElementsWithGroupNumbers(bool ifClassifyElementsWithGroupNumbers)
     {
-      mTheLargestGroupNumberNow = theLargestGroupNumberNow;
+      mIfClassifyElementsWithGroupNumbers = ifClassifyElementsWithGroupNumbers;
+    }
+    
+    void SetNumberOfGroups(unsigned numberOfGroups)
+    {
+      mNumberOfGroups = numberOfGroups;
     }
 
-    unsigned GetTheLargestGroupNumberNow()
+    unsigned GetNumberOfGroups()
     {
-      return mTheLargestGroupNumberNow;
+      return mNumberOfGroups;
+    }
+
+    void ReassignElementsWithGroupNumber2ByGroupNumber1(unsigned groupNumber2, unsigned groupNumber1)
+    {
+      assert(mNumberOfGroups>1);
+      assert(groupNumber2>groupNumber1 && groupNumber2<mNumberOfGroups);
+      // Loop over live elements
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {
+        if (elem_iter->GetGroupNumber()==groupNumber2)
+          elem_iter->SetGroupNumber(groupNumber1);
+        else if (elem_iter->GetGroupNumber()>groupNumber2)
+          elem_iter->SetGroupNumber(elem_iter->GetGroupNumber()-1);
+      }
+      mNumberOfGroups -= 1;
     }
 
     void PartialTheGroupByHeight(unsigned groupNumber, double height, bool groupNumberUnchangedBelow)
     {
-      std::cout << "We are now at method: PartialTheGroupByHeight!" << " mTheLargestGroupNumberNow=" << mTheLargestGroupNumberNow << std::endl;
-      std::cout << "groupNumber=" << groupNumber << ", height=" << height << ", groupNumberUnchangedBelow" << groupNumberUnchangedBelow << std::endl;
+      std::cout << "We are now at method: PartialTheGroupByHeight!" << std::endl;
       for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
           elem_iter != this->GetElementIteratorEnd();
           ++elem_iter)
@@ -808,19 +838,19 @@ public:
           {
             if (this->GetCentroidOfElement(elem_iter->GetIndex())[1]>height)
             {
-              elem_iter->SetGroupNumber(mTheLargestGroupNumberNow+1);
+              elem_iter->SetGroupNumber(mNumberOfGroups);
             }
           }
           else
           {
             if (this->GetCentroidOfElement(elem_iter->GetIndex())[1]<height)
             {
-              elem_iter->SetGroupNumber(mTheLargestGroupNumberNow+1);
+              elem_iter->SetGroupNumber(mNumberOfGroups);
             }
           }
         }
       }
-      SetTheLargestGroupNumberNow(mTheLargestGroupNumberNow+1);
+      SetNumberOfGroups(mNumberOfGroups+1);
     }
 
     double GetLeadingTopOfTheGroup(unsigned groupNumber)
@@ -843,6 +873,11 @@ public:
       if (leading_top == -10.0)
         std::cout << std::endl << "In method GetLeadingTopOfTheGroup, there is no element that belongs to group: " << groupNumber << std::endl;
       return leading_top;
+    }
+
+    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
+    {
+      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
     }
 
 };

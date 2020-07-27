@@ -101,6 +101,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
     }
 
+    // original non-homogeneous SSA method using leading length:
     double y_coord_leading_edge = 0.0;
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
     {
@@ -109,12 +110,11 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             y_coord_leading_edge= p_this_node->rGetLocation()[1];
     }
 
-    unsigned largest_group_number = p_cell_population->rGetMesh().GetTheLargestGroupNumberNow();
-    std::vector<double> leading_tops_of_groups(largest_group_number+1);
-    for (unsigned i=0; i<largest_group_number+1; i++)
-    {
+    // For My Detach Pattern Method, using group number:
+    unsigned number_of_groups = p_cell_population->rGetMesh().GetNumberOfGroups();
+    std::vector<double> leading_tops_of_groups(number_of_groups);
+    for (unsigned i=0; i<number_of_groups; i++)
         leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
-    }
 
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)

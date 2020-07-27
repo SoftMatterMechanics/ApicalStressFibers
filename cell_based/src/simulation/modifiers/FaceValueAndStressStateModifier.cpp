@@ -436,11 +436,15 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
                 {
                     // pCell->SetIsLeadingCell(true);
                     pElement->SetIsLeadingCell(true);
+                    pElement->SetIsLeadingCellTop(true);
+                    pElement->SetIsLeadingCellBottom(false);
                     // pCell->SetIsJustReAttached(false);
                     pElement->SetIsJustReAttached(false);
                     // pCell->SetLamellipodiumStrength(1.0);
                     pElement->SetLamellipodiumStrength(1.0);
                     pCell->GetCellData()->SetItem("is_leading_cell", 1);
+                    pCell->GetCellData()->SetItem("is_leading_cell_top", 1);
+                    pCell->GetCellData()->SetItem("is_leading_cell_bottom", 0);
                     pCell->GetCellData()->SetItem("is_just_reattached", 0);
                     pCell->GetCellData()->SetItem("lamellipodium_strength", 1.0);
                     is_leading_cell = true;
@@ -451,11 +455,15 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
             {
                 // pCell->SetIsLeadingCell(false);
                 pElement->SetIsLeadingCell(false);
+                pElement->SetIsLeadingCellTop(false);
+                pElement->SetIsLeadingCellBottom(false);
                 // pCell->SetIsJustReAttached(false);
                 pElement->SetIsJustReAttached(false);
                 // pCell->SetLamellipodiumStrength(0.0);
                 pElement->SetLamellipodiumStrength(0.0);
                 pCell->GetCellData()->SetItem("is_leading_cell", 0);
+                pCell->GetCellData()->SetItem("is_leading_cell_top", 0);
+                pCell->GetCellData()->SetItem("is_leading_cell_bottom", 0);
                 pCell->GetCellData()->SetItem("is_just_reattached", 0);
                 pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
             }
@@ -464,11 +472,15 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
         {
             // pCell->SetIsLeadingCell(false);
             pElement->SetIsLeadingCell(false);
+            pElement->SetIsLeadingCellTop(false);
+            pElement->SetIsLeadingCellBottom(false);
             // pCell->SetIsJustReAttached(false);
             pElement->SetIsJustReAttached(false);
             // pCell->SetLamellipodiumStrength(0.0);
             pElement->SetLamellipodiumStrength(0.0);
             pCell->GetCellData()->SetItem("is_leading_cell", 0);
+            pCell->GetCellData()->SetItem("is_leading_cell_top", 0);
+            pCell->GetCellData()->SetItem("is_leading_cell_bottom", 0);
             pCell->GetCellData()->SetItem("is_just_reattached", 0);
             pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
         }
@@ -494,6 +506,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateLamellipodiumInfoOfCells(Abstra
         VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
         
         pCell->GetCellData()->SetItem("is_leading_cell", pElement->GetIsLeadingCell());
+        pCell->GetCellData()->SetItem("is_leading_cell_top", pElement->GetIsLeadingCellTop());
+        pCell->GetCellData()->SetItem("is_leading_cell_bottom", pElement->GetIsLeadingCellBottom());
         pCell->GetCellData()->SetItem("is_just_reattached", pElement->GetIsJustReAttached());
         pCell->GetCellData()->SetItem("lamellipodium_strength", pElement->GetLamellipodiumStrength());
 
