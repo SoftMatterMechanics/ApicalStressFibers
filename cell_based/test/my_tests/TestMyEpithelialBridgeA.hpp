@@ -78,19 +78,24 @@ public:
         // double substrate_adhesion_parameter_at_leading_top= -10.0;
         // double substrate_adhesion_parameter_below_leading_top = -1.0;
         // double reservoir_substrate_adhesion_parameter = -1.0;
-        // double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
+        // double nagai_honda_membrane_surface_energy_parameter = 1.0;
         // double target_shape_index = 4.0; // 3.7224 for default
         // double set_polarity_magnitude = 0.5;
 
         double feedback_strength_for_myosin_activity = 0.0;
-        double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
+        double nagai_honda_membrane_surface_energy_parameter = 0.5;
         double target_shape_index = 4.0; // 3.7224 for default
 
         double substrate_adhesion_parameter_at_leading_top= -10.0;
         double substrate_adhesion_parameter_below_leading_top = -1.0;
         double reservoir_substrate_adhesion_parameter = -1.0;
 
-        double set_polarity_magnitude = 0.5;
+        double set_polarity_magnitude = 0.0;
+
+        // for test
+        bool use_new_SSA_distribution_rule = true;
+        double lamellipodium_maturation_rate = 0.1;
+        double lamellipodium_destruction_rate = 0.1;        
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -121,7 +126,7 @@ public:
         bool use_longer_mesh = false;
         
         // energy parameter
-        // double set_nagai_honda_membrane_surface_energy_parameter = 0.1;
+        // double nagai_honda_membrane_surface_energy_parameter = 0.1;
         bool set_use_fixed_target_area = false;
         // double target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
           // substrate adhesion
@@ -134,6 +139,8 @@ public:
         double substrate_adhesion_leading_top_length = 3.0;
         // double substrate_adhesion_parameter_at_leading_top= -3.0;
         // double substrate_adhesion_parameter_below_leading_top = -0.5;
+        double basic_SSA = -1.0;
+        double SSA_for_mature_lamellipodium = -10.0;
                 // detach pattern:
         bool use_my_detach_pattern_method = true;
         if (use_my_detach_pattern_method)
@@ -264,10 +271,7 @@ public:
         bool use_fixed_target_area = set_use_fixed_target_area;
         double fixed_target_area = initial_area;
 
-        // KP 
-        double nagai_honda_membrane_surface_energy_parameter = set_nagai_honda_membrane_surface_energy_parameter;
-                
-        // LAMBDA: Use equation form: 0.5*Gamma*P^2, target perimeter being 0!
+        // LAMBDA: Use equation form: 0.5*Gamma*P^2 + Lambda*P, target perimeter being 0!
         double nagai_honda_cell_cell_adhesion_energy_parameter = -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_target_area_for_modifier));
         if (use_fixed_target_area)
           nagai_honda_cell_cell_adhesion_energy_parameter = -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(fixed_target_area));
@@ -291,8 +295,8 @@ public:
         p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
         p_force->SetUseFaceElementToGetAdhesionParameterBoolean(if_use_face_element_to_get_adhesion_parameter);
 
-        p_force->SetNagaiHondaDeformationEnergyParameter(nagai_honda_deformation_energy_parameter);
-        p_force->SetNagaiHondaMembraneSurfaceEnergyParameter(nagai_honda_membrane_surface_energy_parameter);
+        p_force->SetNagaiHondaDeformationEnergyParameter(nagai_honda_deformation_energy_parameter);//KA
+        p_force->SetNagaiHondaMembraneSurfaceEnergyParameter(nagai_honda_membrane_surface_energy_parameter);//KP
         p_force->SetNagaiHondaCellCellAdhesionEnergyParameter(nagai_honda_cell_cell_adhesion_energy_parameter);
         p_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(nagai_honda_cell_boundary_adhesion_energy_parameter);        
 
@@ -324,6 +328,10 @@ public:
         p_force->SetStripStartYLocation(strip_start_y_location);
           // method for detachment behavior
         p_force->SetUseMyDetachPatternMethod(use_my_detach_pattern_method);
+          // new SSA distribution rule
+        p_force->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
+        p_force->SetBasicSSA(basic_SSA);
+        p_force->SetSSAForMatureLamellipodium(SSA_for_mature_lamellipodium);
 
         p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
         simulator.AddForce(p_force);
@@ -396,7 +404,11 @@ public:
         // my division state modifier
         p_face_value_and_stress_state_modifier->SetUseMyDivisionRuleAlongWithModifier(use_my_division_rule_along_with_modifier);
         p_face_value_and_stress_state_modifier->SetDivisionTime(time_for_one_division_of_cell_population);
-        
+
+        // new SSA distribution rule
+        p_face_value_and_stress_state_modifier->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
+        p_face_value_and_stress_state_modifier->SetLamellipodiumMaturationRate(lamellipodium_maturation_rate);
+        p_face_value_and_stress_state_modifier->SetLamellipodiumDestructionRate(lamellipodium_destruction_rate);
         // outout information
         p_face_value_and_stress_state_modifier->SetOutputModifierInformationBoolean(false);
 
@@ -433,9 +445,16 @@ public:
         // output directory
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-22/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-23/";
 
         oss.str("");
+        if (use_new_SSA_distribution_rule)
+          oss << "NewSSARule:SSA" 
+              << "_matu_lamelli=" << SSA_for_mature_lamellipodium
+              << "_basic=" << basic_SSA
+              << "_matu_rate=" << lamellipodium_maturation_rate
+              << "_destru_rate=" << lamellipodium_destruction_rate;
+
         oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << std::fixed << setprecision(2) << nagai_honda_membrane_surface_energy_parameter

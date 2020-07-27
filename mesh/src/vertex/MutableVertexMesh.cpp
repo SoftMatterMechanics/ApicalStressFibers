@@ -685,6 +685,46 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
     // my changes for group number
     this->mElements[new_element_index]->SetGroupNumber(pElement->GetGroupNumber());
 
+    // my changes for new SSA distribution rule
+    if (pElement->GetIsLeadingCell()) // for a leading cell
+    {
+        if (pElement->GetIsLeadingCellTop())
+        {
+            assert(pElement->GetIsLeadingCellBottom()==false);
+            this->mElements[new_element_index]->SetIsLeadingCell(true);
+            this->mElements[new_element_index]->SetIsLeadingCellTop(true);
+            this->mElements[new_element_index]->SetIsLeadingCellBottom(false);
+            this->mElements[new_element_index]->SetIsJustReAttached(false);
+            this->mElements[new_element_index]->SetLamellipodiumStrength(0.0);
+            pElement->SetIsLeadingCell(false);
+            pElement->SetIsLeadingCellTop(false);
+            pElement->SetIsJustReAttached(false);
+            pElement->SetLamellipodiumStrength(0.0);
+        }
+        else
+        {
+            assert(pElement->GetIsLeadingCellBottom()==true && pElement->GetIsJustReAttached()==false);
+            assert(pElement->GetIsLeadingCellTop()==false);
+            this->mElements[new_element_index]->SetIsLeadingCell(false);
+            this->mElements[new_element_index]->SetIsLeadingCellTop(false);
+            this->mElements[new_element_index]->SetIsLeadingCellBottom(false);
+            this->mElements[new_element_index]->SetIsJustReAttached(false);
+            this->mElements[new_element_index]->SetLamellipodiumStrength(0.0);
+            pElement->SetLamellipodiumStrength(0.0);
+        }
+    }
+    else // for an intermediate cell
+    {
+        assert(!pElement->GetIsLeadingCellTop() && !pElement->GetIsLeadingCellBottom());
+        pElement->SetIsJustReAttached(false);
+        pElement->SetLamellipodiumStrength(0.0);
+        this->mElements[new_element_index]->SetIsLeadingCell(false);
+        this->mElements[new_element_index]->SetIsLeadingCellTop(false);
+        this->mElements[new_element_index]->SetIsLeadingCellBottom(false);
+        this->mElements[new_element_index]->SetIsJustReAttached(false);
+        this->mElements[new_element_index]->SetLamellipodiumStrength(0.0);
+    }
+    
     /**
      * Remove the correct nodes from each element. If placeOriginalElementBelow is true,
      * place the original element below (in the y direction) the new element; otherwise,
@@ -2064,14 +2104,38 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
     if (pNodeA->GetNumContainingElements() == 1 ) // node A, B have detached!
     {
         assert(pNodeB->GetNumContainingElements() == 1);
-        // double time_now = SimulationTime::Instance()->GetTime();
-        // unsigned timesteps_eclipsed = SimulationTime::Instance()->GetTimeStepsElapsed();
-        // std::cout << "At time: " << time_now << ", timesteps elipsed=" << timesteps_eclipsed << ", a detachment hapenned!" << std::endl;
-        std::cout << std::endl << "A detachment happened!" << std::endl;
+        std::cout << std::endl << "A detachment happened by a T1 swap." << std::endl;
+
+        // group number manipulation:
         unsigned original_group_number = this->GetElement(* pNodeA->rGetContainingElementIndices().begin())->GetGroupNumber();
         double height = nodeA_location[1] + 0.5*vector_AB[1];
         bool group_number_unchanged_below = true;
         this->PartialTheGroupByHeight(original_group_number, height, group_number_unchanged_below);
+
+        // for new SSA distribution rule:
+        VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_up;
+        VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_below;
+        if (this->GetCentroidOfElement(* pNodeA->rGetContainingElementIndices().begin())[1] > 
+                this->GetCentroidOfElement(* pNodeB->rGetContainingElementIndices().begin())[1])
+        {
+            p_element_up = this->GetElement(* pNodeA->rGetContainingElementIndices().begin());
+            p_element_below = this->GetElement(* pNodeB->rGetContainingElementIndices().begin());
+        }
+        else
+        {
+            p_element_up = this->GetElement(* pNodeB->rGetContainingElementIndices().begin());
+            p_element_below = this->GetElement(* pNodeA->rGetContainingElementIndices().begin());
+        }
+
+        assert(!p_element_up->GetIsLeadingCell() && !p_element_below->GetIsLeadingCell());
+        p_element_up->SetIsLeadingCell(true);
+        p_element_up->SetIsLeadingCellTop(false);
+        p_element_up->SetIsLeadingCellBottom(true);
+        p_element_up->SetIsJustReAttached(false);
+        p_element_below->SetIsLeadingCell(true);
+        p_element_below->SetIsLeadingCellTop(true);
+        p_element_below->SetIsLeadingCellBottom(false);
+        p_element_below->SetIsJustReAttached(false);
     }
     /*--------------------End of default element-nodes relationship manipulation---------------------------*/
 
@@ -2099,7 +2163,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
             std::cout << std::endl;
             std::cout <<  std::endl << "Index of NodeA" << pNodeA->GetIndex();
             std::cout <<  std::endl << "Index of NodeB" << pNodeB->GetIndex() << std::endl;
-            VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element; 
+            VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element; 
             for (std::set<unsigned>::const_iterator it = rElementsContainingNodes.begin();
                 it != rElementsContainingNodes.end();
                 ++it)
@@ -3372,6 +3436,23 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             // The nodes must have been updated correctly
             assert(pNode->GetNumContainingElements() == 2);
             assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
+
+            // my changes for new SSA distribution rule:
+            if (p_element->GetIsLeadingCell() && p_intersecting_element->GetIsLeadingCell())
+            {
+                std::cout << "A ReAttachment behavior happened, in the T3 swap case: 5." << std::endl;
+                assert( (p_element->GetIsLeadingCellTop()&&p_intersecting_element->GetIsLeadingCellBottom()) 
+                        || (p_element->GetIsLeadingCellBottom()&&p_intersecting_element->GetIsLeadingCellTop()) );
+                
+                p_element->SetIsLeadingCell(false);
+                p_element->SetIsLeadingCellTop(false);
+                p_element->SetIsLeadingCellBottom(false);
+                p_element->SetIsJustReAttached(true);
+                p_intersecting_element->SetIsLeadingCell(false);
+                p_intersecting_element->SetIsLeadingCellTop(false);
+                p_intersecting_element->SetIsLeadingCellBottom(false);
+                p_intersecting_element->SetIsJustReAttached(true);
+            }
 
             // my changes:
             if (mIfUpdateFaceElementsInMesh)

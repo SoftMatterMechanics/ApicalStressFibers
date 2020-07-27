@@ -153,7 +153,11 @@ protected:
 
     bool mUseMyDivisionRuleAlongWithModifier;
 
+    // bool mIsLeadingCell;
 
+    // bool mIsJustReAttached;
+
+    // double mLamellipodiumStrength;
 
 public:
 
@@ -444,6 +448,36 @@ public:
     {
         mCanDivide = canDivide;
     }
+
+    // void SetIsLeadingCell(bool isLeadingCell)
+    // {
+    //     mIsLeadingCell = isLeadingCell;
+    // }
+
+    // bool GetIsLeadingCell()
+    // {
+    //     return mIsLeadingCell;
+    // }
+
+    // void SetIsJustReAttached(bool isJustReAttached)
+    // {
+    //     mIsJustReAttached = isJustReAttached;
+    // }
+
+    // bool GetIsJustReAttached()
+    // {
+    //     return mIsJustReAttached;
+    // }
+
+    // void SetLamellipodiumStrength(double lamellipodiumStrength)
+    // {
+    //     mLamellipodiumStrength = lamellipodiumStrength;
+    // }
+
+    // double GetLamellipodiumStrength()
+    // {
+    //     return mLamellipodiumStrength;
+    // }
 };
 
 

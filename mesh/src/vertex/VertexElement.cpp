@@ -36,7 +36,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 
 
-template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM> // the choice of constructor in my simulation!
 VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
                                                      const std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*>& rFaces,
                                                      const std::vector<bool>& rOrientations,
@@ -44,7 +44,12 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
     : MutableElement<ELEMENT_DIM, SPACE_DIM>(index, rNodes),
       mFaces(rFaces),
       mOrientations(rOrientations),
-      mGroupNumber(0)
+      mGroupNumber(0),
+      mIsLeadingCell(false),
+      mIsLeadingCellTop(false),
+      mIsLeadingCellBottom(false),
+      mIsJustReAttached(false),
+      mLamellipodiumStrength(0.0)
 {
     // This constructor should only be used in 3D
     assert(SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2));    // LCOV_EXCL_LINE - code will be removed at compile time
@@ -101,7 +106,13 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index)
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
                                                      const std::vector<Node<SPACE_DIM>*>& rNodes)
-    : MutableElement<ELEMENT_DIM, SPACE_DIM>(index, rNodes)
+    : MutableElement<ELEMENT_DIM, SPACE_DIM>(index, rNodes),
+      mGroupNumber(0),
+      mIsLeadingCell(false),
+      mIsLeadingCellTop(false),
+      mIsLeadingCellBottom(false),
+      mIsJustReAttached(false),
+      mLamellipodiumStrength(0.0)
 {
 }
 

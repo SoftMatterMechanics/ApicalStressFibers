@@ -95,6 +95,10 @@ protected:
 
     bool mWriteGroupNumberToCell;
 
+    bool mIfUseNewSSADistributionRule;
+    double mLamellipodiumMaturationRate;
+    double mLamellipodiumDestructionRate;
+
     bool mIfOutputModifierInformation;
 
 public:
@@ -126,13 +130,17 @@ public:
     
     void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
 
+    void SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
+    void UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
     void UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     
     void UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
 
-    void SetupSolveForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    void SetupSolveForLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
-    void UpdateForCellDivision(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+    void UpdateLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
     // feedback form:
     void SetConsiderFeedbackOfFaceValues(bool ifConsiderFeedbackOfFaceValues)
@@ -235,12 +243,6 @@ public:
       this->mNagaiHondaCellBoundaryAdhesionEnergyParameter = nagaiHondaCellBoundaryAdhesionEnergyParameter;
     }
     
-    // group number
-    void SetWriteGroupNumberToCell(bool writeGroupNumberToCell)
-    {
-      mWriteGroupNumberToCell = writeGroupNumberToCell;
-    }
-
     // cell division
     void SetUseMyDivisionRuleAlongWithModifier(bool useMyDivisionRuleAlongWithModifier)
     {
@@ -250,6 +252,28 @@ public:
     void SetDivisionTime(double divisionTime)
     {
       mDivisionTime = divisionTime;
+    }
+
+    // group number
+    void SetWriteGroupNumberToCell(bool writeGroupNumberToCell)
+    {
+      mWriteGroupNumberToCell = writeGroupNumberToCell;
+    }
+
+    // new SSA distribution rule
+    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
+    {
+      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
+    }
+
+    void SetLamellipodiumMaturationRate(double lamellipodiumMaturationRate)
+    {
+      mLamellipodiumMaturationRate = lamellipodiumMaturationRate;
+    }
+
+    void SetLamellipodiumDestructionRate(double lamellipodiumDestructionRate)
+    {
+      mLamellipodiumDestructionRate = lamellipodiumDestructionRate;
     }
 
     // output information

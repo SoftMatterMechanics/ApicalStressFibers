@@ -72,6 +72,16 @@ private:
     // my changes
     unsigned mGroupNumber;
 
+    bool mIsLeadingCell;
+
+    bool mIsLeadingCellTop;
+
+    bool mIsLeadingCellBottom;
+
+    bool mIsJustReAttached;
+
+    double mLamellipodiumStrength;
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -182,6 +192,56 @@ public:
     unsigned GetGroupNumber()
     {
       return mGroupNumber;
+    }
+
+    void SetIsLeadingCell(bool isLeadingCell)
+    {
+      mIsLeadingCell = isLeadingCell;
+    }
+
+    bool GetIsLeadingCell()
+    {
+      return mIsLeadingCell;
+    }
+
+    void SetIsLeadingCellTop(bool isLeadingCellTop)
+    {
+      mIsLeadingCellTop = isLeadingCellTop;
+    }
+
+    bool GetIsLeadingCellTop()
+    {
+      return mIsLeadingCellTop;
+    }
+
+    void SetIsLeadingCellBottom(bool isLeadingCellBottom)
+    {
+      mIsLeadingCellBottom = isLeadingCellBottom;
+    }
+
+    bool GetIsLeadingCellBottom()
+    {
+      return mIsLeadingCellBottom;
+    }
+
+    void SetIsJustReAttached(bool isJustReAttached)
+    {
+      mIsJustReAttached = isJustReAttached;
+    }
+
+    bool GetIsJustReAttached()
+    {
+      return mIsJustReAttached;
+    }
+
+    void SetLamellipodiumStrength(double lamellipodiumStrength)
+    {
+      mLamellipodiumStrength = lamellipodiumStrength;
+    }
+
+    double GetLamellipodiumStrength()
+    {
+      return mLamellipodiumStrength;
     }
 
     bool GetOrientation(unsigned faceLocalIndex)
@@ -634,13 +694,58 @@ public:
     {
     }
 
+    void SetGroupNumber(unsigned groupNumber)
+    {
+    }
+
     unsigned GetGroupNumber()
     {
       return 0;
     }
 
-    void SetGroupNumber(unsigned groupNumber)
+    void SetIsLeadingCell(bool isLeadingCell)
     {
+    }
+
+    bool GetIsLeadingCell()
+    {
+      return false;
+    }
+
+    void SetIsLeadingCellTop(bool isLeadingCellTop)
+    {
+    }
+
+    bool GetIsLeadingCellTop()
+    {
+      return false;
+    }
+
+    void SetIsLeadingCellBottom(bool isLeadingCellBottom)
+    {
+    }
+
+    bool GetIsLeadingCellBottom()
+    {
+      return false;
+    }
+
+    void SetIsJustReAttached(bool isJustReAttached)
+    {
+    }
+
+    bool GetIsJustReAttached()
+    {
+      return false;
+    }
+
+    void SetLamellipodiumStrength(double lamellipodiumStrength)
+    {
+    }
+
+    double GetLamellipodiumStrength()
+    {
+      return 0.0;
     }
 
 };

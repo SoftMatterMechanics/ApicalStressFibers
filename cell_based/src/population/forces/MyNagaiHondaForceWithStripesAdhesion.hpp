@@ -164,6 +164,12 @@ protected:
 
     bool mUseMyDetachPatternMethod;
 
+    bool mIfUseNewSSADistributionRule;
+
+    double mBasicSSA;
+
+    double mSSAForMatureLamellipodium;
+
 public:
 
     /**
@@ -382,6 +388,21 @@ public:
     void SetUseMyDetachPatternMethod(bool useMyDetachPatternMethod)
     {
       mUseMyDetachPatternMethod = useMyDetachPatternMethod;
+    }
+
+    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
+    {
+      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
+    }
+
+    void SetBasicSSA(double basicSSA)
+    {
+      mBasicSSA = basicSSA;
+    }
+
+    void SetSSAForMatureLamellipodium(double SSAForMatureLamellipodium)
+    {
+      mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
     }
 
 };

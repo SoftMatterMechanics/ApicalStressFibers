@@ -68,6 +68,8 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
 
       mWriteGroupNumberToCell(false),
 
+      mIfUseNewSSADistributionRule(false),
+
       mIfOutputModifierInformation(false)
 {
 }
@@ -86,6 +88,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPop
         UpdateForCellDivision(rCellPopulation);
     if (mWriteGroupNumberToCell)
         UpdateGroupNumbers(rCellPopulation);
+    if (mIfUseNewSSADistributionRule)
+        UpdateLamellipodiumInfoOfCells(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -101,6 +105,8 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM
         SetupSolveForCellDivision(rCellPopulation);
     if (mWriteGroupNumberToCell)
         UpdateGroupNumbers(rCellPopulation);
+    if (mIfUseNewSSADistributionRule)
+        SetupSolveForLamellipodiumInfoOfCells(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -401,6 +407,122 @@ void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumberOfCell(AbstractCellP
 
     unsigned group_number = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )->GetGroupNumber();
     pCell->GetCellData()->SetItem("group number", group_number);
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        CellPtr pCell = *cell_iter;
+        VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+
+        unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
+        if (fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - 0.0)< 1e-1)
+        {
+            bool is_leading_cell = false;
+            for (unsigned index=0; index< pElement->GetNumNodes(); index++)
+            {
+                if (pElement->GetNode(index)->IsBoundaryNode())
+                {
+                    // pCell->SetIsLeadingCell(true);
+                    pElement->SetIsLeadingCell(true);
+                    // pCell->SetIsJustReAttached(false);
+                    pElement->SetIsJustReAttached(false);
+                    // pCell->SetLamellipodiumStrength(1.0);
+                    pElement->SetLamellipodiumStrength(1.0);
+                    pCell->GetCellData()->SetItem("is_leading_cell", 1);
+                    pCell->GetCellData()->SetItem("is_just_reattached", 0);
+                    pCell->GetCellData()->SetItem("lamellipodium_strength", 1.0);
+                    is_leading_cell = true;
+                    break;
+                }
+            }
+            if (!is_leading_cell)
+            {
+                // pCell->SetIsLeadingCell(false);
+                pElement->SetIsLeadingCell(false);
+                // pCell->SetIsJustReAttached(false);
+                pElement->SetIsJustReAttached(false);
+                // pCell->SetLamellipodiumStrength(0.0);
+                pElement->SetLamellipodiumStrength(0.0);
+                pCell->GetCellData()->SetItem("is_leading_cell", 0);
+                pCell->GetCellData()->SetItem("is_just_reattached", 0);
+                pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
+            }
+        }
+        else
+        {
+            // pCell->SetIsLeadingCell(false);
+            pElement->SetIsLeadingCell(false);
+            // pCell->SetIsJustReAttached(false);
+            pElement->SetIsJustReAttached(false);
+            // pCell->SetLamellipodiumStrength(0.0);
+            pElement->SetLamellipodiumStrength(0.0);
+            pCell->GetCellData()->SetItem("is_leading_cell", 0);
+            pCell->GetCellData()->SetItem("is_just_reattached", 0);
+            pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
+        }
+    }
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::UpdateLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    double dt = SimulationTime::Instance()->GetTimeStep();
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        CellPtr pCell = *cell_iter;
+        VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+        
+        pCell->GetCellData()->SetItem("is_leading_cell", pElement->GetIsLeadingCell());
+        pCell->GetCellData()->SetItem("is_just_reattached", pElement->GetIsJustReAttached());
+        pCell->GetCellData()->SetItem("lamellipodium_strength", pElement->GetLamellipodiumStrength());
+
+        if (pElement->GetLamellipodiumStrength()!=0.0 && !pElement->GetIsLeadingCell())
+        {
+            pElement->SetIsJustReAttached(true);
+            pCell->GetCellData()->SetItem("is_just_reattached", true);
+        }
+            
+        if (pElement->GetIsLeadingCell())
+        {
+            double new_lamellipodium_strength = std::min(1.0, (pElement->GetLamellipodiumStrength()+mLamellipodiumMaturationRate*dt));
+            pElement->SetLamellipodiumStrength(new_lamellipodium_strength);
+            pCell->GetCellData()->SetItem("lamellipodium_strength", new_lamellipodium_strength);
+        }
+        else if (pElement->GetIsJustReAttached())
+        {
+            double new_lamellipodium_strength = std::max(0.0, (pElement->GetLamellipodiumStrength()-mLamellipodiumDestructionRate*dt));
+            pElement->SetLamellipodiumStrength(new_lamellipodium_strength);
+            pCell->GetCellData()->SetItem("lamellipodium_strength", new_lamellipodium_strength);
+            if (new_lamellipodium_strength==0.0)
+            {
+                pElement->SetIsJustReAttached(false);
+                pCell->GetCellData()->SetItem("is_just_reattached", false);
+            }
+        }
+        else
+            assert(pElement->GetLamellipodiumStrength()==0.0);
+    }
 }
 
 template<unsigned DIM>

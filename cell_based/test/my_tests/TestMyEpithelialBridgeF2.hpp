@@ -84,13 +84,13 @@ public:
 
         double feedback_strength_for_myosin_activity = 0.0;
         double set_nagai_honda_membrane_surface_energy_parameter = 1.0;
-        double target_shape_index = 4.0; // 3.7224 for default
+        double target_shape_index = 1.0; // 3.7224 for default
 
         double substrate_adhesion_parameter_at_leading_top= -10.0;
         double substrate_adhesion_parameter_below_leading_top = -1.0;
         double reservoir_substrate_adhesion_parameter = -1.0;
 
-        double set_polarity_magnitude = 0.5;
+        double set_polarity_magnitude = 0.1;
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -433,7 +433,7 @@ public:
         // output directory
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-22/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-23/";
 
         oss.str("");
         oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
