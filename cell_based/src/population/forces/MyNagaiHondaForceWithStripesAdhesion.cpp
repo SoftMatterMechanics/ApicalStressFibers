@@ -373,7 +373,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         case_number = 1;
                         VertexElement<DIM, DIM>* p_element_1 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
                         CellPtr p_cell_1 = p_cell_population->GetCellUsingLocationIndex(p_element_1->GetIndex());
-                        VertexElement<DIM, DIM>* p_element_2 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().end());
+                        VertexElement<DIM, DIM>* p_element_2 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin()++);
                         CellPtr p_cell_2 = p_cell_population->GetCellUsingLocationIndex(p_element_2->GetIndex());
                         double centroid_y_cell_1 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_1->GetIndex())[1];
                         double centroid_y_cell_2 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_2->GetIndex())[1];
@@ -866,6 +866,34 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         }// end of 'Iterate over these elements'
 
         c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution +reservoir_substrate_adhesion_contribution;
+
+        // possilbe tmp output for testing new SSA:
+        bool output_while_testing_new_SSA = false;
+        if (output_while_testing_new_SSA)
+        {
+            VertexElement<DIM, DIM>* pElement = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
+            if (pElement->GetIsLeadingCell() && pElement->GetGroupNumber()>0)
+            {
+                double t_now = SimulationTime::Instance()->GetTime();
+                if (p_this_node->rGetContainingElementIndices().size()==1)
+                {
+                    std::cout << "Time: " << t_now << std::endl;
+                    std::cout << "Node of LeadingCell, node index=" << p_this_node->GetIndex() 
+                            << ", SSA case number=0, node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1]
+                            << std::endl << "Lamellipodium strength=" << pElement->GetLamellipodiumStrength()
+                            << std::endl << "SSA: x=" << area_adhesion_contribution[0] << ", y=" << area_adhesion_contribution[1] << std::endl;
+                }
+                else if (p_this_node->rGetContainingElementIndices().size()==2)
+                {
+                    std::cout << "Time: " << t_now << std::endl;
+                    std::cout << "Node of LeadingCell, node index=" << p_this_node->GetIndex() 
+                            << ", SSA case number=1, node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1]
+                            << std::endl << "Lamellipodium strength1=" << pElement->GetLamellipodiumStrength() 
+                            << ", Lamellipodium strength2=" << p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin()++)->GetLamellipodiumStrength()
+                            << std::endl << "SSA: x=" << area_adhesion_contribution[0] << ", y=" << area_adhesion_contribution[1] << std::endl;
+                }
+            }
+        }
 
         // to do: only typical nodes needs to be considered this carefully!
         if (mConsiderConsistencyForSSA && node_has_SSA)

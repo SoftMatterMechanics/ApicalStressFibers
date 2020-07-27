@@ -81,21 +81,25 @@ public:
         // double nagai_honda_membrane_surface_energy_parameter = 1.0;
         // double target_shape_index = 4.0; // 3.7224 for default
         // double set_polarity_magnitude = 0.5;
+        // bool consider_consistency_of_the_influence_of_CBAdhe = true;
 
         double feedback_strength_for_myosin_activity = 0.0;
         double nagai_honda_membrane_surface_energy_parameter = 0.5;
         double target_shape_index = 4.0; // 3.7224 for default
 
-        double substrate_adhesion_parameter_at_leading_top= -10.0;
+        double substrate_adhesion_parameter_at_leading_top= -15.0;
         double substrate_adhesion_parameter_below_leading_top = -1.0;
         double reservoir_substrate_adhesion_parameter = -1.0;
 
         double set_polarity_magnitude = 0.0;
 
-        // for test
+        // for test new SSS distribution rule
         bool use_new_SSA_distribution_rule = true;
-        double lamellipodium_maturation_rate = 0.1;
+        double lamellipodium_maturation_rate = 0.075;
         double lamellipodium_destruction_rate = 0.1;        
+        double basic_SSA = -1.0;
+        double SSA_for_mature_lamellipodium = -15.0;
+        bool output_concise_swap_information_when_remesh = true;
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -139,8 +143,6 @@ public:
         double substrate_adhesion_leading_top_length = 3.0;
         // double substrate_adhesion_parameter_at_leading_top= -3.0;
         // double substrate_adhesion_parameter_below_leading_top = -0.5;
-        double basic_SSA = -1.0;
-        double SSA_for_mature_lamellipodium = -10.0;
                 // detach pattern:
         bool use_my_detach_pattern_method = true;
         if (use_my_detach_pattern_method)
@@ -188,7 +190,7 @@ public:
         double set_rotational_diffusion_constant = 0.01;
 
         // output
-        bool output_concise_swap_information_when_remesh = false;
+        // bool output_concise_swap_information_when_remesh = false;
         bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
         bool output_information_for_nagai_honda_force = false;
         bool output_numerical_method_information = false;
@@ -278,8 +280,10 @@ public:
         double nagai_honda_cell_boundary_adhesion_energy_parameter = 0.0;
         bool consider_consistency_of_the_influence_of_CBAdhe = true;
         if (consider_consistency_of_the_influence_of_CBAdhe) // note: 0.1 is a magic number.
+          // nagai_honda_cell_boundary_adhesion_energy_parameter = nagai_honda_cell_cell_adhesion_energy_parameter
+          //     + 0.1*target_shape_index*sqrt(use_fixed_target_area? fixed_target_area : reference_target_area_for_modifier);
           nagai_honda_cell_boundary_adhesion_energy_parameter = nagai_honda_cell_cell_adhesion_energy_parameter
-              + 0.1*target_shape_index*sqrt(use_fixed_target_area? fixed_target_area : reference_target_area_for_modifier);
+              + 0.1*4.0*sqrt(use_fixed_target_area? fixed_target_area : reference_target_area_for_modifier);
         bool if_use_face_element_to_get_adhesion_parameter = if_consider_feedback_of_face_values;
 
         // Strips structure of substrate adhesion

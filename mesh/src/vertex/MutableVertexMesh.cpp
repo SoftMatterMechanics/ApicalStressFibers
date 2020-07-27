@@ -3453,6 +3453,19 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 p_intersecting_element->SetIsLeadingCellBottom(false);
                 p_intersecting_element->SetIsJustReAttached(true);
             }
+            if (true) // if an unstable attachment is followed by a dettachment, we tend to assigned an actual intermediate cell to a leading cell!
+            {
+                std::cout << "A ReAttachment behavior happened, in the T3 swap case: 5." << std::endl;
+                
+                p_element->SetIsLeadingCell(false);
+                p_element->SetIsLeadingCellTop(false);
+                p_element->SetIsLeadingCellBottom(false);
+                p_element->SetIsJustReAttached(true);
+                p_intersecting_element->SetIsLeadingCell(false);
+                p_intersecting_element->SetIsLeadingCellTop(false);
+                p_intersecting_element->SetIsLeadingCellBottom(false);
+                p_intersecting_element->SetIsJustReAttached(true);
+            }
 
             // my changes:
             if (mIfUpdateFaceElementsInMesh)
