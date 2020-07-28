@@ -517,13 +517,13 @@ void FaceValueAndStressStateModifier<DIM>::UpdateLamellipodiumInfoOfCells(Abstra
             pCell->GetCellData()->SetItem("is_just_reattached", true);
         }
             
-        if (pElement->GetIsLeadingCell())
+        if (pElement->GetIsLeadingCell()) // leading cell
         {
             double new_lamellipodium_strength = std::min(1.0, (pElement->GetLamellipodiumStrength()+mLamellipodiumMaturationRate*dt));
             pElement->SetLamellipodiumStrength(new_lamellipodium_strength);
             pCell->GetCellData()->SetItem("lamellipodium_strength", new_lamellipodium_strength);
         }
-        else if (pElement->GetIsJustReAttached())
+        else if (pElement->GetIsJustReAttached()) // intermediate cell but still has lamellipodium!
         {
             double new_lamellipodium_strength = std::max(0.0, (pElement->GetLamellipodiumStrength()-mLamellipodiumDestructionRate*dt));
             pElement->SetLamellipodiumStrength(new_lamellipodium_strength);

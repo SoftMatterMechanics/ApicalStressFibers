@@ -138,6 +138,8 @@ protected:
 
     bool mIfUseNewSSADistributionRule;
 
+    bool mIfCheckForT4Swaps;
+
     /**
      * Divide an element along the axis passing through two of its nodes.
      *
@@ -878,6 +880,11 @@ public:
     void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
     {
       mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
+    }
+
+    void SetIfCheckForT4Swaps(bool ifCheckForT4Swaps)
+    {
+      mIfCheckForT4Swaps = ifCheckForT4Swaps;
     }
 
 };

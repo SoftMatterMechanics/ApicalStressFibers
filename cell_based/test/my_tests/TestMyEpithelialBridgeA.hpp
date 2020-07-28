@@ -99,7 +99,9 @@ public:
         double lamellipodium_destruction_rate = 0.1;        
         double basic_SSA = -1.0;
         double SSA_for_mature_lamellipodium = -15.0;
-        bool output_concise_swap_information_when_remesh = true;
+          // T4Swaps:
+        bool if_check_for_T4_swaps = false;
+        bool output_concise_swap_information_when_remesh = false;
 
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
@@ -218,6 +220,7 @@ public:
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
         p_mesh->SetIfClassifyElementsWithGroupNumbers(use_my_detach_pattern_method || use_new_SSA_distribution_rule);
         p_mesh->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
+        p_mesh->SetIfCheckForT4Swaps(if_check_for_T4_swaps);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);
         p_mesh->SetOutputDetailedSwapInformationWhenRemesh(output_detailed_swap_information_when_remesh);
         /*------------------------------END: Mesh Structure------------------------------*/
@@ -459,7 +462,9 @@ public:
               << "_matu_lamelli=" << SSA_for_mature_lamellipodium
               << "_basic=" << basic_SSA
               << "_matu_rate=" << lamellipodium_maturation_rate
-              << "_destru_rate=" << lamellipodium_destruction_rate;
+              << "_destru_rate=" << lamellipodium_destruction_rate
+              << "_T4swaps=" << if_check_for_T4_swaps
+              << '|';
 
         oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index

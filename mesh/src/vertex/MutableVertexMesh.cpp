@@ -61,7 +61,8 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mOutputDetailedSwapInformationWhenRemesh(false),
           mIfClassifyElementsWithGroupNumbers(false),
           mNumberOfGroups(1),
-          mIfUseNewSSADistributionRule(false)
+          mIfUseNewSSADistributionRule(false),
+          mIfCheckForT4Swaps(false)
 {
     // Threshold parameters must be strictly positive
     assert(cellRearrangementThreshold > 0.0);
@@ -1145,7 +1146,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::ReMesh(VertexElementMap& rElemen
         }
 
         // my changes for T4 swap:
-        if (mIfUseNewSSADistributionRule)
+        if (mIfCheckForT4Swaps)
             CheckForT4Swaps();
 
         RemoveDeletedNodes();
@@ -2177,6 +2178,8 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
         // group number manipulation:
         if (mIfClassifyElementsWithGroupNumbers)
         {
+            assert( this->GetElement(* pNodeA->rGetContainingElementIndices().begin())->GetGroupNumber()
+                    == this->GetElement(* pNodeB->rGetContainingElementIndices().begin())->GetGroupNumber() );
             unsigned original_group_number = this->GetElement(* pNodeA->rGetContainingElementIndices().begin())->GetGroupNumber();
             double height = nodeA_location[1] + 0.5*vector_AB[1];
             bool group_number_unchanged_below = true;
@@ -2200,14 +2203,13 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
                 p_element_below = this->GetElement(* pNodeA->rGetContainingElementIndices().begin());
             }
 
-            assert(!p_element_up->GetIsLeadingCell() && !p_element_below->GetIsLeadingCell());
             p_element_up->SetIsLeadingCell(true);
-            p_element_up->SetIsLeadingCellTop(false);
+            // p_element_up->SetIsLeadingCellTop(false);
             p_element_up->SetIsLeadingCellBottom(true);
             p_element_up->SetIsJustReAttached(false);
             p_element_below->SetIsLeadingCell(true);
             p_element_below->SetIsLeadingCellTop(true);
-            p_element_below->SetIsLeadingCellBottom(false);
+            // p_element_below->SetIsLeadingCellBottom(false);
             p_element_below->SetIsJustReAttached(false);
         }
     }
@@ -3592,7 +3594,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             // my changes for new SSA distribution rule:
             if (mIfUseNewSSADistributionRule)
             {
-                // std::cout << "A ReAttachment behavior happened, in the T3 swap case: 5." << std::endl;
+                std::cout << "A Reattachment behavior happened, in the T3 swap case: 5." << std::endl;
                 // assert((p_element->GetIsLeadingCell() && p_intersecting_element->GetIsLeadingCell()));
                 // assert( (p_element->GetIsLeadingCellTop()&&p_intersecting_element->GetIsLeadingCellBottom()) 
                 //         || (p_element->GetIsLeadingCellBottom()&&p_intersecting_element->GetIsLeadingCellTop()) );
@@ -3600,14 +3602,37 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 assert(mIfClassifyElementsWithGroupNumbers);
                 assert(p_element->GetGroupNumber() != p_intersecting_element->GetGroupNumber());// it's a strict constraint
 
-                p_element->SetIsLeadingCell(false);
-                p_element->SetIsLeadingCellTop(false);
-                p_element->SetIsLeadingCellBottom(false);
-                p_element->SetIsJustReAttached(true);
-                p_intersecting_element->SetIsLeadingCell(false);
-                p_intersecting_element->SetIsLeadingCellTop(false);
-                p_intersecting_element->SetIsLeadingCellBottom(false);
-                p_intersecting_element->SetIsJustReAttached(true);
+                // to do:
+                VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_up;
+                VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_below;
+                if (this->GetCentroidOfElement(p_intersecting_element->GetIndex())[1] > intersection[1])
+                {
+                    p_element_up = p_intersecting_element;
+                    p_element_below = p_element;
+                }
+                else
+                {
+                    p_element_below = p_intersecting_element;
+                    p_element_up = p_element;
+                }
+
+                p_element_up->SetIsLeadingCellBottom(false);
+                if (p_element_up->GetIsLeadingCellTop()==false)
+                    p_element_up->SetIsLeadingCell(false);
+                p_element_below->SetIsLeadingCellTop(false);
+                if (p_element_below->GetIsLeadingCellBottom()==false)
+                    p_element_below->SetIsLeadingCell(false);
+                p_element_up->SetIsJustReAttached(true);
+                p_element_below->SetIsJustReAttached(true);
+
+                // p_element->SetIsLeadingCell(false);
+                // p_element->SetIsLeadingCellTop(false);
+                // p_element->SetIsLeadingCellBottom(false);
+                // p_element->SetIsJustReAttached(true);
+                // p_intersecting_element->SetIsLeadingCell(false);
+                // p_intersecting_element->SetIsLeadingCellTop(false);
+                // p_intersecting_element->SetIsLeadingCellBottom(false);
+                // p_intersecting_element->SetIsJustReAttached(true);
             }
 
             // my changes for group number manipulation:
@@ -4929,7 +4954,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 // my changes for new SSA distribution rule:
                 if (mIfUseNewSSADistributionRule)
                 {
-                    // std::cout << "A ReAttachment behavior happened, in the T3 swap case: 11." << std::endl;
+                    std::cout << "A Reattachment behavior happened, in the T3 swap case: 11." << std::endl;
                     // assert((p_element->GetIsLeadingCell() && p_intersecting_element->GetIsLeadingCell()));
                     // assert( (p_element->GetIsLeadingCellTop()&&p_intersecting_element->GetIsLeadingCellBottom()) 
                     //         || (p_element->GetIsLeadingCellBottom()&&p_intersecting_element->GetIsLeadingCellTop()) );
@@ -4937,6 +4962,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     assert(mIfClassifyElementsWithGroupNumbers);
                     assert(p_element->GetGroupNumber() != p_element_1->GetGroupNumber());// it's a strict constraint
 
+                    // to do:
                     p_element->SetIsLeadingCell(false);
                     p_element->SetIsLeadingCellTop(false);
                     p_element->SetIsLeadingCellBottom(false);
