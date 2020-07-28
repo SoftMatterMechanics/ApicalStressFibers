@@ -84,7 +84,7 @@ public:
         // bool consider_consistency_of_the_influence_of_CBAdhe = true;
 
         double feedback_strength_for_myosin_activity = 0.0;
-        double nagai_honda_membrane_surface_energy_parameter = 0.5;
+        double nagai_honda_membrane_surface_energy_parameter = 0.1;
         double target_shape_index = 4.0; // 3.7224 for default
 
         double substrate_adhesion_parameter_at_leading_top= -15.0;
@@ -95,10 +95,10 @@ public:
 
         // for test new SSS distribution rule
         bool use_new_SSA_distribution_rule = true;
-        double lamellipodium_maturation_rate = 0.1;
+        double lamellipodium_maturation_rate = 0.05;
         double lamellipodium_destruction_rate = 0.1;        
-        double basic_SSA = -1.0;
-        double SSA_for_mature_lamellipodium = -15.0;
+        double SSA_for_mature_lamellipodium = -6.0; //-15.0;
+        double basic_SSA = -0.5; //-1.0;
           // T4Swaps:
         bool if_check_for_T4_swaps = false;
         bool output_concise_swap_information_when_remesh = false;
@@ -106,7 +106,7 @@ public:
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // timestep
         double dt = 0.1;
-        double sampling_time = 0.1;
+        double sampling_time = 1.0;
         bool apply_my_change_to_make_timestep_adaptive = true;
         bool consider_consistency_for_SSA = true;
         double max_movement_per_timestep = 0.05;
@@ -454,7 +454,7 @@ public:
         // output directory
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-23/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-28/";
 
         oss.str("");
         if (use_new_SSA_distribution_rule)
