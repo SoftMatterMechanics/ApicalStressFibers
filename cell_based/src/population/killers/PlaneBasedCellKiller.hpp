@@ -62,6 +62,9 @@ private:
      */
     c_vector<double, DIM> mNormalToPlane;
 
+    // my changes 
+    bool mKillCellsGroupNumberFrom1;
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -110,6 +113,12 @@ public:
      * @param rParamsFile the file stream to which the parameters are output
      */
     void OutputCellKillerParameters(out_stream& rParamsFile);
+
+    // my changes
+    void SetKillCellsGroupNumberFrom1(bool killCellsGroupNumberFrom1)
+    {
+        mKillCellsGroupNumberFrom1 = killCellsGroupNumberFrom1;
+    }
 };
 
 #include "SerializationExportWrapper.hpp"

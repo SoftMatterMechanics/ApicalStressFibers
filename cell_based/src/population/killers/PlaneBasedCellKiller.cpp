@@ -34,6 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "PlaneBasedCellKiller.hpp"
+#include "MutableVertexMesh.hpp"
 
 template<unsigned DIM>
 PlaneBasedCellKiller<DIM>::PlaneBasedCellKiller(AbstractCellPopulation<DIM>* pCellPopulation,
@@ -61,6 +62,17 @@ const c_vector<double, DIM>& PlaneBasedCellKiller<DIM>::rGetNormalToPlane() cons
 template<unsigned DIM>
 void PlaneBasedCellKiller<DIM>::CheckAndLabelCellsForApoptosisOrDeath()
 {
+    // my changes
+    MutableVertexMesh<DIM, DIM>* p_mesh = nullptr;
+    if (mKillCellsGroupNumberFrom1)
+    {
+        if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& this->mpCellPopulation->rGetMesh()) == nullptr)
+        {
+            EXCEPTION("MutableVertexMesh should to be used in the PlaneCellKiller");
+        }
+        p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& this->mpCellPopulation->rGetMesh());
+    }
+
     for (typename AbstractCellPopulation<DIM>::Iterator cell_iter = this->mpCellPopulation->Begin();
          cell_iter != this->mpCellPopulation->End();
          ++cell_iter)
@@ -70,6 +82,15 @@ void PlaneBasedCellKiller<DIM>::CheckAndLabelCellsForApoptosisOrDeath()
         if (inner_prod(cell_location - mPointOnPlane, mNormalToPlane) > 0.0)
         {
             cell_iter->Kill();
+        }
+
+
+        // my changes
+        if (mKillCellsGroupNumberFrom1)
+        {
+            CellPtr pCell = *cell_iter;
+            if (p_mesh->GetElement( this->mpCellPopulation->GetLocationIndexUsingCell(pCell) )->GetGroupNumber()>0)
+                cell_iter->Kill();
         }
     }
 }

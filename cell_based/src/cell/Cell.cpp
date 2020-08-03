@@ -527,9 +527,12 @@ CellPtr Cell::Divide()
     // my changes
     p_new_cell->SetMyosinActivity(mMyosinActivity);
     p_new_cell->SetUseMyDivisionRuleAlongWithModifier(mUseMyDivisionRuleAlongWithModifier);
-    
-    this->GetCellData()->SetItem("target area", 0.5*this->GetCellData()->GetItem("target area"));
-    p_new_cell->GetCellData()->SetItem("target area", 0.5*p_new_cell->GetCellData()->GetItem("target area"));
+
+    if (mUseMyDivisionRuleAlongWithModifier)
+    {
+        this->GetCellData()->SetItem("target area", 0.5*this->GetCellData()->GetItem("target area"));
+        p_new_cell->GetCellData()->SetItem("target area", 0.5*p_new_cell->GetCellData()->GetItem("target area"));
+    }
     //tmp
     // std::cout << std::endl << "TargetAreaOfNewCell:" << p_new_cell->GetCellData()->GetItem("target area") << std::endl;
     // std::cout << std::endl << "Cell::Divide() finished!" << std::endl;

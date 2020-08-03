@@ -1063,6 +1063,14 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::RemoveDeletedNodesAndElements(Ve
         }
     }
 
+    // my changes
+    if (!(mDeletedElementIndices.size() == this->mElements.size() - live_elements.size()))
+    {
+        std::cout << "ERR: mDeletedElementIndices.size()=" << mDeletedElementIndices.size() 
+                << ", this->mElements.size()=" << this->mElements.size() 
+                << ", live_elements.size()=" << live_elements.size() << std::endl;
+    }
+
     // Sanity check
     assert(mDeletedElementIndices.size() == this->mElements.size() - live_elements.size());
 

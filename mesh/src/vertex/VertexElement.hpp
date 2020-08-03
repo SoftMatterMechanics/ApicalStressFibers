@@ -505,14 +505,14 @@ public:
       return 0.0;
     }
 
-    bool IsDeleted()
-    {
-      return false;
-    }
+    // bool IsDeleted()
+    // {
+    //   return false;
+    // }
 
-    void MarkAsDeleted()
-    {
-    }
+    // void MarkAsDeleted()
+    // {
+    // }
 
     void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
     {
@@ -553,6 +553,7 @@ private:
 
     double mUnifiedCellBoundaryAdhesionEnergyParameter;
 
+    // may be wrong
     bool mIsDeleted;
 
 public:
@@ -601,12 +602,13 @@ public:
 
     bool IsDeleted()
     {
-      return mIsDeleted;
+      return this->mIsDeleted;
     }
 
+    // may be wrong!!! it's a vitual method!
     void MarkAsDeleted()
     {
-      mIsDeleted = true;
+      this->mIsDeleted = true;
     }
 
     void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)

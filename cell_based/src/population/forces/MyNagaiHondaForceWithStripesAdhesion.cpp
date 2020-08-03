@@ -113,8 +113,11 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
     // For My Detach Pattern Method, using group number:
     unsigned number_of_groups = p_cell_population->rGetMesh().GetNumberOfGroups();
     std::vector<double> leading_tops_of_groups(number_of_groups);
-    for (unsigned i=0; i<number_of_groups; i++)
-        leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
+    if (mUseMyDetachPatternMethod)
+    {
+        for (unsigned i=0; i<number_of_groups; i++)
+            leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
+    }
 
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
@@ -249,7 +252,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             /*---------------------------------Start of substrate adhesion contribution---------------------------------*/
             if (mIfConsiderSubstrateAdhesion)
             {
-                assert( !(mUseMyDetachPatternMethod&&mIfSubstrateAdhesionIsHomogeneous) );
+                assert( !((mIfUseNewSSADistributionRule||mUseMyDetachPatternMethod)&&mIfSubstrateAdhesionIsHomogeneous) );
                 c_vector<double, DIM> substrate_adhesion_area_gradient = zero_vector<double>(DIM);
                 c_vector<double, DIM> weighted_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
                 // Parameters
@@ -354,59 +357,86 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                     double SSA = 0.0; // for case 0
                     double SSA_above_this_node = 0.0; // for case 1
                     double SSA_below_this_node = 0.0; // for case 1
-                    if (p_this_node->rGetContainingElementIndices().size()==1)
+                    if (mIfUseNewSSADistributionRule)
                     {
-                        case_number = 0;
-                        CellPtr p_cell = p_cell_population->GetCellUsingLocationIndex(p_element->GetIndex());
-                        if (p_element->GetIsLeadingCell() || p_element->GetIsJustReAttached())
+                        if (p_this_node->rGetContainingElementIndices().size()==1)
                         {
-                            SSA = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element->GetLamellipodiumStrength();
+                            case_number = 0;
+                            CellPtr p_cell = p_cell_population->GetCellUsingLocationIndex(p_element->GetIndex());
+                            if (p_element->GetIsLeadingCell() || p_element->GetIsJustReAttached())
+                            {
+                                SSA = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element->GetLamellipodiumStrength();
+                                if (mSmallSSAAtFirst && SimulationTime::Instance()->GetTime()<mInitialTimeForSmallSSA)
+                                {
+                                    SSA = mBasicSSA + (mSmallSSAForInitialTime - mBasicSSA)*p_element->GetLamellipodiumStrength();
+                                }
+                                if(mKeepMovingForward)
+                                {
+                                    if (p_element->GetIsLeadingCellBottom())
+                                    {
+                                        if (p_this_node->rGetLocation()[1]>mSlowlyMovingForwardAfterThisHeight)
+                                            SSA = std::max(mBasicSSA, SSA-0.5);
+                                        else
+                                            SSA = std::max(mBasicSSA, SSA-mSSABottomDecrease);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                assert(!p_element->GetIsLeadingCell() && !p_element->GetIsJustReAttached());
+                                SSA = mBasicSSA;
+                            }
                         }
-                        else
+                        else if (p_this_node->rGetContainingElementIndices().size()==2)
                         {
-                            assert(!p_element->GetIsLeadingCell() && !p_element->GetIsJustReAttached());
-                            SSA = mBasicSSA;
-                        }
-                    }
-                    else if (p_this_node->rGetContainingElementIndices().size()==2)
-                    {
-                        case_number = 1;
-                        VertexElement<DIM, DIM>* p_element_1 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
-                        CellPtr p_cell_1 = p_cell_population->GetCellUsingLocationIndex(p_element_1->GetIndex());
-                        VertexElement<DIM, DIM>* p_element_2 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin()++);
-                        CellPtr p_cell_2 = p_cell_population->GetCellUsingLocationIndex(p_element_2->GetIndex());
-                        double centroid_y_cell_1 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_1->GetIndex())[1];
-                        double centroid_y_cell_2 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_2->GetIndex())[1];
-                        double SSA_cell_1 = 0.0;
-                        double SSA_cell_2 = 0.0;
-                        if (p_element_1->GetIsLeadingCell() || p_element_1->GetIsJustReAttached())
-                        {
-                            SSA_cell_1 = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element_1->GetLamellipodiumStrength();
-                        }
-                        else
-                        {
-                            assert(!p_element_1->GetIsLeadingCell() && !p_element_1->GetIsJustReAttached());
-                            SSA_cell_1 = mBasicSSA;
-                        }
-                        if (p_element_2->GetIsLeadingCell() || p_element_2->GetIsJustReAttached())
-                        {
-                            SSA_cell_2 = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element_2->GetLamellipodiumStrength();
-                        }
-                        else
-                        {
-                            assert(!p_element_2->GetIsLeadingCell() && !p_element_2->GetIsJustReAttached());
-                            SSA_cell_2 = mBasicSSA;
-                        }
+                            case_number = 1;
+                            VertexElement<DIM, DIM>* p_element_1 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
+                            CellPtr p_cell_1 = p_cell_population->GetCellUsingLocationIndex(p_element_1->GetIndex());
+                            VertexElement<DIM, DIM>* p_element_2 = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin()++);
+                            CellPtr p_cell_2 = p_cell_population->GetCellUsingLocationIndex(p_element_2->GetIndex());
+                            double centroid_y_cell_1 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_1->GetIndex())[1];
+                            double centroid_y_cell_2 = p_cell_population->rGetMesh().GetCentroidOfElement(p_element_2->GetIndex())[1];
+                            double SSA_cell_1 = 0.0;
+                            double SSA_cell_2 = 0.0;
+                            if (p_element_1->GetIsLeadingCell() || p_element_1->GetIsJustReAttached())
+                            {
+                                SSA_cell_1 = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element_1->GetLamellipodiumStrength();
+                                if (mSmallSSAAtFirst && SimulationTime::Instance()->GetTime()<mInitialTimeForSmallSSA)
+                                {
+                                    SSA_cell_1 = mBasicSSA + (mSmallSSAForInitialTime - mBasicSSA)*p_element_1->GetLamellipodiumStrength();
+                                }
 
-                        if (centroid_y_cell_1 > centroid_y_cell_2)
-                        {
-                            SSA_above_this_node = SSA_cell_1;
-                            SSA_below_this_node = SSA_cell_2;
-                        }
-                        else
-                        {
-                            SSA_above_this_node = SSA_cell_2;
-                            SSA_below_this_node = SSA_cell_1;
+                            }
+                            else
+                            {
+                                assert(!p_element_1->GetIsLeadingCell() && !p_element_1->GetIsJustReAttached());
+                                SSA_cell_1 = mBasicSSA;
+                            }
+                            if (p_element_2->GetIsLeadingCell() || p_element_2->GetIsJustReAttached())
+                            {
+                                SSA_cell_2 = mBasicSSA + (mSSAForMatureLamellipodium - mBasicSSA)*p_element_2->GetLamellipodiumStrength();
+                                if (mSmallSSAAtFirst && SimulationTime::Instance()->GetTime()<mInitialTimeForSmallSSA)
+                                {
+                                    SSA_cell_2 = mBasicSSA + (mSmallSSAForInitialTime - mBasicSSA)*p_element_2->GetLamellipodiumStrength();
+                                }
+
+                            }
+                            else
+                            {
+                                assert(!p_element_2->GetIsLeadingCell() && !p_element_2->GetIsJustReAttached());
+                                SSA_cell_2 = mBasicSSA;
+                            }
+
+                            if (centroid_y_cell_1 > centroid_y_cell_2)
+                            {
+                                SSA_above_this_node = SSA_cell_1;
+                                SSA_below_this_node = SSA_cell_2;
+                            }
+                            else
+                            {
+                                SSA_above_this_node = SSA_cell_2;
+                                SSA_below_this_node = SSA_cell_1;
+                            }
                         }
                     }
 
@@ -434,81 +464,79 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         }
                         if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                         {
-                            if (!mUseMyDetachPatternMethod) // default
+                            adhesive_sample_num += 1.0;
+
+                            if (mIfUseNewSSADistributionRule)
                             {
-                                adhesive_sample_num += 1.0;
-                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                assert(!mUseMyDetachPatternMethod);
+                                if (case_number==0)
+                                    weighted_adhesive_sample_num += 1.0*SSA;
+                                else
                                 {
-                                    weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    assert(case_number==1);
+                                    if (y_coord >= p_this_node->rGetLocation()[1])
+                                        weighted_adhesive_sample_num += 1.0*SSA_above_this_node;
+                                    else
+                                        weighted_adhesive_sample_num += 1.0*SSA_below_this_node;
+                                }
+                            }
+                            else if (mUseMyDetachPatternMethod)
+                            {
+                                if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += 1.0*mSSAForMatureLamellipodium;
                                 }
                                 else
-                                    weighted_adhesive_sample_num += 1.0;
+                                    weighted_adhesive_sample_num += 1.0*mBasicSSA;
                             }
-                            else // in the case that use my detach pattern method:
+                            else
                             {
-                                adhesive_sample_num += 1.0;
-                                if (!mIfUseNewSSADistributionRule)
+                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                 {
-                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
-                                    {
-                                        weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
-                                    }
-                                    else
-                                        weighted_adhesive_sample_num += 1.0;
+                                    weighted_adhesive_sample_num += 1.0*mSSAForMatureLamellipodium;
                                 }
-                                else // UseNewSSADistributionRule
-                                {
-                                    if (case_number==0)
-                                        weighted_adhesive_sample_num += 1.0*SSA;
-                                    else
-                                    {
-                                        assert(case_number==1);
-                                        if (y_coord >= p_this_node->rGetLocation()[1])
-                                            weighted_adhesive_sample_num += 1.0*SSA_above_this_node;
-                                        else
-                                            weighted_adhesive_sample_num += 1.0*SSA_below_this_node;
-                                    }
-                                }
+                                else
+                                    weighted_adhesive_sample_num += 1.0*mBasicSSA;
                             }
+                            
                         }
                         else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                         {
-                            if (!mUseMyDetachPatternMethod) // default
+                            adhesive_sample_num += -1.0;
+
+                            if (mIfUseNewSSADistributionRule)
                             {
-                                adhesive_sample_num += -1.0;
-                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                assert(!mUseMyDetachPatternMethod);
+                                if (case_number==0)
+                                    weighted_adhesive_sample_num += -1.0*SSA;
+                                else
                                 {
-                                    weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                    assert(case_number==1);
+                                    if (y_coord >= p_this_node->rGetLocation()[1])
+                                        weighted_adhesive_sample_num += -1.0*SSA_above_this_node;
+                                    else
+                                        weighted_adhesive_sample_num += -1.0*SSA_below_this_node;
+                                }
+                            }
+                            else if (mUseMyDetachPatternMethod)
+                            {
+                                if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                {
+                                    weighted_adhesive_sample_num += -1.0*mSSAForMatureLamellipodium;
                                 }
                                 else
-                                    weighted_adhesive_sample_num += -1.0;
+                                    weighted_adhesive_sample_num += -1.0*mBasicSSA;
                             }
-                            else // in the case that use my detach pattern method:
+                            else
                             {
-                                adhesive_sample_num += -1.0;
-                                if (!mIfUseNewSSADistributionRule)
+                                if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                 {
-                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
-                                    {
-                                        weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
-                                    }
-                                    else
-                                        weighted_adhesive_sample_num += -1.0;
+                                    weighted_adhesive_sample_num += -1.0*mSSAForMatureLamellipodium;
                                 }
-                                else // UseNewSSADistributionRule
-                                {
-                                    if (case_number==0)
-                                        weighted_adhesive_sample_num += -1.0*SSA;
-                                    else
-                                    {
-                                        assert(case_number==1);
-                                        if (y_coord >= p_this_node->rGetLocation()[1])
-                                            weighted_adhesive_sample_num += -1.0*SSA_above_this_node;
-                                        else
-                                            weighted_adhesive_sample_num += -1.0*SSA_below_this_node;
-                                    }
-                                }
+                                else
+                                    weighted_adhesive_sample_num += -1.0*mBasicSSA;
                             }
+
                         }
                     }
                     double substrate_adhesion_area = adhesive_sample_num/double(sample_num) * sample_area;
@@ -557,81 +585,79 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             }
                             if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                             {
-                                if (!mUseMyDetachPatternMethod) // default
+                                adhesive_sample_num += 1.0;
+
+                                if (mIfUseNewSSADistributionRule)
                                 {
-                                    adhesive_sample_num += 1.0;
-                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                    assert(!mUseMyDetachPatternMethod);
+                                    if (case_number==0)
+                                        weighted_adhesive_sample_num += 1.0*SSA;
+                                    else
                                     {
-                                        weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                        assert(case_number==1);
+                                        if (y_coord >= p_this_node->rGetLocation()[1])
+                                            weighted_adhesive_sample_num += 1.0*SSA_above_this_node;
+                                        else
+                                            weighted_adhesive_sample_num += 1.0*SSA_below_this_node;
+                                    }
+                                }
+                                else if (mUseMyDetachPatternMethod)
+                                {
+                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += 1.0*mSSAForMatureLamellipodium;
                                     }
                                     else
-                                        weighted_adhesive_sample_num += 1.0;
+                                        weighted_adhesive_sample_num += 1.0*mBasicSSA;
                                 }
-                                else // in the case that use my detach pattern method:
+                                else
                                 {
-                                    adhesive_sample_num += 1.0;
-                                    if (!mIfUseNewSSADistributionRule)
+                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                     {
-                                        if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
-                                        {
-                                            weighted_adhesive_sample_num += 1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
-                                        }
-                                        else
-                                            weighted_adhesive_sample_num += 1.0;
+                                        weighted_adhesive_sample_num += 1.0*mSSAForMatureLamellipodium;
                                     }
-                                    else // UseNewSSADistributionRule
-                                    {
-                                        if (case_number==0)
-                                            weighted_adhesive_sample_num += 1.0*SSA;
-                                        else
-                                        {
-                                            assert(case_number==1);
-                                            if (y_coord >= p_this_node->rGetLocation()[1])
-                                                weighted_adhesive_sample_num += 1.0*SSA_above_this_node;
-                                            else
-                                                weighted_adhesive_sample_num += 1.0*SSA_below_this_node;
-                                        }
-                                    }
+                                    else
+                                        weighted_adhesive_sample_num += 1.0*mBasicSSA;
                                 }
+
                             }
                             else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                             {
-                                if (!mUseMyDetachPatternMethod) // default
+                                adhesive_sample_num += -1.0;
+
+                                if (mIfUseNewSSADistributionRule)
                                 {
-                                    adhesive_sample_num += -1.0;
-                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
+                                    assert(!mUseMyDetachPatternMethod);
+                                    if (case_number==0)
+                                        weighted_adhesive_sample_num += -1.0*SSA;
+                                    else
                                     {
-                                        weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
+                                        assert(case_number==1);
+                                        if (y_coord >= p_this_node->rGetLocation()[1])
+                                            weighted_adhesive_sample_num += -1.0*SSA_above_this_node;
+                                        else
+                                            weighted_adhesive_sample_num += -1.0*SSA_below_this_node;
+                                    }
+                                }
+                                else if (mUseMyDetachPatternMethod)
+                                {
+                                    if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
+                                    {
+                                        weighted_adhesive_sample_num += -1.0*mSSAForMatureLamellipodium;
                                     }
                                     else
-                                        weighted_adhesive_sample_num += -1.0;
+                                        weighted_adhesive_sample_num += -1.0*mBasicSSA;
                                 }
-                                else // in the case that use my detach pattern method:
+                                else
                                 {
-                                    adhesive_sample_num += -1.0;
-                                    if (!mIfUseNewSSADistributionRule)
+                                    if (y_coord > (y_coord_leading_edge - substrate_adhesion_leading_top_length))
                                     {
-                                        if (y_coord > (leading_top_of_the_group - substrate_adhesion_leading_top_length))
-                                        {
-                                            weighted_adhesive_sample_num += -1.0*mSubstrateAdhesionParameterAtLeadingTop/mSubstrateAdhesionParameterBelowLeadingTop;
-                                        }
-                                        else
-                                            weighted_adhesive_sample_num += -1.0;
+                                        weighted_adhesive_sample_num += -1.0*mSSAForMatureLamellipodium;
                                     }
-                                    else // UseNewSSADistributionRule
-                                    {
-                                        if (case_number==0)
-                                            weighted_adhesive_sample_num += -1.0*SSA;
-                                        else
-                                        {
-                                            assert(case_number==1);
-                                            if (y_coord >= p_this_node->rGetLocation()[1])
-                                                weighted_adhesive_sample_num += -1.0*SSA_above_this_node;
-                                            else
-                                                weighted_adhesive_sample_num += -1.0*SSA_below_this_node;
-                                        }
-                                    }
+                                    else
+                                        weighted_adhesive_sample_num += -1.0*mBasicSSA;
                                 }
+
                             }
                         }
                         double substrate_adhesion_area_new = adhesive_sample_num/double(sample_num) * sample_area;
@@ -646,15 +672,12 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
                 if (if_substrate_adhesion_is_homogeneous == true)
                     area_adhesion_contribution -= mHomogeneousSubstrateAdhesionParameter*substrate_adhesion_area_gradient;
+                else if (!mSSAStrengthenedOnlyInYDirection)
+                    area_adhesion_contribution -= weighted_substrate_adhesion_area_gradient;
                 else
                 {
-                    if (!mIfUseNewSSADistributionRule)
-                        area_adhesion_contribution -= mSubstrateAdhesionParameterBelowLeadingTop*weighted_substrate_adhesion_area_gradient;
-                    else
-                    {
-                        assert(mIfUseNewSSADistributionRule && mUseMyDetachPatternMethod);
-                        area_adhesion_contribution -= weighted_substrate_adhesion_area_gradient;
-                    }                    
+                    area_adhesion_contribution[0] -= mBasicSSA*substrate_adhesion_area_gradient[0];
+                    area_adhesion_contribution[1] -= weighted_substrate_adhesion_area_gradient[1];
                 }
                 
                 // If consider reservior substrate adhesion:
@@ -1048,9 +1071,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         // tmp
         if (mOutputInformationForNagaiHondaForce)
         {
-            if (norm_2(force_on_node)>20.0)
+            if (norm_2(force_on_node)>2)
             {
                 std::cout << "Weird! Force is too large! Node Index: " << p_this_node->GetIndex() << std::endl;
+                std::cout << "Node location: " << p_this_node->rGetLocation()[0] << ", " << p_this_node->rGetLocation()[1] << std::endl;
                 std::cout << "X direction:" << std::endl;
                 std::cout << "force on node=" << force_on_node[0]
                         << " deformation_contribution=" << deformation_contribution[0]

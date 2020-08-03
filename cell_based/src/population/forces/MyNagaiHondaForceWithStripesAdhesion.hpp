@@ -118,9 +118,9 @@ protected:
     
     double mSubstrateAdhesionLeadingTopLength;
 
-    double mSubstrateAdhesionParameterAtLeadingTop;
+    double mBasicSSA;
 
-    double mSubstrateAdhesionParameterBelowLeadingTop;
+    double mSSAForMatureLamellipodium;
 
     bool mIfConsiderReservoirSubstrateAdhesion;
 
@@ -166,9 +166,19 @@ protected:
 
     bool mIfUseNewSSADistributionRule;
 
-    double mBasicSSA;
+    bool mSSAStrengthenedOnlyInYDirection;
 
-    double mSSAForMatureLamellipodium;
+    bool mKeepMovingForward;
+
+    double mSSABottomDecrease;
+
+    double mSlowlyMovingForwardAfterThisHeight;
+
+    bool mSmallSSAAtFirst;
+
+    double mInitialTimeForSmallSSA;
+
+    double mSmallSSAForInitialTime;
 
 public:
 
@@ -329,14 +339,15 @@ public:
     {
       mSubstrateAdhesionLeadingTopLength = substrateAdhesionLeadingTopLength;
     }
-    void SetSubstrateAdhesionParameterAtLeadingTop( double substrateAdhesionParameterAtLeadingTop)
+    void SetBasicSSA(double basicSSA)
     {
-      mSubstrateAdhesionParameterAtLeadingTop = substrateAdhesionParameterAtLeadingTop;
+      mBasicSSA = basicSSA;
     }
-    void SetSubstrateAdhesionParameterBelowLeadingTop (double substrateAdhesionParameterBelowLeadingTop)
+    void SetSSAForMatureLamellipodium(double SSAForMatureLamellipodium)
     {
-      mSubstrateAdhesionParameterBelowLeadingTop = substrateAdhesionParameterBelowLeadingTop;
+      mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
     }
+
     // RSA
     void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
     {
@@ -395,14 +406,39 @@ public:
       mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
     }
 
-    void SetBasicSSA(double basicSSA)
+    void SetSSAStrengthenedOnlyInYDirection(bool SSAStrengthenedOnlyInYDirection)
     {
-      mBasicSSA = basicSSA;
+      mSSAStrengthenedOnlyInYDirection = SSAStrengthenedOnlyInYDirection;
     }
 
-    void SetSSAForMatureLamellipodium(double SSAForMatureLamellipodium)
+    void SetKeepMovingForward(bool keepMovingForward)
     {
-      mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
+      mKeepMovingForward = keepMovingForward;
+    }
+
+    void SetSSABottomDecrease(double SSABottomDecrease)
+    {
+      mSSABottomDecrease = SSABottomDecrease;
+    }
+
+    void SetSlowlyMovingForwardAfterThisHeight(double slowlyMovingForwardAfterThisHeight)
+    {
+      mSlowlyMovingForwardAfterThisHeight = slowlyMovingForwardAfterThisHeight;
+    }
+
+    void SetSmallSSAAtFirst(bool smallSSAAtFirst)
+    {
+      mSmallSSAAtFirst = smallSSAAtFirst;
+    }
+
+    void SetInitialTimeForSmallSSA(double initialTimeForSmallSSA)
+    {
+      mInitialTimeForSmallSSA = initialTimeForSmallSSA;
+    }
+
+    void SetSmallSSAForInitialTime(double smallSSAForInitialTime)
+    {
+      mSmallSSAForInitialTime = smallSSAForInitialTime;
     }
 
 };
