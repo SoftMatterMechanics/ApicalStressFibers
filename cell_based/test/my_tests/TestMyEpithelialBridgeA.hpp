@@ -90,11 +90,12 @@ public:
         double set_polarity_magnitude = 0.05;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
-        // for test new SSS distribution rule
         double SSA_for_mature_lamellipodium = -10.0;
         double basic_SSA = -1.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
         bool SSA_strengthened_only_in_y_direction = true;//
+        
+        // for test new SSS distribution rule
         bool use_new_SSA_distribution_rule = true;
         double lamellipodium_maturation_rate = 1.0;
         double lamellipodium_destruction_rate = 0.1;
