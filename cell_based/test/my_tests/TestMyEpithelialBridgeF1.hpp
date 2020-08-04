@@ -62,6 +62,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "NagaiHondaForce.hpp"
 #include "MyNagaiHondaForceWithStripesAdhesion.hpp"
 #include "DiffusionForce.hpp"
+#include "PlaneBasedCellKiller.hpp"
 
 // #include <ctime>
 
@@ -83,10 +84,10 @@ public:
 
         double feedback_strength_for_myosin_activity = 0.0;
         double nagai_honda_membrane_surface_energy_parameter = 0.1;
-        double target_shape_index = 1.0; // 3.7224 for default
+        double target_shape_index = 2.5; // 3.7224 for default
         bool consider_consistency_of_the_influence_of_CBAdhe = false;
 
-        double set_polarity_magnitude = 0.05;
+        double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
         double SSA_for_mature_lamellipodium = -10.0;
@@ -252,7 +253,8 @@ public:
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001);
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
-        p_mesh->SetIfClassifyElementsWithGroupNumbers(use_my_detach_pattern_method || use_new_SSA_distribution_rule);
+        bool classify_elements_with_group_numbers = true;
+        p_mesh->SetIfClassifyElementsWithGroupNumbers(classify_elements_with_group_numbers);
         p_mesh->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
         p_mesh->SetIfCheckForT4Swaps(if_check_for_T4_swaps);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);

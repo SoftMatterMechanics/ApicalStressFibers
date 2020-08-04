@@ -81,13 +81,13 @@ public:
         // double target_shape_index = 4.0; // 3.7224 for default
         // double set_polarity_magnitude = 0.5;
         // bool consider_consistency_of_the_influence_of_CBAdhe = true;
-
+        assert(false);
         double feedback_strength_for_myosin_activity = 0.0;
         double nagai_honda_membrane_surface_energy_parameter = 0.1;
-        double target_shape_index = 1.0; // 3.7224 for default
+        double target_shape_index = 4.0; // 3.7224 for default
         bool consider_consistency_of_the_influence_of_CBAdhe = false;
 
-        double set_polarity_magnitude = 0.05;
+        double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
         double SSA_for_mature_lamellipodium = -10.0;
@@ -103,7 +103,7 @@ public:
         
         bool kill_cells_group_number_from1 = true;
 
-        bool small_SSA_at_first = true;
+        bool small_SSA_at_first = false;
         double initial_time_for_small_SSA = 5.0;
         double small_SSA_for_initial_time = -6.0;
         if (small_SSA_at_first)
@@ -253,7 +253,8 @@ public:
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001);
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
-        p_mesh->SetIfClassifyElementsWithGroupNumbers(use_my_detach_pattern_method || use_new_SSA_distribution_rule);
+        bool classify_elements_with_group_numbers = true;
+        p_mesh->SetIfClassifyElementsWithGroupNumbers(classify_elements_with_group_numbers);
         p_mesh->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
         p_mesh->SetIfCheckForT4Swaps(if_check_for_T4_swaps);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);

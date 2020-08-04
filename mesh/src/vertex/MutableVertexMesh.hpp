@@ -872,7 +872,7 @@ public:
         }
       }
       // assert(leading_top!=-10.0);
-      if (leading_top == -10.0)
+      if (leading_top == -10.0 && false)
         std::cout << std::endl << "In method GetLeadingTopOfTheGroup, there is no element that belongs to group: " << groupNumber << std::endl;
       return leading_top;
     }
