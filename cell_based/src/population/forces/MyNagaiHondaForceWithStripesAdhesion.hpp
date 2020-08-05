@@ -168,6 +168,10 @@ protected:
 
     bool mSSAStrengthenedOnlyInYDirection;
 
+    bool mAddPullingForceOnNodeIndividually;
+
+    double mPullingForceOnNode;
+
     bool mKeepMovingForward;
 
     double mSSABottomDecrease;
@@ -411,6 +415,16 @@ public:
       mSSAStrengthenedOnlyInYDirection = SSAStrengthenedOnlyInYDirection;
     }
 
+    void SetAddPullingForceOnNodeIndividually(bool addPullingForceOnNodeIndividually)
+    {
+      mAddPullingForceOnNodeIndividually = addPullingForceOnNodeIndividually;
+    }
+
+    void SetPullingForceOnNode(double pullingForceOnNode)
+    {
+      mPullingForceOnNode = pullingForceOnNode;
+    }
+    
     void SetKeepMovingForward(bool keepMovingForward)
     {
       mKeepMovingForward = keepMovingForward;

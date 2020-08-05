@@ -877,6 +877,32 @@ public:
       return leading_top;
     }
 
+    unsigned GetNodeIndexForLeadingTopOfTheGroup(unsigned groupNumber)
+    {
+      unsigned node_index = 0;
+      double leading_top = -10.0;
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {
+        if (elem_iter->GetGroupNumber()==groupNumber)
+        {
+          for (unsigned i=0; i < elem_iter->GetNumNodes(); i++)
+          {
+            if (fabs(elem_iter->GetNode(i)->rGetLocation()[0])<0.5 && elem_iter->GetNode(i)->rGetLocation()[1]>leading_top)
+            {
+              node_index = elem_iter->GetNode(i)->GetIndex();
+              leading_top = elem_iter->GetNode(i)->rGetLocation()[1];
+            }
+          }
+        }
+      }
+      // assert(node_index!=0);
+      if (node_index==0 && false)
+        std::cout << std::endl << "In method GetLeadingTopOfTheGroup, there is no element that belongs to group: " << groupNumber << std::endl;
+      return node_index;
+    }
+
     void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
     {
       mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;

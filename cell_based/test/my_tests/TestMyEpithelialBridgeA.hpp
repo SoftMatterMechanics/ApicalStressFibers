@@ -81,28 +81,34 @@ public:
         // double target_shape_index = 4.0; // 3.7224 for default
         // double set_polarity_magnitude = 0.5;
         // bool consider_consistency_of_the_influence_of_CBAdhe = true;
-        assert(false);
+
         double feedback_strength_for_myosin_activity = 0.0;
         double nagai_honda_membrane_surface_energy_parameter = 0.1;
-        double target_shape_index = 4.0; // 3.7224 for default
+        double target_shape_index = 1.0; // 3.7224 for default
         bool consider_consistency_of_the_influence_of_CBAdhe = false;
 
         double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
-        double SSA_for_mature_lamellipodium = -10.0;
         double basic_SSA = -1.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = basic_SSA;
         bool SSA_strengthened_only_in_y_direction = true;//
+        bool kill_cells_group_number_from1 = true;
         
-        // for test new SSS distribution rule
+        // SSA form:
+        bool if_substrate_adhesion_is_homogeneous = false;
+          // homogeneous
+        bool add_pulling_force_on_node_individually = false;
+        double pulling_force_on_node = 9.0;
+          // non-homogeneous
+        double SSA_for_mature_lamellipodium = -10.0;
+        bool use_my_detach_pattern_method = false;
         bool use_new_SSA_distribution_rule = true;
         double lamellipodium_maturation_rate = 1.0;
         double lamellipodium_destruction_rate = 0.1;
-        bool if_check_for_T4_swaps = false;
+        bool if_check_for_T4_swaps = true;
         
-        bool kill_cells_group_number_from1 = true;
-
         bool small_SSA_at_first = false;
         double initial_time_for_small_SSA = 5.0;
         double small_SSA_for_initial_time = -6.0;
@@ -167,20 +173,17 @@ public:
           // SUBTRATE ADHESION:
         bool if_consider_substrate_adhesion = true;
             // strip substrate adhesion
-        bool if_substrate_adhesion_is_homogeneous = false;
+        // bool if_substrate_adhesion_is_homogeneous = false;
               // if homogeneous
-        double homogeneous_substrate_adhesion_parameter = -3.0;
+        // double homogeneous_substrate_adhesion_parameter = basic_SSA;
               // if not homogeneous
         double substrate_adhesion_leading_top_length = 3.0;
         // double SSA_for_mature_lamellipodium = -10.0;
         // double basic_SSA = -0.5;
-                // my detach pattern:
-        bool use_my_detach_pattern_method = false;
-                // new SSS distribution rule
+        // bool use_my_detach_pattern_method = false;
         // bool use_new_SSA_distribution_rule = true;
         // double lamellipodium_maturation_rate = 0.05;
         // double lamellipodium_destruction_rate = 0.1;
-                    // T4Swaps:
         // bool if_check_for_T4_swaps = false;
         assert( !(if_substrate_adhesion_is_homogeneous&&(use_my_detach_pattern_method||use_new_SSA_distribution_rule)) );
         assert( !(use_new_SSA_distribution_rule && use_my_detach_pattern_method) );
@@ -336,6 +339,8 @@ public:
           // Strip Substrate Adhesion
         p_force->SetIfSubstrateAdhesionIsHomogeneous(if_substrate_adhesion_is_homogeneous);
         p_force->SetHomogeneousSubstrateAdhesionParameter(homogeneous_substrate_adhesion_parameter);
+        p_force->SetAddPullingForceOnNodeIndividually(add_pulling_force_on_node_individually);
+        p_force->SetPullingForceOnNode(pulling_force_on_node);
         p_force->SetSubstrateAdhesionLeadingTopLength(substrate_adhesion_leading_top_length);
         p_force->SetBasicSSA(basic_SSA);
         p_force->SetSSAForMatureLamellipodium(SSA_for_mature_lamellipodium);
@@ -492,14 +497,17 @@ public:
             "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-30/";
 
         oss.str("");
-        if (use_new_SSA_distribution_rule)
-          oss << "NewSSARule=1_" 
-              << "_matu_rate=" << lamellipodium_maturation_rate
-              << "_destru_rate=" << lamellipodium_destruction_rate
-              << "_T4swaps=" << if_check_for_T4_swaps
-              << '|';
+        if(if_check_for_T4_swaps)
+          oss << "_T4swaps=1";
 
-        oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
+        if (use_new_SSA_distribution_rule)
+          oss << "_NewSSARule=1_matu_rate=" << std::fixed << setprecision(2) << lamellipodium_maturation_rate
+              << "_destru_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
+
+        if (add_pulling_force_on_node_individually)
+          oss << "_Add_pulling_force_indi=1_value=" << std::fixed << setprecision(2) << pulling_force_on_node;
+
+        oss << "|_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index;

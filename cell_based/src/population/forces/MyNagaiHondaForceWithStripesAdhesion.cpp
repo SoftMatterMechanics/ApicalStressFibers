@@ -119,6 +119,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
     }
 
+    unsigned node_index_for_leading_top_of_the_group0 = 0;
+    if (mAddPullingForceOnNodeIndividually)
+        node_index_for_leading_top_of_the_group0 = p_cell_population->rGetMesh().GetNodeIndexForLeadingTopOfTheGroup(0);
+
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
     {
@@ -890,7 +894,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
         c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution +reservoir_substrate_adhesion_contribution;
 
-        // possilbe tmp output for testing new SSA:
+        if (mAddPullingForceOnNodeIndividually && p_this_node->GetIndex()==node_index_for_leading_top_of_the_group0)
+            force_on_node[1] += mPullingForceOnNode;
+
+        // tmp: possilbe output for testing new SSA:
         bool output_while_testing_new_SSA = false;
         if (output_while_testing_new_SSA)
         {
