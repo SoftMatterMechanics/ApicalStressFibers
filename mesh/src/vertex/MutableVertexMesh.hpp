@@ -136,7 +136,7 @@ protected:
 
     unsigned mNumberOfGroups;
 
-    bool mIfUseNewSSADistributionRule;
+    bool mMarkLeadingCells;
 
     bool mIfCheckForT4Swaps;
 
@@ -903,9 +903,27 @@ public:
       return node_index;
     }
 
-    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
+    unsigned GetNumNodesOfLeadingCellTopOfGroup(unsigned groupNumber=0)
     {
-      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
+      unsigned num_nodes = 0;
+      for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
+          elem_iter != this->GetElementIteratorEnd();
+          ++elem_iter)
+      {
+        if (elem_iter->GetGroupNumber()==groupNumber && elem_iter->GetIsLeadingCellTop())
+        {
+          num_nodes = elem_iter->GetNumNodes();
+          break;
+        }
+      }
+      if (num_nodes==0)
+        std::cout << std::endl << "Error: GetNumNodesOfLeadingCellTopOfGroup(" << groupNumber << ")=0!" << std::endl;
+      return num_nodes;
+    }
+
+    void SetMarkLeadingCells(bool markLeadingCells)
+    {
+      mMarkLeadingCells = markLeadingCells;
     }
 
     void SetIfCheckForT4Swaps(bool ifCheckForT4Swaps)

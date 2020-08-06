@@ -123,6 +123,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
     if (mAddPullingForceOnNodeIndividually)
         node_index_for_leading_top_of_the_group0 = p_cell_population->rGetMesh().GetNodeIndexForLeadingTopOfTheGroup(0);
 
+    unsigned num_nodes_leading_cell_top = 0;
+    if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
+        num_nodes_leading_cell_top = p_cell_population->rGetMesh().GetNumNodesOfLeadingCellTopOfGroup(0);
+
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
     {
@@ -895,7 +899,27 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution +reservoir_substrate_adhesion_contribution;
 
         if (mAddPullingForceOnNodeIndividually && p_this_node->GetIndex()==node_index_for_leading_top_of_the_group0)
-            force_on_node[1] += mPullingForceOnNode;
+            force_on_node[1] += mPullingForceOnLeadingCell;
+        else if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
+        {
+            bool node_belongs_to_leading_cell = false;
+            for (std::set<unsigned>::iterator iter = containing_elem_indices.begin();
+                iter != containing_elem_indices.end();
+                ++iter)
+            {
+                if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
+                {
+                    node_belongs_to_leading_cell = true;
+                    break;
+                }
+            }
+
+            if (node_belongs_to_leading_cell)
+            {
+                assert(num_nodes_leading_cell_top!=0);
+                force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
+            }
+        }
 
         // tmp: possilbe output for testing new SSA:
         bool output_while_testing_new_SSA = false;

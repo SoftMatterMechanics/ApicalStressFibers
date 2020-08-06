@@ -170,7 +170,9 @@ protected:
 
     bool mAddPullingForceOnNodeIndividually;
 
-    double mPullingForceOnNode;
+    bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
+
+    double mPullingForceOnLeadingCell;
 
     bool mKeepMovingForward;
 
@@ -420,9 +422,14 @@ public:
       mAddPullingForceOnNodeIndividually = addPullingForceOnNodeIndividually;
     }
 
-    void SetPullingForceOnNode(double pullingForceOnNode)
+    void SetAddPullingForceEvenlyOnNodesOfLeadingCell(bool addPullingForceEvenlyOnNodesOfLeadingCell)
     {
-      mPullingForceOnNode = pullingForceOnNode;
+      mAddPullingForceEvenlyOnNodesOfLeadingCell = addPullingForceEvenlyOnNodesOfLeadingCell;
+    }
+
+    void SetPullingForceOnLeadingCell(double pullingForceOnLeadingCell)
+    {
+      mPullingForceOnLeadingCell = pullingForceOnLeadingCell;
     }
     
     void SetKeepMovingForward(bool keepMovingForward)

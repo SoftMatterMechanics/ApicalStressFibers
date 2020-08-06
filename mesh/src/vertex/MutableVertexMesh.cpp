@@ -61,7 +61,7 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mOutputDetailedSwapInformationWhenRemesh(false),
           mIfClassifyElementsWithGroupNumbers(false),
           mNumberOfGroups(1),
-          mIfUseNewSSADistributionRule(false),
+          mMarkLeadingCells(false),
           mIfCheckForT4Swaps(false)
 {
     // Threshold parameters must be strictly positive
@@ -2195,7 +2195,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
         }
 
         // for new SSA distribution rule:
-        if (mIfUseNewSSADistributionRule)
+        if (mMarkLeadingCells)
         {
             VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_up;
             VertexElement<ELEMENT_DIM, SPACE_DIM>* p_element_below;
@@ -3600,7 +3600,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             }            
 
             // my changes for new SSA distribution rule:
-            if (mIfUseNewSSADistributionRule)
+            if (mMarkLeadingCells)
             {
                 std::cout << "A Reattachment behavior happened, in the T3 swap case: 5." << std::endl;
                 // assert((p_element->GetIsLeadingCell() && p_intersecting_element->GetIsLeadingCell()));
@@ -4960,7 +4960,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                 }
             
                 // my changes for new SSA distribution rule:
-                if (mIfUseNewSSADistributionRule)
+                if (mMarkLeadingCells)
                 {
                     std::cout << "A Reattachment behavior happened, in the T3 swap case: 11." << std::endl;
                     // assert((p_element->GetIsLeadingCell() && p_intersecting_element->GetIsLeadingCell()));

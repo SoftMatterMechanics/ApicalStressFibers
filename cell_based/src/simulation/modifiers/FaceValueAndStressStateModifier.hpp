@@ -95,7 +95,7 @@ protected:
 
     bool mWriteGroupNumberToCell;
 
-    bool mIfUseNewSSADistributionRule;
+    bool mMarkLeadingCells;
     double mLamellipodiumMaturationRate;
     double mLamellipodiumDestructionRate;
 
@@ -261,9 +261,9 @@ public:
     }
 
     // new SSA distribution rule
-    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
+    void SetMarkLeadingCells(bool markLeadingCells)
     {
-      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
+      mMarkLeadingCells = markLeadingCells;
     }
 
     void SetLamellipodiumMaturationRate(double lamellipodiumMaturationRate)

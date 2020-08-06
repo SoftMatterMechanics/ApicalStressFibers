@@ -73,72 +73,91 @@ public:
     void TestStripSubstrateAdhesion()
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
-        // PHASE DIAGRAM SEARCH:
-        //                       OPTIONS:
-        // double feedback_strength_for_myosin_activity = 0.0;
-        // double reservoir_substrate_adhesion_parameter = -1.0;
-        // double nagai_honda_membrane_surface_energy_parameter = 1.0;
-        // double target_shape_index = 4.0; // 3.7224 for default
-        // double set_polarity_magnitude = 0.5;
-        // bool consider_consistency_of_the_influence_of_CBAdhe = true;
+        // FOR PHASE DIAGRAM SEARCH:
 
-        double feedback_strength_for_myosin_activity = 0.0;
-        double nagai_honda_membrane_surface_energy_parameter = 0.1;
-        double target_shape_index = 3.0; // 3.7224 for default
-        bool consider_consistency_of_the_influence_of_CBAdhe = false;
+        // Gamma:
+/******/double nagai_honda_membrane_surface_energy_parameter = 0.1;
+        // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
+/******/double target_shape_index = 1.0;
+        // Cell-boundary adhesion:
+        bool consider_consistency_of_the_influence_of_CBAdhe = false;        
 
-        double set_polarity_magnitude = 0.00;
+        // Feedback:
+/*----*/double feedback_strength_for_myosin_activity = 0.0;
+
+        // Polarity:
+/*----*/double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
+        // Substrate adhesion:
+/*----*/double basic_SSA = -1.0;
         double SSA_for_mature_lamellipodium = -10.0;
-        double basic_SSA = -1.0;
+/******/double pulling_force_on_leading_cell = 4.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
-        bool SSA_strengthened_only_in_y_direction = true;//
+        double homogeneous_substrate_adhesion_parameter = basic_SSA;
         
-        // for test new SSS distribution rule
-        bool use_new_SSA_distribution_rule = true;
+        // Strip substrate adhesion form:
+        bool consider_consistency_for_SSA = true;
+/*----*/bool if_substrate_adhesion_is_homogeneous = true;
+          // some basic mechanisms:
+        bool classify_elements_with_group_numbers = true;
+        bool mark_leading_cells = true;
+        bool kill_cells_group_number_from1 = true;
+        bool SSA_strengthened_only_in_y_direction = true;
+        bool if_check_for_T4_swaps = false;
+          // homogeneous SSA case:
+        bool add_pulling_force_on_node_individually = false;
+/*----*/bool add_pulling_force_evenly_on_nodes_of_leading_cell = true;
+          // non-homogeneous SSA case:
+            // one leading top:
+        double substrate_adhesion_leading_top_length = 3.0;
+            // several leading tops:
+        bool use_my_detach_pattern_method = false;
+            // distribution rule:
+/*----*/bool use_new_SSA_distribution_rule = false;
+        if (use_new_SSA_distribution_rule)
+          assert(mark_leading_cells);
         double lamellipodium_maturation_rate = 1.0;
         double lamellipodium_destruction_rate = 0.1;
-        bool if_check_for_T4_swaps = false;
-        
-        bool kill_cells_group_number_from1 = true;
-
-        bool small_SSA_at_first = true;
+              // assistant methods for distribution rule:
+        bool small_SSA_at_first = false;
         double initial_time_for_small_SSA = 5.0;
         double small_SSA_for_initial_time = -6.0;
         if (small_SSA_at_first)
-          assert(fabs(SSA_for_mature_lamellipodium) >= fabs(small_SSA_for_initial_time));
-        
+          assert(use_new_SSA_distribution_rule && fabs(SSA_for_mature_lamellipodium) >= fabs(small_SSA_for_initial_time));
         bool keep_moving_forward = false;
         double SSA_bottom_decrease = 5.0;
         double slowly_moving_forward_after_this_height = 25.0;
+        if (keep_moving_forward)
+          assert(use_new_SSA_distribution_rule);
 
-        // tmp
+        // output:
         bool output_concise_swap_information_when_remesh = false;
         bool output_information_for_nagai_honda_force = false;
+        /*-----------------------END: Frequently changed parameters-------------------------*/
 
-        /*-----------------------START: Frequently changed parameters-------------------------*/
-        // timestep
+
+        /*-----------------------START: Occasionally changed parameters-------------------------*/
+        // Timestep:
         double dt = 0.1;
         double sampling_time = 1.0;
         bool apply_my_change_to_make_timestep_adaptive = true;
-        bool consider_consistency_for_SSA = true;
         double max_movement_per_timestep = 0.05;
         bool restrict_vertex_movement = false;
         if (apply_my_change_to_make_timestep_adaptive)
           assert(restrict_vertex_movement==false);
         double small_change_for_area_calculation = 0.2;
 
-        // cell rearrangement
+        // Cell rearrangement:
         double set_cell_rearrangement_threshold = 0.05;
 
-        // cell division
+        // Cell division:
         bool run_with_birth =true;
         double time_for_one_division_of_cell_population = 25;
         double growth_rate_for_target_area_after_division = 0.1;
         bool use_my_division_rule_along_with_modifier = true;
 
-        // structure
+        // Structure:
         bool if_use_larger_strip_distance = false;
         bool one_period_only = true;
         bool if_mesh_has_two_period = false;
@@ -146,54 +165,35 @@ public:
           one_period_only = false;
         bool use_longer_mesh = false;
         
-        // energy parameters
-          // KA, A0:
+        // Energy parameters:
+        // Use equation form: 0.5*KA*(A-A0)^2 + 0.5*Gamma*P^2 + 1.0*Lambda*P. ( Lambda=-Ga*P0, p0=P0/sqrt(A0) );
+        // Target perimeter being 0!
+        // KA:
         double nagai_honda_deformation_energy_parameter = 1;
+        // A0:
         double reference_area = M_PI;
-          // Gamma, p0(P0):
-        // double nagai_honda_membrane_surface_energy_parameter = 0.1;
-        // double target_shape_index = 4.0; // {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
         bool use_fixed_target_area_without_modifier = false;
-          // LAMBDA: Use equation form: 0.5*Gamma*P^2 + 1.0*Lambda*P, target perimeter being 0!
-            // CCA
-        double nagai_honda_cell_cell_adhesion_energy_parameter = 
-            -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_area)); // Lambda=-Ga*P0;
-            // CBA
-        double nagai_honda_cell_boundary_adhesion_energy_parameter = 0.0;
-        // bool consider_consistency_of_the_influence_of_CBAdhe = false;
-        if (consider_consistency_of_the_influence_of_CBAdhe) // note: 0.1 is a magic number.
-          nagai_honda_cell_boundary_adhesion_energy_parameter = nagai_honda_cell_cell_adhesion_energy_parameter
-              + 0.1*(target_shape_index*sqrt(reference_area));
-          // SUBTRATE ADHESION:
+        // Cell-cell adhesion:
+        double cell_cell_adhesion_parameter = 
+            -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_area));
+        // Cell-boundary adhesion:
+        double cell_boundary_adhesion_parameter = 0.0;
+        if (consider_consistency_of_the_influence_of_CBAdhe)
+          cell_boundary_adhesion_parameter = cell_cell_adhesion_parameter + 0.1*(4.0*sqrt(reference_area));
+
+        // Substrate adhesion:
         bool if_consider_substrate_adhesion = true;
-            // strip substrate adhesion
-        bool if_substrate_adhesion_is_homogeneous = false;
-              // if homogeneous
-        double homogeneous_substrate_adhesion_parameter = -3.0;
-              // if not homogeneous
-        double substrate_adhesion_leading_top_length = 3.0;
-        // double SSA_for_mature_lamellipodium = -10.0;
-        // double basic_SSA = -0.5;
-                // my detach pattern:
-        bool use_my_detach_pattern_method = false;
-                // new SSS distribution rule
-        // bool use_new_SSA_distribution_rule = true;
-        // double lamellipodium_maturation_rate = 0.05;
-        // double lamellipodium_destruction_rate = 0.1;
-                    // T4Swaps:
-        // bool if_check_for_T4_swaps = false;
+        // Strip substrate adhesion (SSA):
         assert( !(if_substrate_adhesion_is_homogeneous&&(use_my_detach_pattern_method||use_new_SSA_distribution_rule)) );
         assert( !(use_new_SSA_distribution_rule && use_my_detach_pattern_method) );
-        
-            // reservoir substrate adhesion
+        // Reservoir substrate adhesion (RSA):
         bool if_consider_reservoir_substrate_adhesion = true;// true for default
         if (!if_consider_substrate_adhesion)
           assert(if_consider_reservoir_substrate_adhesion==false);
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
-        // double reservoir_substrate_adhesion_parameter = -0.5;
         
-        // feedback
+        // Feedback:
         bool is_default_feedback_form = true;
         int case_number_of_membrane_surface_energy_form = 2; // 2, for default, 2 for new membr_surf_energy form1, 3 for form2.
         bool if_consider_feedback_of_face_values = true;
@@ -204,11 +204,10 @@ public:
         bool CCA_dont_decrease = false;
         bool CCA_increasing_has_a_threshold_of_edge_length = true;
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
-        // double feedback_strength_for_myosin_activity = 0;
         double hill_coefficient_for_myosin_activity = 8.0;
         double feedback_strength_for_adhesion = 0;
         double hill_coefficient_for_adhesion = 8.0;
-          // for consistency
+          // for consistency of feedback form:
         if (feedback_strength_for_myosin_activity == 0.0)
           if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
         if (feedback_strength_for_adhesion == 0.0)
@@ -220,19 +219,15 @@ public:
         if (is_default_feedback_form)
           assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
         
-        // random force and polarity
+        // Random force and polarity:
         bool add_random_force = true;
         bool consider_polarity = true;
         bool vanishing_motility_for_node_in_the_strip_interval = false;
-        // double set_polarity_magnitude = 0.2;
-        // double set_rotational_diffusion_constant = 0.01;
 
-        // output
-        // bool output_concise_swap_information_when_remesh = false;
-        bool output_detailed_swap_information_when_remesh = false; //suggest "false" for concise output results
-        // bool output_information_for_nagai_honda_force = false;
+        // Output:
+        bool output_detailed_swap_information_when_remesh = false;
         bool output_numerical_method_information = false;
-        /*-----------------------END: Frequently changed parameters-------------------------*/
+        /*-----------------------END: Occasionally changed parameters-------------------------*/
 
 
         /*------------------------------START: Mesh Structure------------------------------*/
@@ -253,9 +248,8 @@ public:
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001);
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
-        bool classify_elements_with_group_numbers = true;
         p_mesh->SetIfClassifyElementsWithGroupNumbers(classify_elements_with_group_numbers);
-        p_mesh->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
+        p_mesh->SetMarkLeadingCells(mark_leading_cells);
         p_mesh->SetIfCheckForT4Swaps(if_check_for_T4_swaps);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);
         p_mesh->SetOutputDetailedSwapInformationWhenRemesh(output_detailed_swap_information_when_remesh);
@@ -325,8 +319,8 @@ public:
 
         p_force->SetNagaiHondaDeformationEnergyParameter(nagai_honda_deformation_energy_parameter);//KA
         p_force->SetNagaiHondaMembraneSurfaceEnergyParameter(nagai_honda_membrane_surface_energy_parameter);//KP
-        p_force->SetNagaiHondaCellCellAdhesionEnergyParameter(nagai_honda_cell_cell_adhesion_energy_parameter);
-        p_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(nagai_honda_cell_boundary_adhesion_energy_parameter);        
+        p_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_parameter);
+        p_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(cell_boundary_adhesion_parameter);        
 
         p_force->SetUseFixedTargetArea(use_fixed_target_area_without_modifier); // used in the case where there is no target area modifier! (no division)
         p_force->SetFixedTargetArea(reference_area);
@@ -336,6 +330,9 @@ public:
           // Strip Substrate Adhesion
         p_force->SetIfSubstrateAdhesionIsHomogeneous(if_substrate_adhesion_is_homogeneous);
         p_force->SetHomogeneousSubstrateAdhesionParameter(homogeneous_substrate_adhesion_parameter);
+        p_force->SetAddPullingForceOnNodeIndividually(add_pulling_force_on_node_individually);
+        p_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
+        p_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
         p_force->SetSubstrateAdhesionLeadingTopLength(substrate_adhesion_leading_top_length);
         p_force->SetBasicSSA(basic_SSA);
         p_force->SetSSAForMatureLamellipodium(SSA_for_mature_lamellipodium);
@@ -439,7 +436,7 @@ public:
         p_face_value_and_stress_state_modifier->SetDivisionTime(time_for_one_division_of_cell_population);
 
         // new SSA distribution rule
-        p_face_value_and_stress_state_modifier->SetIfUseNewSSADistributionRule(use_new_SSA_distribution_rule);
+        p_face_value_and_stress_state_modifier->SetMarkLeadingCells(mark_leading_cells);
         p_face_value_and_stress_state_modifier->SetLamellipodiumMaturationRate(lamellipodium_maturation_rate);
         p_face_value_and_stress_state_modifier->SetLamellipodiumDestructionRate(lamellipodium_destruction_rate);
         // outout information
@@ -486,43 +483,51 @@ public:
         
 
         /*--------------------------START: Output Directory and Simulation Information File---------------------*/
-        // output directory
+        // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-07-30/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-06/";
 
         oss.str("");
-        if (use_new_SSA_distribution_rule)
-          oss << "NewSSARule=1_" 
-              << "_matu_rate=" << lamellipodium_maturation_rate
-              << "_destru_rate=" << lamellipodium_destruction_rate
-              << "_T4swaps=" << if_check_for_T4_swaps
-              << '|';
-
-        oss << "_MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
+        oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
-            << "_p0=" << std::fixed << setprecision(2) << target_shape_index;
+            << "_p0=" << std::fixed << setprecision(2) << target_shape_index
+            << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
+            << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+
+        if(if_check_for_T4_swaps)
+          oss << "_T4swaps=1";
         if (if_substrate_adhesion_is_homogeneous)
+        {
           oss << "_HomoSSA=" << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
+          if (add_pulling_force_on_node_individually)
+            oss << "_Pull_force_lead_node=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
+          if (add_pulling_force_evenly_on_nodes_of_leading_cell)
+            oss << "_Pull_force_lead_cell=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
+        }
         else
         {
-          oss << "_SSA:mature_lame=" << std::fixed << setprecision(1) << SSA_for_mature_lamellipodium
+          oss << "_NonHomoSSA:mature_lame=" << std::fixed << setprecision(1) << SSA_for_mature_lamellipodium
             << "_basic=" << std::fixed << setprecision(1) << basic_SSA;
+          if (use_new_SSA_distribution_rule)
+            oss << "_NewSSARule:matu_rate=" << std::fixed << setprecision(2) << lamellipodium_maturation_rate
+                << "_destru_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
+          else if (use_my_detach_pattern_method)
+            oss << "_Multiple_lead_tops=1";
         }
-        oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter
-            << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         output_directory += oss.str();
+
         time_t raw_time = time(0);
         struct tm * now = localtime(& raw_time);
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ", " << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        output_directory += "_timestamp=" + oss.str();
+        output_directory += "_Timestamp=" + oss.str();
 
         std::string concise_output_directory = output_directory;
         
-        // concise information written to directoory.
+        // Concise information written to directoory.
         oss.str("");
         oss << std::fixed << setprecision(3) << dt;
         output_directory += "/Dt=" + oss.str();
@@ -564,10 +569,10 @@ public:
         oss << std::fixed << setprecision(2) << target_shape_index;
         output_directory += "_p0=" + oss.str();
         oss.str("");
-        oss << ((fabs(nagai_honda_cell_cell_adhesion_energy_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << nagai_honda_cell_cell_adhesion_energy_parameter;
+        oss << ((fabs(cell_cell_adhesion_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_cell_adhesion_parameter;
         output_directory += "_CCAdhe=" + oss.str();
         oss.str("");
-        oss << ((fabs(nagai_honda_cell_boundary_adhesion_energy_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << nagai_honda_cell_boundary_adhesion_energy_parameter;
+        oss << ((fabs(cell_boundary_adhesion_parameter)>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_boundary_adhesion_parameter;
         output_directory += "_CBAdhe=" + oss.str();
         
         output_directory += "_|HasSubAdh=" + std::to_string(if_consider_substrate_adhesion);
@@ -580,7 +585,7 @@ public:
           output_directory += "_HasRSA=" + std::to_string(if_consider_reservoir_substrate_adhesion);
         }
         
-        // detailed information  written to directoory.
+        // Detailed information  written to directoory.
         output_directory += "/";
         if (run_with_birth)
         {
