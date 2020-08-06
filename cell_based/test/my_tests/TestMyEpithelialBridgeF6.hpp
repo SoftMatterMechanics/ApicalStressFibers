@@ -74,11 +74,11 @@ public:
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // FOR PHASE DIAGRAM SEARCH:
-
+// assert(false);
         // Gamma:
 /******/double nagai_honda_membrane_surface_energy_parameter = 0.1;
         // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
-/******/double target_shape_index = 4.0;
+/******/double target_shape_index = 3.7224;
         // Cell-boundary adhesion:
         bool consider_consistency_of_the_influence_of_CBAdhe = false;        
 
