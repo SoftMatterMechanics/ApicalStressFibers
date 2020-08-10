@@ -486,7 +486,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-06/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-10/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity

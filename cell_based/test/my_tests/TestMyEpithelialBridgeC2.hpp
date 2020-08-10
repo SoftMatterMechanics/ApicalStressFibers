@@ -66,10 +66,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyEpithelialBridgeC2 : public AbstractCellBasedTestSuite
-{
-public:
-
     void TestStripSubstrateAdhesion()
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
@@ -486,7 +482,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-06/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-10/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
@@ -725,7 +721,5 @@ public:
 
         simulator.Solve();
     }
-
-};
 
 #endif /* TESTMYEPITHELIALBRIDGEC2_HPP_ */
