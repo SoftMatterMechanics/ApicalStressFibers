@@ -66,6 +66,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
+class TestMyEpithelialBridgeC2 : public AbstractCellBasedTestSuite
+{
+public:
+
     void TestStripSubstrateAdhesion()
     {
         /*-----------------------START: Frequently changed parameters-------------------------*/
@@ -721,5 +725,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         simulator.Solve();
     }
+
+};
 
 #endif /* TESTMYEPITHELIALBRIDGEC2_HPP_ */
