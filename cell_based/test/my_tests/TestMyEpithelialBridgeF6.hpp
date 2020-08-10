@@ -86,6 +86,7 @@ public:
 /*----*/double feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
+/*----*/bool add_random_force = false;
 /*----*/double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
@@ -220,7 +221,6 @@ public:
           assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
         
         // Random force and polarity:
-        bool add_random_force = true;
         bool consider_polarity = true;
         bool vanishing_motility_for_node_in_the_strip_interval = false;
 
