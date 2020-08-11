@@ -76,9 +76,9 @@ public:
         // FOR PHASE DIAGRAM SEARCH:
 // assert(false);
         // Gamma:
-/******/double nagai_honda_membrane_surface_energy_parameter = 1.0;
+/******/double nagai_honda_membrane_surface_energy_parameter = 0.2;
         // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
-/******/double target_shape_index = 4.0;
+/******/double target_shape_index = 1.0;
         // Cell-boundary adhesion:
         bool consider_consistency_of_the_influence_of_CBAdhe = false;        
 
@@ -86,14 +86,14 @@ public:
 /*----*/double feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
-/*----*/bool add_random_force = false;
+/*----*/bool add_random_force = true;
 /*----*/double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
         // Substrate adhesion:
 /*----*/double basic_SSA = -1.0;
         double SSA_for_mature_lamellipodium = -10.0;
-/******/double pulling_force_on_leading_cell = 1.0;
+/******/double pulling_force_on_leading_cell = 8.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
         double homogeneous_substrate_adhesion_parameter = basic_SSA;
         
@@ -140,14 +140,14 @@ public:
 
         /*-----------------------START: Occasionally changed parameters-------------------------*/
         // Timestep:
-        double dt = 0.1;
+/*----*/double dt = 0.2;
         double sampling_time = 1.0;
         bool apply_my_change_to_make_timestep_adaptive = true;
-        double max_movement_per_timestep = 0.05;
+/*----*/double max_movement_per_timestep = 0.1;
         bool restrict_vertex_movement = false;
         if (apply_my_change_to_make_timestep_adaptive)
           assert(restrict_vertex_movement==false);
-        double small_change_for_area_calculation = 0.2;
+/*----*/double small_change_for_area_calculation = 0.4;
 
         // Cell rearrangement:
         double set_cell_rearrangement_threshold = 0.05;
@@ -493,6 +493,7 @@ public:
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
+            << "_brown=" << add_random_force
             << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
             << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
