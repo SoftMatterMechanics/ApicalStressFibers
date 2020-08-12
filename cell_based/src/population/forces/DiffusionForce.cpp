@@ -47,7 +47,8 @@ DiffusionForce<DIM>::DiffusionForce()
       mViscosity(3.204e-6), // default to viscosity of water at room temperature in (using 10 microns and hours)
       mUseTheSameNodeRadius(false),
       mTheSameNodeRadius(10.0),
-      mConsiderPolarity(true)
+      mConsiderPolarity(true),
+      mIfEquilibrateForAWhile(false)
 {
 }
 
@@ -92,6 +93,11 @@ template<unsigned DIM>
 void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCellPopulation)
 {
     double dt = SimulationTime::Instance()->GetTimeStep();
+
+    double t_now = SimulationTime::Instance()->GetTime();
+
+    if (mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium)
+        return;
 
     // Iterate over the nodes
     for (typename AbstractMesh<DIM, DIM>::NodeIterator node_iter = rCellPopulation.rGetMesh().GetNodeIteratorBegin();

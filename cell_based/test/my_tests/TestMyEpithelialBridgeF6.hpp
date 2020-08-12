@@ -72,13 +72,42 @@ public:
 
     void TestStripSubstrateAdhesion()
     {
-        /*-----------------------START: Frequently changed parameters-------------------------*/
+        // assert(false);
+
+
         // FOR PHASE DIAGRAM SEARCH:
-// assert(false);
+        double nagai_honda_membrane_surface_energy_parameter = 0.2;
+        double target_shape_index = 4.0;
+        double pulling_force_on_leading_cell = 3.0;
+        
+        double end_time = 400.0;
+        double time_for_equilibrium = 0.0;
+        double max_movement_per_timestep = 0.1;
+
+        if (target_shape_index<=0.5)
+          time_for_equilibrium = 50.0;
+        else if (target_shape_index<=2.0)
+          time_for_equilibrium = 20.0;
+        if (target_shape_index>=2.5 && pulling_force_on_leading_cell>=6.75)
+        {
+          end_time = 200;
+          max_movement_per_timestep = 0.2;
+        }
+
+        
+        /*-----------------------START: Frequently changed parameters-------------------------*/
+        // Time:
+/*----*/double dt = 0.1;
+/******/// double end_time = 400.0;
+/******/// double time_for_equilibrium = 50.0;
+        double sampling_time = 1.0;
+/******/// double max_movement_per_timestep = 0.1;
+/*----*/double small_change_for_area_calculation = 0.2;
+
         // Gamma:
-/******/double nagai_honda_membrane_surface_energy_parameter = 0.2;
+/******/// double nagai_honda_membrane_surface_energy_parameter = 0.2;
         // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
-/******/double target_shape_index = 0.0;
+/******/// double target_shape_index = 0.0;
         // Cell-boundary adhesion:
         bool consider_consistency_of_the_influence_of_CBAdhe = false;        
 
@@ -93,7 +122,7 @@ public:
         // Substrate adhesion:
 /*----*/double basic_SSA = -1.0;
         double SSA_for_mature_lamellipodium = -10.0;
-/******/double pulling_force_on_leading_cell = 11.0;
+/******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
         double homogeneous_substrate_adhesion_parameter = basic_SSA;
         
@@ -140,14 +169,10 @@ public:
 
         /*-----------------------START: Occasionally changed parameters-------------------------*/
         // Timestep:
-/*----*/double dt = 0.2;
-        double sampling_time = 1.0;
         bool apply_my_change_to_make_timestep_adaptive = true;
-/*----*/double max_movement_per_timestep = 0.1;
         bool restrict_vertex_movement = false;
         if (apply_my_change_to_make_timestep_adaptive)
           assert(restrict_vertex_movement==false);
-/*----*/double small_change_for_area_calculation = 0.4;
 
         // Cell rearrangement:
         double set_cell_rearrangement_threshold = 0.05;
@@ -223,6 +248,11 @@ public:
         // Random force and polarity:
         bool consider_polarity = true;
         bool vanishing_motility_for_node_in_the_strip_interval = false;
+
+        // EquilibrateForAWhile
+        bool if_equilibrate_for_a_while = true;
+        if (time_for_equilibrium == 0.0)
+          if_equilibrate_for_a_while = false;
 
         // Output:
         bool output_detailed_swap_information_when_remesh = false;
@@ -363,6 +393,9 @@ public:
         p_force->SetSSABottomDecrease(SSA_bottom_decrease);
         p_force->SetSlowlyMovingForwardAfterThisHeight(slowly_moving_forward_after_this_height);
 
+        p_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_force->SetTimeForEquilibrium(time_for_equilibrium);
+
         p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
         simulator.AddForce(p_force);
         /*-----------------------------END: MyNagaiHondaForceWithStripesAdhesion---------------------*/
@@ -384,6 +417,9 @@ public:
           p_force2->SetReservoirTop(strip_start_y_location);
           p_force2->SetStripStartLocation(strip_start_x_location);
           p_force2->SetStripWidth(strip_width);
+
+          p_force2->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+          p_force2->SetTimeForEquilibrium(time_for_equilibrium);
 
           translational_diffusion_constant = p_force2->GetDiffusionScalingConstant()/node_radius;
           simulator.AddForce(p_force2);
@@ -468,7 +504,7 @@ public:
         simulator.SetSamplingTimestepMultiple(sampling_timestep_multiple);
         simulator.SetSamplingTime(sampling_time);
 
-        simulator.SetEndTime(400.0);
+        simulator.SetEndTime(end_time);
         /*------------------------------------END: Timestep---------------------------------------*/
 
 
@@ -486,7 +522,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-10/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-12/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity

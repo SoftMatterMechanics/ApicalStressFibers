@@ -186,6 +186,10 @@ protected:
 
     double mSmallSSAForInitialTime;
 
+    bool mIfEquilibrateForAWhile;
+
+    double mTimeForEquilibrium;
+
 public:
 
     /**
@@ -460,6 +464,16 @@ public:
     void SetSmallSSAForInitialTime(double smallSSAForInitialTime)
     {
       mSmallSSAForInitialTime = smallSSAForInitialTime;
+    }
+
+    void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
+    {
+      mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
+    }
+
+    void SetTimeForEquilibrium(double timeForEquilibrium)
+    {
+      mTimeForEquilibrium = timeForEquilibrium;
     }
 
 };

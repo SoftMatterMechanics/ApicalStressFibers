@@ -83,6 +83,9 @@ private :
     double mStripStartLocation;
     double mStripWidth;
 
+    bool mIfEquilibrateForAWhile;
+    double mTimeForEquilibrium;
+
 
 
 
@@ -156,6 +159,16 @@ public :
     void SetStripWidth(double stripWidth)
     {
       mStripWidth = stripWidth;
+    }
+
+    void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
+    {
+      mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
+    }
+
+    void SetTimeForEquilibrium(double timeForEquilibrium)
+    {
+      mTimeForEquilibrium = timeForEquilibrium;
     }
 
 

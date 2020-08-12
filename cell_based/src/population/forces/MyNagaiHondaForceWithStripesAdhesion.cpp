@@ -917,7 +917,9 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             if (node_belongs_to_leading_cell)
             {
                 assert(num_nodes_leading_cell_top!=0);
-                force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
+                double t_now = SimulationTime::Instance()->GetTime();
+                if ( !(mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium) )
+                    force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
             }
         }
 
