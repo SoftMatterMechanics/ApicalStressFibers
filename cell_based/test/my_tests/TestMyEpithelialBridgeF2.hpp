@@ -78,31 +78,31 @@ public:
         // FOR PHASE DIAGRAM SEARCH:
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
         double target_shape_index = 4.0;
-        double pulling_force_on_leading_cell = 3.0;
+        double pulling_force_on_leading_cell = 14;
         
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.1;
 
-        if (target_shape_index<=0.5)
-          time_for_equilibrium = 50.0;
-        else if (target_shape_index<=2.0)
-          time_for_equilibrium = 20.0;
-        if (target_shape_index>=2.5 && pulling_force_on_leading_cell>=6.75)
-        {
-          end_time = 200;
-          max_movement_per_timestep = 0.2;
-        }
+        // if (target_shape_index<=0.5)
+        //   time_for_equilibrium = 50.0;
+        // else if (target_shape_index<=2.0)
+        //   time_for_equilibrium = 20.0;
+        // if (target_shape_index>=2.5 && pulling_force_on_leading_cell>=6.75)
+        // {
+        //   end_time = 200;
+        //   max_movement_per_timestep = 0.2;
+        // }
 
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.1;
+/*----*/double dt = 0.2;
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
         double sampling_time = 1.0;
 /******/// double max_movement_per_timestep = 0.1;
-/*----*/double small_change_for_area_calculation = 0.2;
+/*----*/double small_change_for_area_calculation = 0.4;
 
         // Gamma:
 /******/// double nagai_honda_membrane_surface_energy_parameter = 0.2;
@@ -522,7 +522,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-12/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-21/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
