@@ -69,6 +69,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
     unsigned num_nodes = p_cell_population->GetNumNodes();
     unsigned num_elements = p_cell_population->GetNumElements();
 
+    // my changes
+    if (num_elements<20)
+        return;
+
     // Begin by computing the area and perimeter of each element in the mesh, to avoid having to do this multiple times
     std::vector<double> element_areas(num_elements);
     std::vector<double> element_perimeters(num_elements);

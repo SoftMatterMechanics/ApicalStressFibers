@@ -77,10 +77,13 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double target_shape_index = 4.0;
-        double pulling_force_on_leading_cell = 10;
-        double polarity_magnitude = 0.0;
-        double translational_diffusion_constant = 0.02;       
+        double target_shape_index = 2.0;
+        double pulling_force_on_leading_cell = 20;
+
+        double polarity_magnitude = 0.2;
+        double rotational_diffusion_constant = 0.2*2.0*M_PI;
+        double translational_diffusion_constant = 0.0;
+
         double feedback_strength_for_myosin_activity = 0.01;
 
         double end_time = 400.0;
@@ -120,7 +123,7 @@ public:
         // Polarity:
 /*----*/bool add_random_force = true;
 /******/// double polarity_magnitude = 0.00;
-        double rotational_diffusion_constant = 0.2*2.0*M_PI;
+/******/// double rotational_diffusion_constant = 0.2*2.0*M_PI;
 /******/// double translational_diffusion_constant = 0.0;
 
 
@@ -345,7 +348,7 @@ public:
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= 200.0/120.0;
-        double strip_start_x_location = strip_width/4.0;
+        double strip_start_x_location = 0.0;
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
         double strip_start_y_location = 1.5*num_ele_up*1/sqrt(3)*sqrt(initial_area/(sqrt(3)/2));
@@ -527,7 +530,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-21/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-24/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
