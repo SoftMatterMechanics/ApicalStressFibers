@@ -953,7 +953,39 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DeleteElementPriorToReMesh(unsig
         p_node->SetAsBoundaryNode(true);
     }
 
-    // Mark this element as deleted
+    // my changes
+    if (mIfUpdateFaceElementsInMesh)
+    {
+        for (unsigned i=0; i<this->mElements[index]->GetNumNodes(); i++)
+        {
+            VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_face = this->mElements[index]->GetFace(i);
+
+            Node<SPACE_DIM>* pNodeA = p_face->GetNode(0);
+            Node<SPACE_DIM>* pNodeB = p_face->GetNode(1);
+                        // Find the indices of the elements owned by each node
+            std::set<unsigned> elements_containing_nodeA = pNodeA->rGetContainingElementIndices();
+            std::set<unsigned> elements_containing_nodeB = pNodeB->rGetContainingElementIndices();
+
+            // Find common elements
+            std::set<unsigned> shared_elements;
+            std::set_intersection(elements_containing_nodeA.begin(),
+                                elements_containing_nodeA.end(),
+                                elements_containing_nodeB.begin(),
+                                elements_containing_nodeB.end(),
+                                std::inserter(shared_elements, shared_elements.begin()));
+
+            // Check that the nodes have a common edge
+            assert(!shared_elements.empty());
+
+            // If the edge corresponds to a single element, then the cell is on the boundary
+            if (shared_elements.size() == 1)
+            {
+                p_face->MarkAsDeleted();
+            }
+        }
+    }
+    
+    // Mark this element as deleted: here the element is unregistered from those nodes.
     this->mElements[index]->MarkAsDeleted();
     mDeletedElementIndices.push_back(index);
 }

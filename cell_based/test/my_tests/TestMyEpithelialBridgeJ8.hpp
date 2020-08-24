@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYEPITHELIALBRIDGEA_HPP_
-#define TESTMYEPITHELIALBRIDGEA_HPP_
+#ifndef TESTMYEPITHELIALBRIDGEJ8_HPP_
+#define TESTMYEPITHELIALBRIDGEJ8_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -66,7 +66,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyEpithelialBridgeA : public AbstractCellBasedTestSuite
+class TestMyEpithelialBridgeJ8 : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -770,4 +770,4 @@ public:
 
 };
 
-#endif /* TESTMYEPITHELIALBRIDGEA_HPP_ */
+#endif /* TESTMYEPITHELIALBRIDGEJ8_HPP_ */

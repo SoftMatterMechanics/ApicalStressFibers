@@ -8,3 +8,13 @@ my_tests/TestMyEpithelialBridgeF3.hpp
 my_tests/TestMyEpithelialBridgeF4.hpp
 my_tests/TestMyEpithelialBridgeF5.hpp
 my_tests/TestMyEpithelialBridgeF6.hpp
+my_tests/TestMyEpithelialBridgeJ1.hpp
+my_tests/TestMyEpithelialBridgeJ2.hpp
+my_tests/TestMyEpithelialBridgeJ3.hpp
+my_tests/TestMyEpithelialBridgeJ4.hpp
+my_tests/TestMyEpithelialBridgeJ5.hpp
+my_tests/TestMyEpithelialBridgeJ6.hpp
+my_tests/TestMyEpithelialBridgeJ7.hpp
+my_tests/TestMyEpithelialBridgeJ8.hpp
+my_tests/TestMyEpithelialBridgeJ9.hpp
+my_tests/TestMyEpithelialBridgeJ10.hpp

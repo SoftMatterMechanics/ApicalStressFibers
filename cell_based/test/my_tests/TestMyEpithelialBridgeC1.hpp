@@ -76,10 +76,11 @@ public:
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double nagai_honda_membrane_surface_energy_parameter = 0.2;
+        double nagai_honda_membrane_surface_energy_parameter = 0.5;
         double target_shape_index = 4.0;
         double pulling_force_on_leading_cell = 14;
-        
+        double set_polarity_magnitude = 0.1;
+
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.1;
@@ -116,7 +117,7 @@ public:
 
         // Polarity:
 /*----*/bool add_random_force = true;
-/*----*/double set_polarity_magnitude = 0.00;
+/******/// double set_polarity_magnitude = 0.00;
         double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
 
         // Substrate adhesion:
