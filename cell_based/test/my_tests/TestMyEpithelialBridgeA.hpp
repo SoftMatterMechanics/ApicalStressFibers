@@ -77,8 +77,8 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double target_shape_index = 2.0;
-        double pulling_force_on_leading_cell = 20;
+        double target_shape_index = 4.0;
+        double pulling_force_on_leading_cell = 5;
 
         double polarity_magnitude = 0.2;
         double rotational_diffusion_constant = 0.2*2.0*M_PI;
@@ -115,7 +115,7 @@ public:
         // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
 /******/// double target_shape_index = 0.0;
         // Cell-boundary adhesion:
-        bool consider_consistency_of_the_influence_of_CBAdhe = false;        
+        bool consider_consistency_of_the_influence_of_CBAdhe = false;
 
         // Feedback:
 /******/// feedback_strength_for_myosin_activity = 0.0;

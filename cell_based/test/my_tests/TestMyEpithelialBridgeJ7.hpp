@@ -72,14 +72,19 @@ public:
 
     void TestStripSubstrateAdhesion()
     {
-        assert(false);
+        // assert(false);
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double nagai_honda_membrane_surface_energy_parameter = 0.5;
-        double target_shape_index = 4.0;
-        double pulling_force_on_leading_cell = 9;
-        double set_polarity_magnitude = 0.1;
+        double nagai_honda_membrane_surface_energy_parameter = 0.2;
+        double target_shape_index = 0.0;
+        double pulling_force_on_leading_cell = 5;
+
+        double polarity_magnitude = 0.2;
+        double rotational_diffusion_constant = 0.2*2.0*M_PI;
+        double translational_diffusion_constant = 0.0;
+
+        double feedback_strength_for_myosin_activity = 0.01;
 
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
@@ -110,15 +115,17 @@ public:
         // Shape index (p0): {6/sqrt(6*sqrt(3)/4)}=3.7224 for default
 /******/// double target_shape_index = 0.0;
         // Cell-boundary adhesion:
-        bool consider_consistency_of_the_influence_of_CBAdhe = false;        
+        bool consider_consistency_of_the_influence_of_CBAdhe = false;
 
         // Feedback:
-/*----*/double feedback_strength_for_myosin_activity = 0.0;
+/******/// feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
 /*----*/bool add_random_force = true;
-/******/// double set_polarity_magnitude = 0.00;
-        double set_rotational_diffusion_constant = 0.2*2.0*M_PI;
+/******/// double polarity_magnitude = 0.00;
+/******/// double rotational_diffusion_constant = 0.2*2.0*M_PI;
+/******/// double translational_diffusion_constant = 0.0;
+
 
         // Substrate adhesion:
 /*----*/double basic_SSA = -1.0;
@@ -248,6 +255,8 @@ public:
         
         // Random force and polarity:
         bool consider_polarity = true;
+        if (polarity_magnitude==0.0)
+          consider_polarity = false;
         bool vanishing_motility_for_node_in_the_strip_interval = false;
 
         // EquilibrateForAWhile
@@ -404,12 +413,15 @@ public:
 
         /*-----------------------------START: RandomForce and PolarityModifier--------------------------*/
         // Brownian diffusion
-        double translational_diffusion_constant = 0.0;
         if (add_random_force)
         {
           MAKE_PTR(DiffusionForce<2>, p_force2);
           bool use_the_same_node_radius = true;
           double node_radius = 50*1e2;
+          if (translational_diffusion_constant >0.0)
+            node_radius = p_force2->GetDiffusionScalingConstant()/translational_diffusion_constant;
+          else
+            node_radius = 50*1e2;          
           p_force2->SetUseTheSameNodeRadius(use_the_same_node_radius);
           p_force2->SetTheSameNodeRadius(node_radius);
           p_force2->SetConsiderPolarity(consider_polarity);
@@ -422,18 +434,13 @@ public:
           p_force2->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
           p_force2->SetTimeForEquilibrium(time_for_equilibrium);
 
-          translational_diffusion_constant = p_force2->GetDiffusionScalingConstant()/node_radius;
           simulator.AddForce(p_force2);
         }
 
         // Polarity modifier
-        double polarity_magnitude = 0.0;
-        double rotational_diffusion_constant = 0.0;
         if (consider_polarity)
         {
           MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
-          polarity_magnitude = set_polarity_magnitude;
-          rotational_diffusion_constant = set_rotational_diffusion_constant;
           p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
           simulator.AddSimulationModifier(p_polarity_modifier);
@@ -523,7 +530,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-21/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-24/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
