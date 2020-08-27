@@ -76,19 +76,19 @@ public:
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double target_shape_index = 2.0;
-        double pulling_force_on_leading_cell = 5;
+        double target_shape_index = 0.5;
+        double feedback_strength_for_myosin_activity = 0.0;
 
-        double polarity_magnitude = 0.2;
+        double nagai_honda_membrane_surface_energy_parameter = 0.2;
+        double pulling_force_on_leading_cell = 10;
+
+        double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.2*2.0*M_PI;
         double translational_diffusion_constant = 0.0;
 
-        double feedback_strength_for_myosin_activity = 0.01;
-
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
-        double max_movement_per_timestep = 0.1;
+        double max_movement_per_timestep = 0.05;
 
         // if (target_shape_index<=0.5)
         //   time_for_equilibrium = 50.0;
@@ -103,7 +103,7 @@ public:
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.2;
+/*----*/double dt = 0.1;
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
         double sampling_time = 1.0;
@@ -421,7 +421,7 @@ public:
           if (translational_diffusion_constant >0.0)
             node_radius = p_force2->GetDiffusionScalingConstant()/translational_diffusion_constant;
           else
-            node_radius = 50*1e2;          
+            node_radius = 50*1e2;
           p_force2->SetUseTheSameNodeRadius(use_the_same_node_radius);
           p_force2->SetTheSameNodeRadius(node_radius);
           p_force2->SetConsiderPolarity(consider_polarity);
@@ -530,7 +530,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-24/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-27/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
