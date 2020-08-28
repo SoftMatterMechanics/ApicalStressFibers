@@ -80,7 +80,7 @@ public:
         double feedback_strength_for_myosin_activity = 0.0;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 10;
+        double pulling_force_on_leading_cell = 12;
 
         double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.2*2.0*M_PI;
@@ -530,10 +530,10 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-27/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-28/";
 
         oss.str("");
-        oss << "MyoFeStr=" << std::fixed << setprecision(2) << feedback_strength_for_myosin_activity
+        oss << "MyoFeStr=" << std::fixed << setprecision(3) << feedback_strength_for_myosin_activity
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
