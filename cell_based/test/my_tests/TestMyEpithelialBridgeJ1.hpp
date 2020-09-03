@@ -77,10 +77,11 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.5;
-        double feedback_strength_for_myosin_activity = 0.0;
+        double feedback_strength_for_myosin_activity = 0.015;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 12;
+        double pulling_force_on_leading_cell = 10;
+        bool run_with_birth =true;
 
         double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.2*2.0*M_PI;
@@ -186,7 +187,7 @@ public:
         double set_cell_rearrangement_threshold = 0.05;
 
         // Cell division:
-        bool run_with_birth =true;
+/******/// bool run_with_birth =true;
         double time_for_one_division_of_cell_population = 25;
         double growth_rate_for_target_area_after_division = 0.1;
         bool use_my_division_rule_along_with_modifier = true;
@@ -530,7 +531,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-08-28/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-03/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(3) << feedback_strength_for_myosin_activity
@@ -561,6 +562,10 @@ public:
           else if (use_my_detach_pattern_method)
             oss << "_Multiple_lead_tops=1";
         }
+        if (use_longer_mesh)
+          oss << "_longMesh";
+        if (!run_with_birth)
+          oss << "_NoDivi";
         output_directory += oss.str();
 
         time_t raw_time = time(0);
