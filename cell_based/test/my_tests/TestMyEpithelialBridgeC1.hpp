@@ -77,7 +77,7 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.5;
-        double feedback_strength_for_myosin_activity = 0.00;
+        double feedback_strength_for_myosin_activity = 0.0025;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
         double pulling_force_on_leading_cell = 10;
