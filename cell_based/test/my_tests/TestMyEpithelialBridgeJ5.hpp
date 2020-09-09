@@ -77,7 +77,7 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 1.25;
-        double feedback_strength_for_myosin_activity = 0.0025;
+        double feedback_strength_for_myosin_activity = 0.01375;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
         double pulling_force_on_leading_cell = 10;
@@ -531,10 +531,10 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-07/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-09/";
 
         oss.str("");
-        oss << "MyoFeStr=" << std::fixed << setprecision(3) << feedback_strength_for_myosin_activity
+        oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
@@ -677,7 +677,7 @@ public:
           // feedback parameters
           output_directory += "_|FeedbackPara:";
           oss.str("");
-          oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity ;
+          oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(4) << feedback_strength_for_myosin_activity ;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity ;
