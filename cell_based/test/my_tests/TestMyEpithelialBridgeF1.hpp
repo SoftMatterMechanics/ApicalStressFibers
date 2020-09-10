@@ -77,10 +77,10 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 3.75;
-        double feedback_strength_for_myosin_activity = 0.01375;
+        double feedback_strength_for_myosin_activity = 0.00;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 10;
+        double pulling_force_on_leading_cell = 12;
         bool run_with_birth =false;
 
         double polarity_magnitude = 0.0;
@@ -531,7 +531,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-09/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-10/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
