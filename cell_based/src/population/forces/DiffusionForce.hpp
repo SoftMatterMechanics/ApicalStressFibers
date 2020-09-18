@@ -72,6 +72,8 @@ private :
     static const double msBoltzmannConstant;
 
     // my changes
+    bool mIsNoBrownianRandomForce;
+
     bool mUseTheSameNodeRadius;
 
     double mTheSameNodeRadius;
@@ -121,6 +123,11 @@ public :
     ~DiffusionForce();
 
     // my changes
+    void SetIsNoBrownianRandomForce(bool isNoBrownianRandomForce)
+    {
+      mIsNoBrownianRandomForce = isNoBrownianRandomForce;
+    }
+
     void SetUseTheSameNodeRadius(bool useTheSameNodeRadius)
     {
       mUseTheSameNodeRadius = useTheSameNodeRadius;

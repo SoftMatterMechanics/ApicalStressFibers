@@ -80,12 +80,11 @@ public:
         double feedback_strength_for_myosin_activity = 0.00;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 12;
+        double pulling_force_on_leading_cell = 10;
         bool run_with_birth =false;
 
-        double polarity_magnitude = 0.0;
-        double rotational_diffusion_constant = 0.2*2.0*M_PI;
-        double translational_diffusion_constant = 0.0;
+        double polarity_magnitude = 0.001;
+        double rotational_diffusion_constant = 0.01; //0.2*2.0*M_PI;
 
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
@@ -123,9 +122,14 @@ public:
 
         // Polarity:
 /*----*/bool add_random_force = true;
+        bool is_no_brownian_random_force = true;
+        double translational_diffusion_constant = 0.0;
 /******/// double polarity_magnitude = 0.00;
 /******/// double rotational_diffusion_constant = 0.2*2.0*M_PI;
-/******/// double translational_diffusion_constant = 0.0;
+        if (is_no_brownian_random_force&&polarity_magnitude==0.0)
+          add_random_force = false;
+        if (polarity_magnitude!=0.0)
+          assert(add_random_force==true);
 
 
         // Substrate adhesion:
@@ -423,6 +427,7 @@ public:
             node_radius = p_force2->GetDiffusionScalingConstant()/translational_diffusion_constant;
           else
             node_radius = 50*1e2;
+          p_force2->SetIsNoBrownianRandomForce(is_no_brownian_random_force);
           p_force2->SetUseTheSameNodeRadius(use_the_same_node_radius);
           p_force2->SetTheSameNodeRadius(node_radius);
           p_force2->SetConsiderPolarity(consider_polarity);
@@ -531,14 +536,14 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-10/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-17/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
-            << "_brown=" << add_random_force
+            << "_hasBrown=" << (add_random_force&&(!is_no_brownian_random_force))
             << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
             << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
@@ -695,9 +700,12 @@ public:
 
         if (add_random_force)
         {
-          oss.str("");
-          oss << std::scientific << setprecision(2) << translational_diffusion_constant;
-          output_directory += "_|D_trans=" + oss.str();
+          if (!is_no_brownian_random_force)
+          {
+            oss.str("");
+            oss << std::scientific << setprecision(2) << translational_diffusion_constant;
+            output_directory += "_|D_trans=" + oss.str();
+          }
           if (consider_polarity)
           {
             oss.str("");

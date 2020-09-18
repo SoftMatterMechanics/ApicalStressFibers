@@ -45,6 +45,7 @@ DiffusionForce<DIM>::DiffusionForce()
     : AbstractForce<DIM>(),
       mAbsoluteTemperature(296.0), // default to room temperature
       mViscosity(3.204e-6), // default to viscosity of water at room temperature in (using 10 microns and hours)
+      mIsNoBrownianRandomForce(false),
       mUseTheSameNodeRadius(false),
       mTheSameNodeRadius(10.0),
       mConsiderPolarity(true),
@@ -148,6 +149,9 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
             double xi = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
 
             force_contribution[i] = (nu*sqrt(2.0*diffusion_constant*dt)/dt)*xi;
+
+            if (mIsNoBrownianRandomForce)
+                force_contribution[i] = 0.0;
 
             if (mConsiderPolarity)
             {
