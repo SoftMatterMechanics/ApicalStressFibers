@@ -142,11 +142,11 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
         location = GetNode(index)->rGetLocation();
 
         // Node copy at original location
-        Node<2>* p_node = new Node<2>(index, false, location[0], location[1]);
+        Node<2>* p_node = new Node<2>(index, false, location[0] + this->mMoveMeshRightForNPeriods*mWidth, location[1]);
         temp_nodes[index] = p_node;
 
         // Node copy shifted right
-        p_node = new Node<2>(num_nodes + index, false, location[0] + mWidth, location[1]);
+        p_node = new Node<2>(num_nodes + index, false, location[0] + mWidth + this->mMoveMeshRightForNPeriods*mWidth, location[1]);
         temp_nodes[num_nodes + index] = p_node;
 
     }

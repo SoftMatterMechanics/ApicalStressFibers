@@ -76,19 +76,22 @@ public:
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 3.25;
+        double target_shape_index = 4.75;
         double feedback_strength_for_myosin_activity = 0.00;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
         double pulling_force_on_leading_cell = 10;
         bool run_with_birth =false;
-
-        double polarity_magnitude = 0.001;
+        bool if_use_larger_strip_distance = false;
+        bool is_no_brownian_random_force = false;
+        double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.01; //0.2*2.0*M_PI;
 
         double end_time = 400.0;
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05;
+
+        int move_mesh_right_for_N_periods = 0;
 
         // if (target_shape_index<=0.5)
         //   time_for_equilibrium = 50.0;
@@ -122,7 +125,7 @@ public:
 
         // Polarity:
 /*----*/bool add_random_force = true;
-        bool is_no_brownian_random_force = true;
+/******/// bool is_no_brownian_random_force = true;
         double translational_diffusion_constant = 0.0;
 /******/// double polarity_magnitude = 0.00;
 /******/// double rotational_diffusion_constant = 0.2*2.0*M_PI;
@@ -197,7 +200,7 @@ public:
         bool use_my_division_rule_along_with_modifier = true;
 
         // Structure:
-        bool if_use_larger_strip_distance = false;
+/******/// bool if_use_larger_strip_distance = false;
         bool one_period_only = true;
         bool if_mesh_has_two_period = false;
         if (if_mesh_has_two_period)
@@ -286,12 +289,15 @@ public:
         if (use_longer_mesh)
           num_ele_up *=2;
 
+/******/// int move_mesh_right_for_N_periods = 1;
+
         double initial_area = reference_area;
         double cell_rearrangement_threshold = set_cell_rearrangement_threshold;
         bool if_update_face_elements_in_mesh = if_consider_feedback_of_face_values;
 
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001);
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
+        p_mesh->SetMoveMeshRightForNPeriods(move_mesh_right_for_N_periods);        
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
         p_mesh->SetIfClassifyElementsWithGroupNumbers(classify_elements_with_group_numbers);
         p_mesh->SetMarkLeadingCells(mark_leading_cells);
@@ -536,7 +542,7 @@ public:
         // Output directory:
         std::ostringstream oss;
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-17/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-22/";
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
@@ -568,9 +574,13 @@ public:
             oss << "_Multiple_lead_tops=1";
         }
         if (use_longer_mesh)
-          oss << "_longMesh";
+          oss << "_LongMesh";
+        if (if_use_larger_strip_distance)
+          oss << "_LargerStripDis";
         if (!run_with_birth)
           oss << "_NoDivi";
+        if (move_mesh_right_for_N_periods!=0)
+          oss << "_MvRight" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
         output_directory += oss.str();
 
         time_t raw_time = time(0);

@@ -126,6 +126,8 @@ protected:
     std::vector< c_vector<double, SPACE_DIM> > mLocationsOfT3Swaps;
 
     // my changes
+    int mMoveMeshRightForNPeriods;
+
     bool mIfUpdateFaceElementsInMesh;
 
     bool mOutputConciseSwapInformationWhenRemesh;
@@ -687,6 +689,11 @@ public:
      * \todo This method seems to be redundant; remove it? (#2401)
      */
     void ReMesh();
+
+    void SetMoveMeshRightForNPeriods(int moveMeshRightForNPeriods)
+    {
+      mMoveMeshRightForNPeriods = moveMeshRightForNPeriods;
+    }
 
     void SetUpdateFaceElementsInMeshBoolean(bool ifUpdateFaceElementsInMesh)
     {
