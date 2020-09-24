@@ -76,13 +76,13 @@ public:
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;
-        double feedback_strength_for_myosin_activity = 0.00;
+        double target_shape_index = 2.25;
+        double feedback_strength_for_myosin_activity = 0.015;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 10;
+        double pulling_force_on_leading_cell = 12;
         bool run_with_birth =false;
-        bool if_use_larger_strip_distance = false;
+        bool if_use_larger_strip_distance = true;
         bool is_no_brownian_random_force = false;
         double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.01; //0.2*2.0*M_PI;
@@ -541,8 +541,14 @@ public:
         /*--------------------------START: Output Directory and Simulation Information File---------------------*/
         // Output directory:
         std::ostringstream oss;
+        time_t raw_time = time(0);
+        struct tm * now = localtime(& raw_time);
+
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-22/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: ";
+        oss.str("");
+        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
+        output_directory += oss.str();
 
         oss.str("");
         oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
@@ -576,15 +582,13 @@ public:
         if (use_longer_mesh)
           oss << "_LongMesh";
         if (if_use_larger_strip_distance)
-          oss << "_LargerStripDis";
+          oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
         if (!run_with_birth)
           oss << "_NoDivi";
         if (move_mesh_right_for_N_periods!=0)
           oss << "_MvRight" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
         output_directory += oss.str();
 
-        time_t raw_time = time(0);
-        struct tm * now = localtime(& raw_time);
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ", " << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
