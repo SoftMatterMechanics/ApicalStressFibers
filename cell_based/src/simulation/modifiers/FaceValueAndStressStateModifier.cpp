@@ -70,7 +70,9 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
 
       mMarkLeadingCells(false),
 
-      mIfOutputModifierInformation(false)
+      mIfOutputModifierInformation(false),
+
+      mHasMyosinActivityDepression(false)
 {
 }
 
@@ -288,6 +290,18 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(
         changing_rate = 0.0;
     }
     unified_edge_myosin_activty += dt*changing_rate;
+
+    // Myosin Activity Depression:
+    if (mHasMyosinActivityDepression && SimulationTime::Instance()->GetTime()>mMyosinActivityDepressedTime)
+    {
+        unified_edge_myosin_activty -=dt*changing_rate;
+        if (unified_edge_myosin_activty>1.0)
+            unified_edge_myosin_activty = std::max(1.0, (unified_edge_myosin_activty-dt*mMyosinActivityDepressingRate));
+        // else
+        //     unified_edge_myosin_activty = std::min(1.0, (unified_edge_myosin_activty+dt*mMyosinActivityDepressingRate));
+
+    }
+
     p_face->SetUnifiedEdgeMyosinActivty(unified_edge_myosin_activty);
     if (mIfOutputModifierInformation && random()%100000==0)
     {

@@ -76,22 +76,33 @@ public:
 
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.25;
-        double feedback_strength_for_myosin_activity = 0.015;
+        double target_shape_index = 4.75;//p0
 
-        double nagai_honda_membrane_surface_energy_parameter = 0.2;
-        double pulling_force_on_leading_cell = 12;
+        double pulling_force_on_leading_cell = 10;// Fy
+
+        double feedback_strength_for_myosin_activity = 0.01125;//Fb
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+
+        double nagai_honda_membrane_surface_energy_parameter = 0.2;//Ga
+
+        bool if_use_larger_strip_distance = false;
+        double strip_dis_multiplied = 20.0/6.0;
+
+        int move_mesh_right_for_N_periods = 0;
+
         bool run_with_birth =false;
-        bool if_use_larger_strip_distance = true;
+
         bool is_no_brownian_random_force = false;
         double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.01; //0.2*2.0*M_PI;
 
-        double end_time = 400.0;
+        bool has_myo_depression = false;
+        double myosin_activity_depressing_rate = 0.05;
+
+        double end_time = 800.0;
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05;
 
-        int move_mesh_right_for_N_periods = 0;
 
         // if (target_shape_index<=0.5)
         //   time_for_equilibrium = 50.0;
@@ -201,6 +212,7 @@ public:
 
         // Structure:
 /******/// bool if_use_larger_strip_distance = false;
+/******/// double strip_dis_multiplied = 10.0/6.0;
         bool one_period_only = true;
         bool if_mesh_has_two_period = false;
         if (if_mesh_has_two_period)
@@ -239,7 +251,7 @@ public:
         bool is_default_feedback_form = true;
         int case_number_of_membrane_surface_energy_form = 2; // 2, for default, 2 for new membr_surf_energy form1, 3 for form2.
         bool if_consider_feedback_of_face_values = true;
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+/******/// bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool if_consider_feedback_of_cell_cell_adhesion = true;
         bool EMA_dont_decrease = false;
@@ -281,7 +293,7 @@ public:
         /*------------------------------START: Mesh Structure------------------------------*/
         unsigned num_ele_cross = 6;
         if (if_use_larger_strip_distance)
-          num_ele_cross = 10;
+          num_ele_cross = (unsigned)round(num_ele_cross*strip_dis_multiplied);
         if (if_mesh_has_two_period)
           num_ele_cross *= 2;
 
@@ -358,7 +370,7 @@ public:
         double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
-          strip_distance *= 200.0/120.0;
+          strip_distance *= strip_dis_multiplied;
         double strip_start_x_location = 0.0;
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
@@ -498,6 +510,11 @@ public:
         // outout information
         p_face_value_and_stress_state_modifier->SetOutputModifierInformationBoolean(false);
 
+        // myosin activity depression:
+        p_face_value_and_stress_state_modifier->SetHasMyosinActivityDepression(has_myo_depression);
+        p_face_value_and_stress_state_modifier->SetMyosinActivityDepressedTime(400.0);
+        p_face_value_and_stress_state_modifier->SetMyosinActivityDepressingRate(myosin_activity_depressing_rate);
+
         simulator.AddSimulationModifier(p_face_value_and_stress_state_modifier);
         /*-----------------------END: !!!!!!Feedback: FaceValueAndStressStateModifier: need modification---------------*/
 
@@ -541,28 +558,36 @@ public:
         /*--------------------------START: Output Directory and Simulation Information File---------------------*/
         // Output directory:
         std::ostringstream oss;
+        time_t raw_time = time(0);
+        struct tm * now = localtime(& raw_time);
+
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: 20-09-24/";
+            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: ";
+        oss.str("");
+        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
+        output_directory += oss.str();
 
         oss.str("");
-        oss << "MyoFeStr=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
+        if (if_substrate_adhesion_is_homogeneous)
+        {
+          if (add_pulling_force_on_node_individually)
+            oss << "Fy_lead_node=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
+          if (add_pulling_force_evenly_on_nodes_of_leading_cell)
+            oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
+        }
+
+        oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
+            << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
-            << "_p0=" << std::fixed << setprecision(2) << target_shape_index
-            << "_hasBrown=" << (add_random_force&&(!is_no_brownian_random_force))
-            << "_fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
+            << "_Brown=" << (add_random_force&&(!is_no_brownian_random_force))
+            << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
             << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
         if(if_check_for_T4_swaps)
           oss << "_T4swaps=1";
         if (if_substrate_adhesion_is_homogeneous)
-        {
           oss << "_HomoSSA=" << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
-          if (add_pulling_force_on_node_individually)
-            oss << "_Pull_force_lead_node=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
-          if (add_pulling_force_evenly_on_nodes_of_leading_cell)
-            oss << "_Pull_force_lead_cell=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
-        }
         else
         {
           oss << "_NonHomoSSA:mature_lame=" << std::fixed << setprecision(1) << SSA_for_mature_lamellipodium
@@ -580,11 +605,13 @@ public:
         if (!run_with_birth)
           oss << "_NoDivi";
         if (move_mesh_right_for_N_periods!=0)
-          oss << "_MvRight" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
+          oss << "_MvRight=" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
+        if (has_myo_depression)
+          oss << "_MyoDeprRate=" << std::scientific << setprecision(1)<< myosin_activity_depressing_rate;
+        if (!if_apply_feedback_of_face_values_only_for_boundary_cells)
+          oss << "_FbInside=1";
         output_directory += oss.str();
 
-        time_t raw_time = time(0);
-        struct tm * now = localtime(& raw_time);
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday 
             << ", " << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;

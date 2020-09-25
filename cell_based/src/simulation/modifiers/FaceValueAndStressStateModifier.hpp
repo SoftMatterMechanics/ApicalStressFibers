@@ -101,6 +101,10 @@ protected:
 
     bool mIfOutputModifierInformation;
 
+    bool mHasMyosinActivityDepression;
+    double mMyosinActivityDepressedTime;
+    double mMyosinActivityDepressingRate;
+
 public:
 
     /**
@@ -280,6 +284,21 @@ public:
     void SetOutputModifierInformationBoolean(bool ifOutputModifierInformation)
     {
       mIfOutputModifierInformation = ifOutputModifierInformation;
+    }
+
+    void SetHasMyosinActivityDepression(bool hasMyosinActivityDepression)
+    {
+      mHasMyosinActivityDepression = hasMyosinActivityDepression;
+    }
+
+    void SetMyosinActivityDepressedTime (double myosinActivityDepressedTime)
+    {
+      mMyosinActivityDepressedTime = myosinActivityDepressedTime;
+    }
+
+    void SetMyosinActivityDepressingRate (double myosinActivityDepressingRate)
+    {
+      mMyosinActivityDepressingRate = myosinActivityDepressingRate;
     }
 
     /**
