@@ -70,9 +70,7 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
 
       mMarkLeadingCells(false),
 
-      mIfOutputModifierInformation(false),
-
-      mHasMyosinActivityDepression(false)
+      mIfOutputModifierInformation(false)
 {
 }
 
@@ -194,10 +192,17 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         unsigned elem_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
         VertexElement<DIM, DIM>* p_element = p_mesh->GetElement(elem_index);
         double area = p_mesh->GetVolumeOfElement(elem_index);
-        double Pai = -this->mNagaiHondaDeformationEnergyParameter*(area-this->mFixedTargetArea);
+        // double perimeter = p_mesh->GetSurfaceAreaOfElement(elem_index);
+        double Pressure_ = area/(this->mFixedTargetArea)-1;
+        double Ga_= 1/(this->mFixedTargetArea)*this->mNagaiHondaMembraneSurfaceEnergyParameter;
+        double myosin_weighted_perimeter = 0.0;
         double sum_XX = 0.0;
         double sum_YY = 0.0;
         double sum_XY = 0.0;
+        double sum_adhe_XX = 0.0;
+        double sum_adhe_YY = 0.0;
+        double sum_adhe_XY = 0.0;
+
         for (unsigned local_index =0; local_index < p_element->GetNumNodes(); local_index++)
         {
             Node<DIM>* pNodeA = p_element->GetNode(local_index);
@@ -218,37 +223,56 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
                                 std::inserter(shared_elements, shared_elements.begin()));
             // Check that the nodes have a common edge
             assert(!shared_elements.empty());
-            double elem1_perimeter = p_mesh->GetSurfaceAreaOfElement(*shared_elements.begin());
-            double elem2_perimeter = 0.0;
-            double T_ab = this->mNagaiHondaMembraneSurfaceEnergyParameter*(elem1_perimeter-this->mFixedTargetPerimeter);
-            if (shared_elements.size() == 2)
-            {
-                elem2_perimeter = p_mesh->GetSurfaceAreaOfElement(*shared_elements.end());
-                T_ab += this->mNagaiHondaMembraneSurfaceEnergyParameter*(elem2_perimeter-this->mFixedTargetPerimeter);
-            }
             if (shared_elements.size() >= 3)
             {
                 std::cout<< std::endl << "Get error in FaceValueAndStressStateModifier::UpdateStressStateOfCell";
                 std::cout<< std::endl << "Get shared elements more than 2";
             }
-            sum_XX += (T_ab*vec_ab[0]/l_ab)*vec_ab[0];
-            sum_YY += (T_ab*vec_ab[1]/l_ab)*vec_ab[1];
-            sum_XY += (T_ab*vec_ab[0]/l_ab)*vec_ab[1];
+            double lambda = 0.0;
+            if (shared_elements.size() == 1)
+                lambda = 0.0;
+            else
+                lambda = mNagaiHondaCellCellAdhesionEnergyParameter;
+            if (mIfConsiderFeedbackOfFaceValues)
+            {
+                lambda *= p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()))
+                            ->GetUnifiedCellCellAdhesionEnergyParameter();
+            }
+            sum_adhe_XX += lambda/pow(this->mFixedTargetArea,1.5)*l_ab/sqrt(this->mFixedTargetArea)*(vec_ab[0]/l_ab)*(vec_ab[0]/l_ab);
+            sum_adhe_YY += lambda/pow(this->mFixedTargetArea,1.5)*l_ab/sqrt(this->mFixedTargetArea)*(vec_ab[1]/l_ab)*(vec_ab[1]/l_ab);
+            sum_adhe_XY += lambda/pow(this->mFixedTargetArea,1.5)*l_ab/sqrt(this->mFixedTargetArea)*(vec_ab[0]/l_ab)*(vec_ab[1]/l_ab);
 
-            // if (random()%10000==0)
-            // {
-            //     double t = SimulationTime::Instance()->GetTime();
-            //     std::cout << std::endl << "1||t=" << t << "|elem_index=" << elem_index << "|area=" << area;
-            //     std::cout << "|Pai=" << Pai << "|local_index=" << local_index << "|l_ab=" << l_ab << "|vec_ab=" << vec_ab[0] << ", " << vec_ab[1];
-            //     std::cout << "|elem1_perimeter=" << elem1_perimeter << "|elem2_perimeter=" << elem2_perimeter << "|T_ab=" << T_ab;
-            // }
-        }
-        stress_XX = -Pai + 1/(2*area)*sum_XX;
-        stress_YY = -Pai + 1/(2*area)*sum_YY;
-        stress_XY = 1/(2*area)*sum_XY;
+            if (mIfConsiderFeedbackOfFaceValues)
+            {
+                double m_ab = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()))
+                            ->GetUnifiedEdgeMyosinActivty();
+                myosin_weighted_perimeter += sqrt(m_ab)*l_ab/sqrt(this->mFixedTargetArea);
+
+                sum_XX += sqrt(m_ab)*(vec_ab[0]/l_ab)*vec_ab[0]/sqrt(this->mFixedTargetArea);
+                sum_YY += sqrt(m_ab)*(vec_ab[1]/l_ab)*vec_ab[1]/sqrt(this->mFixedTargetArea);
+                sum_XY += sqrt(m_ab)*(vec_ab[0]/l_ab)*vec_ab[1]/sqrt(this->mFixedTargetArea);
+            }
+            else
+            {
+                myosin_weighted_perimeter += l_ab/sqrt(this->mFixedTargetArea);
+                sum_XX += (vec_ab[0]/l_ab)*vec_ab[0]/sqrt(this->mFixedTargetArea);
+                sum_YY += (vec_ab[1]/l_ab)*vec_ab[1]/sqrt(this->mFixedTargetArea);
+                sum_XY += (vec_ab[0]/l_ab)*vec_ab[1]/sqrt(this->mFixedTargetArea);
+            }
+        } // end of iteration of vertices of the element, for calculation of summation.
+
+        stress_XX = Pressure_ + Ga_/(area/(this->mFixedTargetArea))*myosin_weighted_perimeter*sum_XX + 1/(area/(this->mFixedTargetArea))*sum_adhe_XX;
+        stress_YY = Pressure_ + Ga_/(area/(this->mFixedTargetArea))*myosin_weighted_perimeter*sum_YY + 1/(area/(this->mFixedTargetArea))*sum_adhe_YY;
+        stress_XY = Ga_/(area/(this->mFixedTargetArea))*myosin_weighted_perimeter*sum_XY + 1/(area/(this->mFixedTargetArea))*sum_adhe_XY;
+        // up is the stress normalized using the literature method(A0_=1); below is the stress normalized using our method(A0_=PI);
+        stress_XX *= (this->mFixedTargetArea);
+        stress_YY *= (this->mFixedTargetArea);
+        stress_XY *= (this->mFixedTargetArea);
+
         double R = sqrt( pow((stress_XX-stress_YY)/2, 2) + pow(stress_XY, 2) );
         stress_1 = (stress_XX + stress_YY)/2 + R;
         stress_2 = (stress_XX + stress_YY)/2 - R;
+
         if (mIfOutputModifierInformation && random()%10000==0)
         {
             double t = SimulationTime::Instance()->GetTime();
@@ -258,6 +282,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         }
 
     }
+    
+    
     pCell->GetCellData()->SetItem("StressXX", stress_XX);
     pCell->GetCellData()->SetItem("StressYY", stress_YY);
     pCell->GetCellData()->SetItem("StressXY", stress_XY);
@@ -290,18 +316,6 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(
         changing_rate = 0.0;
     }
     unified_edge_myosin_activty += dt*changing_rate;
-
-    // Myosin Activity Depression:
-    if (mHasMyosinActivityDepression && SimulationTime::Instance()->GetTime()>mMyosinActivityDepressedTime)
-    {
-        unified_edge_myosin_activty -=dt*changing_rate;
-        if (unified_edge_myosin_activty>1.0)
-            unified_edge_myosin_activty = std::max(1.0, (unified_edge_myosin_activty-dt*mMyosinActivityDepressingRate));
-        // else
-        //     unified_edge_myosin_activty = std::min(1.0, (unified_edge_myosin_activty+dt*mMyosinActivityDepressingRate));
-
-    }
-
     p_face->SetUnifiedEdgeMyosinActivty(unified_edge_myosin_activty);
     if (mIfOutputModifierInformation && random()%100000==0)
     {
