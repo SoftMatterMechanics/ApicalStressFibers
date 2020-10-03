@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYEPITHELIALBRIDGEA_HPP_
-#define TESTMYEPITHELIALBRIDGEA_HPP_
+#ifndef TESTMYEB_HPP_
+#define TESTMYEB_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -66,7 +66,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyEpithelialBridgeA : public AbstractCellBasedTestSuite
+class TestMyEB : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -78,12 +78,12 @@ public:
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.5;//p0
 
-        double pulling_force_on_leading_cell = 8;// Fy
+        double pulling_force_on_leading_cell = 8/pow(M_PI,1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.005;//Fb
+        double feedback_strength_for_myosin_activity = 0.005/M_PI;//Fb
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
 
-        double nagai_honda_membrane_surface_energy_parameter = 0.2;//Ga
+        double nagai_honda_membrane_surface_energy_parameter = 0.2/sqrt(M_PI);//Ga
 
         bool if_use_larger_strip_distance = false;
         double strip_dis_multiplied = 20.0/6.0;
@@ -94,14 +94,14 @@ public:
 
         bool is_no_brownian_random_force = false;
         double polarity_magnitude = 0.0;
-        double rotational_diffusion_constant = 0.01; //0.2*2.0*M_PI;
+        double rotational_diffusion_constant = 0.01/M_PI; //0.2*2.0*M_PI;
 
         bool has_myo_depression = false;
-        double myosin_activity_depressing_rate = 0.05;
+        double myosin_activity_depressing_rate = 0.05/M_PI;
 
-        double end_time = 800.0;
+        double end_time = 800.0*M_PI;
         double time_for_equilibrium = 0.0;
-        double max_movement_per_timestep = 0.05;
+        double max_movement_per_timestep = 0.05/sqrt(M_PI);
 
 
         // if (target_shape_index<=0.5)
@@ -117,12 +117,12 @@ public:
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.01;
+/*----*/double dt = 0.1*M_PI;
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
-        double sampling_time = 0.1;
+        double sampling_time = 1.0*M_PI;
 /******/// double max_movement_per_timestep = 0.1;
-/*----*/double small_change_for_area_calculation = 0.4;
+/*----*/double small_change_for_area_calculation = 0.4/sqrt(M_PI);
 
         // Gamma:
 /******/// double nagai_honda_membrane_surface_energy_parameter = 0.2;
@@ -135,7 +135,7 @@ public:
 /******/// feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
-/*----*/bool add_random_force = false;
+/*----*/bool add_random_force = true;
 /******/// bool is_no_brownian_random_force = true;
         double translational_diffusion_constant = 0.0;
 /******/// double polarity_magnitude = 0.00;
@@ -147,8 +147,8 @@ public:
 
 
         // Substrate adhesion:
-/*----*/double basic_SSA = -1.0;
-        double SSA_for_mature_lamellipodium = -10.0;
+/*----*/double basic_SSA = -1.0/M_PI;
+        double SSA_for_mature_lamellipodium = -10.0/M_PI;
 /******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
         double homogeneous_substrate_adhesion_parameter = basic_SSA;
@@ -167,24 +167,24 @@ public:
 /*----*/bool add_pulling_force_evenly_on_nodes_of_leading_cell = true;
           // non-homogeneous SSA case:
             // one leading top:
-        double substrate_adhesion_leading_top_length = 3.0;
+        double substrate_adhesion_leading_top_length = 3.0/sqrt(M_PI);
             // several leading tops:
         bool use_my_detach_pattern_method = false;
             // distribution rule:
 /*----*/bool use_new_SSA_distribution_rule = false;
         if (use_new_SSA_distribution_rule)
           assert(mark_leading_cells);
-        double lamellipodium_maturation_rate = 1.0;
-        double lamellipodium_destruction_rate = 0.1;
+        double lamellipodium_maturation_rate = 1.0/M_PI;
+        double lamellipodium_destruction_rate = 0.1/M_PI;
               // assistant methods for distribution rule:
         bool small_SSA_at_first = false;
-        double initial_time_for_small_SSA = 5.0;
-        double small_SSA_for_initial_time = -6.0;
+        double initial_time_for_small_SSA = 5.0*M_PI;
+        double small_SSA_for_initial_time = -6.0/M_PI;
         if (small_SSA_at_first)
           assert(use_new_SSA_distribution_rule && fabs(SSA_for_mature_lamellipodium) >= fabs(small_SSA_for_initial_time));
         bool keep_moving_forward = false;
-        double SSA_bottom_decrease = 5.0;
-        double slowly_moving_forward_after_this_height = 25.0;
+        double SSA_bottom_decrease = 5.0/M_PI;//?
+        double slowly_moving_forward_after_this_height = 25.0/sqrt(M_PI);
         if (keep_moving_forward)
           assert(use_new_SSA_distribution_rule);
 
@@ -202,12 +202,12 @@ public:
           assert(restrict_vertex_movement==false);
 
         // Cell rearrangement:
-        double set_cell_rearrangement_threshold = 0.05;
+        double set_cell_rearrangement_threshold = 0.05/sqrt(M_PI);
 
         // Cell division:
 /******/// bool run_with_birth =true;
-        double time_for_one_division_of_cell_population = 25;
-        double growth_rate_for_target_area_after_division = 0.1;
+        double time_for_one_division_of_cell_population = 25*M_PI;
+        double growth_rate_for_target_area_after_division = 0.1/M_PI;
         bool use_my_division_rule_along_with_modifier = true;
 
         // Structure:
@@ -225,7 +225,7 @@ public:
         // KA:
         double nagai_honda_deformation_energy_parameter = 1;
         // A0:
-        double reference_area = M_PI;
+        double reference_area = M_PI/M_PI;
         bool use_fixed_target_area_without_modifier = false;
         // Cell-cell adhesion:
         double cell_cell_adhesion_parameter = 
@@ -233,7 +233,7 @@ public:
         // Cell-boundary adhesion:
         double cell_boundary_adhesion_parameter = 0.0;
         if (consider_consistency_of_the_influence_of_CBAdhe)
-          cell_boundary_adhesion_parameter = cell_cell_adhesion_parameter + 0.1*(4.0*sqrt(reference_area));
+          cell_boundary_adhesion_parameter = cell_cell_adhesion_parameter + 0.1/M_PI*(4.0*sqrt(reference_area/M_PI));
 
         // Substrate adhesion:
         bool if_consider_substrate_adhesion = true;
@@ -325,7 +325,7 @@ public:
         CellsGenerator<BernoulliTrialCellCycleModel, 2> cells_generator;
         bool use_bernoulli_trial_cell_cycle_model = true;
         cells_generator.SetUseBernoulliTrialCellCycleModel(use_bernoulli_trial_cell_cycle_model);
-        double divide_probability_for_a_cell = 1.0/time_for_one_division_of_cell_population/(num_ele_cross*num_ele_up);
+        double divide_probability_for_a_cell = 1/M_PI*1.0/time_for_one_division_of_cell_population/(num_ele_cross*num_ele_up);
         double minimum_division_age = -0.01;
         cells_generator.SetDivideProbability(divide_probability_for_a_cell);
         cells_generator.SetMinimumDivisionAge(minimum_division_age);
@@ -440,7 +440,7 @@ public:
         {
           MAKE_PTR(DiffusionForce<2>, p_force2);
           bool use_the_same_node_radius = true;
-          double node_radius = 50*1e2;
+          double node_radius = 50*1e2;//?
           if (translational_diffusion_constant >0.0)
             node_radius = p_force2->GetDiffusionScalingConstant()/translational_diffusion_constant;
           else
@@ -513,7 +513,7 @@ public:
 
         // myosin activity depression:
         p_face_value_and_stress_state_modifier->SetHasMyosinActivityDepression(has_myo_depression);
-        p_face_value_and_stress_state_modifier->SetMyosinActivityDepressedTime(400.0);
+        p_face_value_and_stress_state_modifier->SetMyosinActivityDepressedTime(400.0*M_PI);
         p_face_value_and_stress_state_modifier->SetMyosinActivityDepressingRate(myosin_activity_depressing_rate);
 
         simulator.AddSimulationModifier(p_face_value_and_stress_state_modifier);
@@ -554,7 +554,7 @@ public:
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc, (&cell_population, point, normal, stop_time));
         simulator.AddCellPopulationBoundaryCondition(p_bc);
         /*--------------------------------END: Boundary condition-----------------------------*/
-        simulator.SetOutputCellVelocities(true);
+        
 
         /*--------------------------START: Output Directory and Simulation Information File---------------------*/
         // Output directory:
@@ -824,4 +824,4 @@ public:
 
 };
 
-#endif /* TESTMYEPITHELIALBRIDGEA_HPP_ */
+#endif /* TESTMYEB_HPP_ */

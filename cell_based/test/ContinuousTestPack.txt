@@ -1,3 +1,4 @@
+my_tests/TestMyEB.hpp
 my_tests/TestMyEpithelialBridgeA.hpp
 my_tests/TestMyEpithelialBridgeC1.hpp
 my_tests/TestMyEpithelialBridgeC2.hpp
