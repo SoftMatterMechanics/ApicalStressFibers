@@ -117,10 +117,10 @@ public:
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.01;
+/*----*/double dt = 0.1;
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
-        double sampling_time = 0.1;
+        double sampling_time = 1;
 /******/// double max_movement_per_timestep = 0.1;
 /*----*/double small_change_for_area_calculation = 0.4;
 
@@ -135,7 +135,7 @@ public:
 /******/// feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
-/*----*/bool add_random_force = false;
+/*----*/bool add_random_force = true;
 /******/// bool is_no_brownian_random_force = true;
         double translational_diffusion_constant = 0.0;
 /******/// double polarity_magnitude = 0.00;
@@ -554,7 +554,6 @@ public:
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc, (&cell_population, point, normal, stop_time));
         simulator.AddCellPopulationBoundaryCondition(p_bc);
         /*--------------------------------END: Boundary condition-----------------------------*/
-        simulator.SetOutputCellVelocities(true);
 
         /*--------------------------START: Output Directory and Simulation Information File---------------------*/
         // Output directory:

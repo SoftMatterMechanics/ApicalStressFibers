@@ -797,7 +797,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                         if_node_a_inner_node = true;
 
                     bool if_node_contact_to_reservoir_bottom = false;
-                    if (fabs(p_this_node->rGetLocation()[1]) < 0.01)
+                    if (fabs(p_this_node->rGetLocation()[1]) < 0.01/sqrt(M_PI/mFixedTargetArea))
                         if_node_contact_to_reservoir_bottom = true;
 
                     bool node_is_at_mesh_bottom = false;
@@ -975,7 +975,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             averaged_inner_strip_substrate_adhesion_contribution[0] = area_adhesion_contribution[0] * mSmallChangeForAreaCalculation/inner_strip_small_change;
             averaged_inner_strip_substrate_adhesion_contribution[1] = area_adhesion_contribution[1];
             double SSA_x_inner_strip = averaged_inner_strip_substrate_adhesion_contribution[0];
-            if (!(fabs(SSA_x_inner_strip) < 1000.0) && inner_strip_small_change/mSmallChangeForAreaCalculation>0.1)
+            if (!(fabs(SSA_x_inner_strip) < 1000.0/pow(M_PI/mFixedTargetArea,1.5)) && inner_strip_small_change/mSmallChangeForAreaCalculation>0.1)
             {
                 std::cout << "SSA_x_inner_strip is too large! SSA_x_inner_strip=" << SSA_x_inner_strip << std::endl;
                 std::cout << "area_adhesion_contribution[0]=" << area_adhesion_contribution[0] << ", inner_strip_small_change/mSmallChange=" << inner_strip_small_change/mSmallChangeForAreaCalculation << std::endl;

@@ -240,7 +240,9 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             double l_ab = p_mesh->GetDistanceBetweenNodes(pNodeA->GetIndex(), pNodeB->GetIndex());
             c_vector<double,DIM> vec_ab =  p_mesh->GetVectorFromAtoB(location_a, location_b);
 
-            VertexElement<DIM-1,  DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+            VertexElement<DIM-1,  DIM>* pFace = nullptr;
+            if (mIfConsiderFeedbackOfFaceValues)
+                pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
 
             std::set<unsigned> elements_containing_nodeA = pNodeA->rGetContainingElementIndices();
             std::set<unsigned> elements_containing_nodeB = pNodeB->rGetContainingElementIndices();

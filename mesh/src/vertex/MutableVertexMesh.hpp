@@ -126,6 +126,8 @@ protected:
     std::vector< c_vector<double, SPACE_DIM> > mLocationsOfT3Swaps;
 
     // my changes
+    double mMultiplyResultsBy;
+
     int mMoveMeshRightForNPeriods;
 
     bool mIfUpdateFaceElementsInMesh;
@@ -690,6 +692,11 @@ public:
      */
     void ReMesh();
 
+    void SetMultiplyResultsBy(double multiplyResultsBy)
+    {
+      mMultiplyResultsBy = multiplyResultsBy;
+    }
+    
     void SetMoveMeshRightForNPeriods(int moveMeshRightForNPeriods)
     {
       mMoveMeshRightForNPeriods = moveMeshRightForNPeriods;
