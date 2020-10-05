@@ -338,8 +338,20 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             double t = SimulationTime::Instance()->GetTime();
             c_vector<double, DIM> centroid = p_mesh->GetCentroidOfElement(elem_index);
             std::cout << std::endl << "1||t=" << t << "|elem_index=" << elem_index << "|centroid=" << centroid[0] << ", " << centroid[1];
-            std::cout << std::endl << "2||stressXX=" << stress_XX << "|stressYY=" << stress_YY << "|stressXY=" << stress_XY;
+            std::cout << std::endl << "2||stressXX=" << stress_XX << "|stressYY=" << stress_YY << "|Ga_/(area/(this->mFixedTargetArea))=" << Ga_/(area/(this->mFixedTargetArea))
+                     << "|myosin_weighted_perimeter=" << myosin_weighted_perimeter << "|sum_YY=" << sum_YY 
+                    << "|1/(area/(this->mFixedTargetArea))=" << 1/(area/(this->mFixedTargetArea)) << "|sum_adhe_YY=" << sum_adhe_YY;
         }
+
+        // if(elem_index==43)
+        // {
+        //     double t = SimulationTime::Instance()->GetTime();
+        //     c_vector<double, DIM> centroid = p_mesh->GetCentroidOfElement(elem_index);
+        //     std::cout << std::endl << "1||t=" << t << "|elem_index=" << elem_index << "|centroid=" << centroid[0] << ", " << centroid[1];
+        //     std::cout << std::endl << "2||stressYY=" << stress_YY << "|Pressure_=" << Pressure_ << "|Ga_/(area/(this->mFixedTargetArea))=" << Ga_/(area/(this->mFixedTargetArea))
+        //              << "|myosin_weighted_perimeter=" << myosin_weighted_perimeter << "|sum_YY=" << sum_YY 
+        //             << "|1/(area/(this->mFixedTargetArea))=" << 1/(area/(this->mFixedTargetArea)) << "|sum_adhe_YY=" << sum_adhe_YY;
+        // }
 
     }
     

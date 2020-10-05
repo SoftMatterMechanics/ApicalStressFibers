@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYEB_HPP_
-#define TESTMYEB_HPP_
+#ifndef TESTMYNEWEB_HPP_
+#define TESTMYNEWEB_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -61,12 +61,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MyXToroidalHoneycombVertexMeshGenerator.hpp"
 #include "NagaiHondaForce.hpp"
 #include "MyNagaiHondaForceWithStripesAdhesion.hpp"
+#include "MyNewNagaiHondaForceWithStripesAdhesion.hpp"
 #include "DiffusionForce.hpp"
 #include "PlaneBasedCellKiller.hpp"
 
 // #include <ctime>
 
-class TestMyEB : public AbstractCellBasedTestSuite
+class TestMyNewEB : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -76,10 +77,12 @@ public:
 
 
         double reference_area = 1.0;
+        double new_reference_area = (M_PI+1.0)/M_PI;
+
         double multiply_results_by = 1/sqrt(reference_area);
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
         bool if_consider_substrate_adhesion = true;
-        bool if_consider_reservoir_substrate_adhesion = true && if_consider_substrate_adhesion;// true for default
+        bool if_consider_reservoir_substrate_adhesion = false && if_consider_substrate_adhesion;// true for default
         bool if_consider_feedback_of_face_values = true;
         double set_node_radius = 50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
 
@@ -155,14 +158,14 @@ public:
 
 
         // Substrate adhesion:
-/*----*/double basic_SSA = -1.0/(M_PI/reference_area);
+/*----*/double basic_SSA = +1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
 /******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
         double homogeneous_substrate_adhesion_parameter = basic_SSA;
         
         // Strip substrate adhesion form:
-        bool consider_consistency_for_SSA = true;
+        bool consider_consistency_for_SSA = false;
 /*----*/bool if_substrate_adhesion_is_homogeneous = true;
           // some basic mechanisms:
         bool classify_elements_with_group_numbers = true;
@@ -237,11 +240,11 @@ public:
         bool use_fixed_target_area_without_modifier = false;
         // Cell-cell adhesion:
         double cell_cell_adhesion_parameter = 
-            -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_area));
+            -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_area));//?
         // Cell-boundary adhesion:
         double cell_boundary_adhesion_parameter = 0.0;
         if (consider_consistency_of_the_influence_of_CBAdhe)
-          cell_boundary_adhesion_parameter = cell_cell_adhesion_parameter + 0.1/(M_PI/reference_area)*(4.0*sqrt(reference_area));
+          cell_boundary_adhesion_parameter = cell_cell_adhesion_parameter + 0.1/(M_PI/reference_area)*(4.0*sqrt(reference_area));//?
 
         // Substrate adhesion:
         // bool if_consider_substrate_adhesion = true;
@@ -354,6 +357,7 @@ public:
         MAKE_PTR_ARGS(TargetAreaLinearGrowthModifier<2>, p_growth_modifier, ());
         p_growth_modifier->SetUseUseMyOwnRuleForUpdateTargetAreaOfCell(true);
         p_growth_modifier->SetReferenceTargetArea(reference_area);
+        p_growth_modifier->SetReferenceTargetArea(new_reference_area);
         p_growth_modifier->SetGrowthRate(growth_rate_for_target_area_after_division);
         p_growth_modifier->SetAgeToStartGrowing(0.0);
         simulator.AddSimulationModifier(p_growth_modifier);
@@ -374,14 +378,14 @@ public:
 
 
         /*-----------------------------START: MyNagaiHondaForceWithStripesAdhesion---------------------*/
-        MAKE_PTR(MyNagaiHondaForceWithStripesAdhesion<2>, p_force);
+        MAKE_PTR(MyNewNagaiHondaForceWithStripesAdhesion<2>, p_force);
         
         // Strips structure of substrate adhesion
-        double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
+        double strip_width = 6*sqrt(initial_area/(sqrt(3)/2))-sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= strip_dis_multiplied;
-        double strip_start_x_location = 0.0;
+        double strip_start_x_location = 3.0*sqrt(initial_area/(sqrt(3)/2));
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
         double strip_start_y_location = 1.5*num_ele_up*1/sqrt(3)*sqrt(initial_area/(sqrt(3)/2));
@@ -396,7 +400,8 @@ public:
         p_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(cell_boundary_adhesion_parameter);        
 
         p_force->SetUseFixedTargetArea(use_fixed_target_area_without_modifier); // used in the case where there is no target area modifier! (no division)
-        p_force->SetFixedTargetArea(reference_area);
+        p_force->SetFixedTargetArea(reference_area);//?
+        p_force->SetFixedTargetArea(new_reference_area);
         p_force->SetTargetShapeIndex(target_shape_index);
           // substrate adhesion info
         p_force->SetIfConsiderSubstrateAdhesion(if_consider_substrate_adhesion);
@@ -495,7 +500,8 @@ public:
         
         // Feedback information
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
-        p_face_value_and_stress_state_modifier->SetFixedTargetArea(reference_area);
+        p_face_value_and_stress_state_modifier->SetFixedTargetArea(reference_area);//?
+        p_face_value_and_stress_state_modifier->SetFixedTargetArea(new_reference_area);
         p_face_value_and_stress_state_modifier->SetEdgeLengthAtRest(edge_length_at_rest);
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForMyosinActivity(feedback_strength_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForMyosinActivity(hill_coefficient_for_myosin_activity);
@@ -507,7 +513,7 @@ public:
         p_face_value_and_stress_state_modifier->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);        
         p_face_value_and_stress_state_modifier->SetNagaiHondaMembraneSurfaceEnergyParameter(nagai_honda_membrane_surface_energy_parameter);
         p_face_value_and_stress_state_modifier->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_parameter);
-        p_face_value_and_stress_state_modifier->SetFixedTargetPerimeter(target_shape_index*sqrt(reference_area));
+        p_face_value_and_stress_state_modifier->SetFixedTargetPerimeter(target_shape_index*sqrt(reference_area));//?
         
         // my group number modifier
         p_face_value_and_stress_state_modifier->SetWriteGroupNumberToCell(use_my_detach_pattern_method);
@@ -836,4 +842,4 @@ public:
 
 };
 
-#endif /* TESTMYEB_HPP_ */
+#endif /* TESTMYNEWEB_HPP_ */
