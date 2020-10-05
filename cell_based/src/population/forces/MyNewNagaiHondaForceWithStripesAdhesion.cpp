@@ -278,43 +278,43 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                 double small_change = mSmallChangeForAreaCalculation;
                 double preferred_sample_dis = small_change/5.0;
 
-                c_vector<double, DIM> centroid = p_cell_population->rGetMesh().GetCentroidOfElement(elem_index);
-                int stripe_num = round((centroid[0] - strip_start_x_location)/stripe_distance);
+                c_vector<double, DIM> previous_node_location = p_previous_node->rGetLocation();
+                c_vector<double, DIM> this_node_location = p_this_node->rGetLocation();
+                c_vector<double, DIM> next_node_location = p_next_node->rGetLocation();
+                // consider periodicity: modify the node location!
+                if (dynamic_cast<MyXToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
+                {
+                    bool triangle_straddles_left_right_boundary = false;
+
+                    c_vector<double, 2> vector1 = this_node_location - previous_node_location;
+                    if (fabs(vector1[0]) > 0.5*mWidth)
+                        triangle_straddles_left_right_boundary = true;
+                    c_vector<double, 2> vector2 = next_node_location - this_node_location;
+                    if (fabs(vector2[0]) > 0.5*mWidth)
+                        triangle_straddles_left_right_boundary = true;
+                    if (triangle_straddles_left_right_boundary)
+                    {
+                        if (previous_node_location[0] < mCenterOfWidth)
+                            previous_node_location[0] += mWidth;
+                        if (this_node_location[0] < mCenterOfWidth)
+                            this_node_location[0] += mWidth;
+                        if (next_node_location[0] < mCenterOfWidth)
+                            next_node_location[0] += mWidth;
+                    }
+                }
+
+                c_vector<double, DIM> centroid_triangle = 1/3.0*(previous_node_location+this_node_location+next_node_location);
+                int stripe_num = (int) round((centroid_triangle[0] - strip_start_x_location)/stripe_distance);
 
                 double stripe_location = strip_start_x_location+ stripe_distance*stripe_num;
                 double stripe_left = stripe_location - stripe_width/2;
                 double stripe_right = stripe_location + stripe_width/2;
-
+                double left_stripe_right = strip_start_x_location+ stripe_distance*(stripe_num-1) + stripe_width/2;
+                double right_stripe_left = strip_start_x_location+ stripe_distance*(stripe_num+1) - stripe_width/2;
                 double sample_area_bottom = 0.0;
                 double sample_area_top = 0.0;
                 double sample_area_left = 0.0;
                 double sample_area_right = 0.0;
-
-                c_vector<double, DIM> previous_node_location = p_previous_node->rGetLocation();
-                c_vector<double, DIM> this_node_location = p_this_node->rGetLocation();
-                c_vector<double, DIM> next_node_location = p_next_node->rGetLocation();
-                
-                    // consider periodicity: modify the node location!
-                    if (dynamic_cast<MyXToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
-                    {
-                        bool triangle_straddles_left_right_boundary = false;
-
-                        c_vector<double, 2> vector1 = this_node_location - previous_node_location;
-                        if (fabs(vector1[0]) > 0.5*mWidth)
-                            triangle_straddles_left_right_boundary = true;
-                        c_vector<double, 2> vector2 = next_node_location - this_node_location;
-                        if (fabs(vector2[0]) > 0.5*mWidth)
-                            triangle_straddles_left_right_boundary = true;
-                        if (triangle_straddles_left_right_boundary)
-                        {
-                            if (previous_node_location[0] < mCenterOfWidth)
-                                previous_node_location[0] += mWidth;
-                            if (this_node_location[0] < mCenterOfWidth)
-                                this_node_location[0] += mWidth;
-                            if (next_node_location[0] < mCenterOfWidth)
-                                next_node_location[0] += mWidth;
-                        }
-                    }
 
                 double expanded_triangle_box_bottom = -small_change+std::min(std::min(previous_node_location[1],this_node_location[1]),next_node_location[1]);
                 double expanded_triangle_box_top = small_change+std::max(std::max(previous_node_location[1],this_node_location[1]),next_node_location[1]);
@@ -322,9 +322,6 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                 double expanded_triangle_box_right = small_change+std::max(std::max(previous_node_location[0],this_node_location[0]),next_node_location[0]);
                 
                 bool has_substrate_adhesion_area = true;
-                // consider periodicity. Important!!!
-                if (fabs(expanded_triangle_box_left-expanded_triangle_box_right) > stripe_distance/2)
-                has_substrate_adhesion_area = false;
 
                 if (expanded_triangle_box_top<strip_start_y_location)
                     has_substrate_adhesion_area = false;
@@ -334,6 +331,7 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                     sample_area_bottom = expanded_triangle_box_bottom>strip_start_y_location ? expanded_triangle_box_bottom : strip_start_y_location;
                 }
 
+                // codes follows only suit for the case that the triangle laps over only one strip!
                 if (expanded_triangle_box_right<stripe_left)
                     has_substrate_adhesion_area = false;
                 else if (expanded_triangle_box_left<stripe_left)
@@ -356,6 +354,37 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                 }
                 else
                     has_substrate_adhesion_area = false;
+
+                // particular case:
+                bool if_in_a_particular_case1 = false;
+                bool if_in_a_particular_case2 = false;
+                bool if_in_a_particular_case = false;
+                double strip_interval_left = 0.0;
+                double strip_interval_right = 0.0;
+                if (expanded_triangle_box_top>=strip_start_y_location && expanded_triangle_box_right>stripe_left && expanded_triangle_box_left<left_stripe_right)
+                    if_in_a_particular_case1 = true;
+                if (expanded_triangle_box_top>=strip_start_y_location && expanded_triangle_box_left<stripe_right && expanded_triangle_box_right>right_stripe_left)
+                    if_in_a_particular_case2 = true;
+                if (if_in_a_particular_case1||if_in_a_particular_case2)
+                {
+                    if_in_a_particular_case = true;
+                    has_substrate_adhesion_area = true;
+                    sample_area_left = expanded_triangle_box_left;
+                    sample_area_right = expanded_triangle_box_right;
+                    if (if_in_a_particular_case1)
+                    {
+                        strip_interval_left = left_stripe_right;
+                        strip_interval_right = stripe_left;
+                    }
+                    if (if_in_a_particular_case2)
+                    {
+                        assert(!if_in_a_particular_case1);
+                        strip_interval_left = stripe_right;
+                        strip_interval_right = right_stripe_left;
+                    }
+
+                }
+
                 unsigned num_across = 0;
                 unsigned num_up = 0;
                 unsigned sample_num = 0;
@@ -498,8 +527,14 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                         }
                         if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                         {
-                            adhesive_sample_num += 1.0;
-
+                            if (!if_in_a_particular_case)
+                                adhesive_sample_num += 1.0;
+                            else // in a particular case!
+                            {
+                                if (point[0]<strip_interval_left || point[0]>strip_interval_right)
+                                    adhesive_sample_num += 1.0;
+                            }
+                            
                             if (mIfUseNewSSADistributionRule)
                             {
                                 assert(!mUseMyDetachPatternMethod);
@@ -536,7 +571,14 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                         }
                         else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                         {
-                            adhesive_sample_num += -1.0;
+                            if (!if_in_a_particular_case)
+                                adhesive_sample_num += -1.0;
+                            else // in a particular case!
+                            {
+                                if (point[0]<strip_interval_left || point[0]>strip_interval_right)
+                                    adhesive_sample_num += -1.0;
+                            }
+                            
 
                             if (mIfUseNewSSADistributionRule)
                             {
@@ -619,8 +661,14 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                             }
                             if (point_at_left_of_vector[0]==true && point_at_left_of_vector[1]==true && point_at_left_of_vector[2]==true)
                             {
-                                adhesive_sample_num += 1.0;
-
+                                if (!if_in_a_particular_case)
+                                    adhesive_sample_num += 1.0;
+                                else // in a particular case!
+                                {
+                                    if (point[0]<strip_interval_left || point[0]>strip_interval_right)
+                                        adhesive_sample_num += 1.0;
+                                }
+                            
                                 if (mIfUseNewSSADistributionRule)
                                 {
                                     assert(!mUseMyDetachPatternMethod);
@@ -657,8 +705,14 @@ void MyNewNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(Abstract
                             }
                             else if (point_at_left_of_vector[0]==false && point_at_left_of_vector[1]==false && point_at_left_of_vector[2]==false)
                             {
-                                adhesive_sample_num += -1.0;
-
+                                if (!if_in_a_particular_case)
+                                    adhesive_sample_num += -1.0;
+                                else // in a particular case!
+                                {
+                                    if (point[0]<strip_interval_left || point[0]>strip_interval_right)
+                                        adhesive_sample_num += -1.0;
+                                }
+                                
                                 if (mIfUseNewSSADistributionRule)
                                 {
                                     assert(!mUseMyDetachPatternMethod);

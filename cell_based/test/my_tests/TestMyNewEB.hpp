@@ -110,7 +110,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 800.0*(M_PI/reference_area);
+        double end_time = 400.0*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 
@@ -600,23 +600,28 @@ public:
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
             << "_Brown=" << (add_random_force&&(!is_no_brownian_random_force))
-            << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
-            << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+            << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
+        if (if_consider_substrate_adhesion && if_consider_reservoir_substrate_adhesion)
+          oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
         if(if_check_for_T4_swaps)
           oss << "_T4swaps=1";
-        if (if_substrate_adhesion_is_homogeneous)
-          oss << "_HomoSSA=" << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
-        else
+        if (if_consider_substrate_adhesion)
         {
-          oss << "_NonHomoSSA:mature_lame=" << std::fixed << setprecision(1) << SSA_for_mature_lamellipodium
-            << "_basic=" << std::fixed << setprecision(1) << basic_SSA;
-          if (use_new_SSA_distribution_rule)
-            oss << "_NewSSARule:matu_rate=" << std::fixed << setprecision(2) << lamellipodium_maturation_rate
-                << "_destru_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
-          else if (use_my_detach_pattern_method)
-            oss << "_Multiple_lead_tops=1";
+          if (if_substrate_adhesion_is_homogeneous)
+            oss << "_HomoSSA=" << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
+          else
+          {
+            oss << "_NonHomoSSA:mature_lame=" << std::fixed << setprecision(1) << SSA_for_mature_lamellipodium
+              << "_basic=" << std::fixed << setprecision(1) << basic_SSA;
+            if (use_new_SSA_distribution_rule)
+              oss << "_NewSSARule:matu_rate=" << std::fixed << setprecision(2) << lamellipodium_maturation_rate
+                  << "_destru_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
+            else if (use_my_detach_pattern_method)
+              oss << "_Multiple_lead_tops=1";
+          }
         }
+        
         if (use_longer_mesh)
           oss << "_LongMesh";
         if (if_use_larger_strip_distance)
