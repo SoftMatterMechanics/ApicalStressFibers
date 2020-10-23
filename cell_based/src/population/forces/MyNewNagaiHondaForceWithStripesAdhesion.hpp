@@ -121,14 +121,6 @@ protected:
     double mBasicSSA;
 
     double mSSAForMatureLamellipodium;
-
-    bool mIfConsiderReservoirSubstrateAdhesion;
-
-    double mReservoirSubstrateAdhesionParameter;
-
-    bool mIfIgnoreReservoirSubstrateAdhesionAtTop;
-
-    bool mIfIgnoreReservoirSubstrateAdhesionAtBottom;
     
     double mStripWidth;
 
@@ -155,10 +147,6 @@ protected:
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
 
     bool mIfUseFaceElementToGetAdhesionParameter;
-
-    bool mOutputInformationForNagaiHondaForce;
-
-    bool mConsiderConsistencyForSSA;
 
     double mSmallChangeForAreaCalculation;
 
@@ -358,24 +346,6 @@ public:
       mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
     }
 
-    // RSA
-    void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
-    {
-      mIfConsiderReservoirSubstrateAdhesion = ifConsiderReservoirSubstrateAdhesion;
-    }
-    void SetReservoirSubstrateAdhesionParameter (double reservoirSubstrateAdhesionParameter)
-    {
-      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
-    }
-    void SetIfIgnoreReservoirSubstrateAdhesionAtTop (bool ifIgnoreReservoirSubstrateAdhesionAtTop)
-    {
-      mIfIgnoreReservoirSubstrateAdhesionAtTop = ifIgnoreReservoirSubstrateAdhesionAtTop;
-    }
-    void SetIfIgnoreReservoirSubstrateAdhesionAtBottom (bool ifIgnoreReservoirSubstrateAdhesionAtBottom)
-    {
-      mIfIgnoreReservoirSubstrateAdhesionAtBottom = ifIgnoreReservoirSubstrateAdhesionAtBottom;
-    }
-
     void SetCaseNumberOfMembraneSurfaceEnergyForm ( unsigned caseNumberOfMembraneSurfaceEnergyForm)
     {
       this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
@@ -389,16 +359,6 @@ public:
     void SetUseFaceElementToGetAdhesionParameterBoolean(bool ifUseFaceElementToGetAdhesionParameter)
     {
       mIfUseFaceElementToGetAdhesionParameter = ifUseFaceElementToGetAdhesionParameter;
-    }
-
-    void SetOutputInformationForNagaiHondaForce(bool outputInformationForNagaiHondaForce)
-    {
-      mOutputInformationForNagaiHondaForce = outputInformationForNagaiHondaForce;
-    }
-
-    void SetConsiderConsistencyForSSA(bool considerConsistencyForSSA)
-    {
-      mConsiderConsistencyForSSA = considerConsistencyForSSA;
     }
 
     void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)

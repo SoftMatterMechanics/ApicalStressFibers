@@ -79,11 +79,7 @@ private :
     double mTheSameNodeRadius;
 
     bool mConsiderPolarity;
-    bool mVanishingMotilityForNodeInTheStripInterval;
     bool mOnePeriodOnly;
-    double mReservoirTop;
-    double mStripStartLocation;
-    double mStripWidth;
 
     bool mIfEquilibrateForAWhile;
     double mTimeForEquilibrium;
@@ -143,29 +139,9 @@ public :
       mConsiderPolarity = considerPolarity;
     }
 
-    void SetVanishingMotilityForNodeInTheStripInterval(bool vanishingMotilityForNodeInTheStripInterval)
-    {
-      mVanishingMotilityForNodeInTheStripInterval = vanishingMotilityForNodeInTheStripInterval;
-    }
-
     void SetOnePeriodOnly(bool onePeriodOnly)
     {
       mOnePeriodOnly = onePeriodOnly;
-    }
-
-    void SetReservoirTop(double reservoirTop)
-    {
-      mReservoirTop = reservoirTop;
-    }
-
-    void SetStripStartLocation(double stripStartLocation)
-    {
-      mStripStartLocation = stripStartLocation;
-    }
-
-    void SetStripWidth(double stripWidth)
-    {
-      mStripWidth = stripWidth;
     }
 
     void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)

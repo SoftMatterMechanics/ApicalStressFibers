@@ -144,6 +144,12 @@ protected:
 
     bool mIfCheckForT4Swaps;
 
+    double mTypicalLengthForT4Swaps;
+
+    double mSeparationRatioWithRearrThresh;
+
+    bool mPerformT4SwapsOnlyWhenCellIsTriangle;
+
     /**
      * Divide an element along the axis passing through two of its nodes.
      *
@@ -943,6 +949,21 @@ public:
     void SetIfCheckForT4Swaps(bool ifCheckForT4Swaps)
     {
       mIfCheckForT4Swaps = ifCheckForT4Swaps;
+    }
+
+    void SetTypicalLengthForT4Swaps(double typicalLengthForT4Swaps)
+    {
+      mTypicalLengthForT4Swaps = typicalLengthForT4Swaps;
+    }
+
+    void SetSeparationRatioWithRearrThresh(double separationRatioWithRearrThresh)
+    {
+      mSeparationRatioWithRearrThresh = separationRatioWithRearrThresh;
+    }
+
+    void SetPerformT4SwapsOnlyWhenCellIsTriangle(bool performT4SwapsOnlyWhenCellIsTriangle)
+    {
+      mPerformT4SwapsOnlyWhenCellIsTriangle = performT4SwapsOnlyWhenCellIsTriangle;
     }
 
 };

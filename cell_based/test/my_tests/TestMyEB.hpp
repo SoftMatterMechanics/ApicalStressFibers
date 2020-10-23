@@ -75,26 +75,29 @@ public:
         // assert(false);
 
 
-        double reference_area = 1.0;
-        double multiply_results_by = 1/sqrt(reference_area);
+        double reference_area = M_PI;
+        double multiply_results_by = 1.0;
+        // double multiply_results_by = 1/sqrt(reference_area);
         bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
         bool if_consider_substrate_adhesion = true;
         bool if_consider_reservoir_substrate_adhesion = true && if_consider_substrate_adhesion;// true for default
         bool if_consider_feedback_of_face_values = true;
         double set_node_radius = 50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
 
+        bool if_set_cell_data_of_detailed_force_contributions = false;
+
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.5;//p0
+        double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 8/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.005/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.01125/(M_PI/reference_area);//Fb
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
-        bool if_use_larger_strip_distance = false;
-        double strip_dis_multiplied = 20.0/6.0;
+        bool if_use_larger_strip_distance = true;
+        double strip_dis_multiplied = 40.0/12.0;
 
         int move_mesh_right_for_N_periods = 0;
 
@@ -107,7 +110,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 800.0*(M_PI/reference_area);
+        double end_time = 400.0*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 
@@ -285,7 +288,6 @@ public:
         bool consider_polarity = true;
         if (polarity_magnitude==0.0)
           consider_polarity = false;
-        bool vanishing_motility_for_node_in_the_strip_interval = false;
 
         // EquilibrateForAWhile
         bool if_equilibrate_for_a_while = true;
@@ -460,11 +462,7 @@ public:
           p_force2->SetUseTheSameNodeRadius(use_the_same_node_radius);
           p_force2->SetTheSameNodeRadius(node_radius);
           p_force2->SetConsiderPolarity(consider_polarity);
-          p_force2->SetVanishingMotilityForNodeInTheStripInterval(vanishing_motility_for_node_in_the_strip_interval);
           p_force2->SetOnePeriodOnly(one_period_only);
-          p_force2->SetReservoirTop(strip_start_y_location);
-          p_force2->SetStripStartLocation(strip_start_x_location);
-          p_force2->SetStripWidth(strip_width);
 
           p_force2->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
           p_force2->SetTimeForEquilibrium(time_for_equilibrium);
@@ -504,6 +502,7 @@ public:
 
         // my stress state modifier
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
+        p_face_value_and_stress_state_modifier->SetIfSetCellDataOfEachForceContributions(if_set_cell_data_of_detailed_force_contributions);
         p_face_value_and_stress_state_modifier->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);        
         p_face_value_and_stress_state_modifier->SetNagaiHondaMembraneSurfaceEnergyParameter(nagai_honda_membrane_surface_energy_parameter);
         p_face_value_and_stress_state_modifier->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_parameter);
@@ -545,7 +544,7 @@ public:
 
 
         /*------------------------------------START: Timestep---------------------------------------*/
-        double sampling_timestep_multiple = round(1/dt);
+        double sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
 
         simulator.SetApplyMyChangesToMakeTimestepAdaptive(apply_my_change_to_make_timestep_adaptive);
         simulator.SetDt(dt);
@@ -764,8 +763,6 @@ public:
             oss.str("");
             oss << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
             output_directory += "_Dr=" + oss.str();
-            if (vanishing_motility_for_node_in_the_strip_interval)
-              output_directory += "_IntervalNodeMotility=0";
           }
         }   
 

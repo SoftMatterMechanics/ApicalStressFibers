@@ -82,7 +82,9 @@ protected:
     double mHillCoefficientForAdhesion;
 
     bool mIfCalculateStressState;
+    bool mIfSetCellDataOfEachForceContributions;
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
+    bool mUseFixedTargetArea;
     double mFixedTargetArea;
     double mFixedTargetPerimeter;
     double mNagaiHondaDeformationEnergyParameter;
@@ -129,6 +131,8 @@ public:
     void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
 
     void UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+    
+    void UpdateCellDataOfForcesFromNeighboringCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
     
     void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     
@@ -212,9 +216,19 @@ public:
       mIfCalculateStressState = ifCalculateStressState;
     }
 
+    void SetIfSetCellDataOfEachForceContributions(bool ifSetCellDataOfEachForceContributions)
+    {
+      mIfSetCellDataOfEachForceContributions = ifSetCellDataOfEachForceContributions;
+    }
+
     void SetFixedTargetArea(double fixedTargetArea)
     {
       this->mFixedTargetArea = fixedTargetArea;
+    }
+
+    void SetUseFixedTargetArea(bool useFixedTargetArea)
+    {
+      mUseFixedTargetArea = useFixedTargetArea;
     }
 
     void SetFixedTargetPerimeter(double fixedTargetPerimeter)

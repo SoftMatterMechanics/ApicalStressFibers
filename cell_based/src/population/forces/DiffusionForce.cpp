@@ -156,20 +156,12 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
             if (mConsiderPolarity)
             {
                 std::set<unsigned> containing_elem_indices = node_iter->rGetContainingElementIndices();
-                // tmp!
-                bool node_is_in_strip_interval = node_iter->rGetLocation()[1]>mReservoirTop
-                        && (node_iter->rGetLocation()[0]>(mStripStartLocation+mStripWidth/2.0) || node_iter->rGetLocation()[0]<(mStripStartLocation-mStripWidth/2.0));
-                if ( !(mVanishingMotilityForNodeInTheStripInterval && node_is_in_strip_interval) )
+                // used in typical situation only. my assertion!
+                for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
                 {
-                    // used in typical situation only. my assertion!
-                    assert(mOnePeriodOnly);
-                    for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
-                    {
-                        double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
-                        double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
-                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
-                    }
-
+                    double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
+                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
+                    force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
                 }
             }
         }
