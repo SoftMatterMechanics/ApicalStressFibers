@@ -82,16 +82,16 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool if_consider_reservoir_substrate_adhesion = true && if_consider_substrate_adhesion;// true for default
         bool if_consider_feedback_of_face_values = true;
-        double set_node_radius = 50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
+        double set_node_radius = 1.0/pow(1.0,2.0)*50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
 
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 1.0*0.01125/(M_PI/reference_area);//Fb
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
@@ -110,7 +110,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 200.0*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 
@@ -591,9 +591,12 @@ public:
         oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
             << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << nagai_honda_membrane_surface_energy_parameter
-            << "_Brown=" << (add_random_force&&(!is_no_brownian_random_force))
-            << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
+                << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
+        if (add_random_force&&(!is_no_brownian_random_force))
+          oss << "_Brown:Dtr=" << std::scientific << setprecision(2) << translational_diffusion_constant;
+        else
+          oss << "_Brown=0";
+        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
             << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
         if(if_check_for_T4_swaps)
