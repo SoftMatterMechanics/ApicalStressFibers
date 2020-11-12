@@ -82,17 +82,18 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool if_consider_reservoir_substrate_adhesion = true && if_consider_substrate_adhesion;// true for default
         bool if_consider_feedback_of_face_values = true;
-        double set_node_radius = 1.0/pow(4.0,2.0)*50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
+        double set_node_radius = 1.0/pow(1.0,2.0)*50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
 
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 2.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 4.0*0.01125/(M_PI/reference_area);//Fb
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+        double feedback_strength_for_myosin_activity = 10.0*0.01125/(M_PI/reference_area);//Fb
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
+        bool apply_feedback_of_face_values_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
@@ -110,7 +111,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 200.0*(M_PI/reference_area);
+        double end_time = 400.0*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 
@@ -487,6 +488,9 @@ public:
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValues(if_consider_feedback_of_face_values);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(if_apply_feedback_of_face_values_only_for_boundary_cells);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(if_apply_feedback_of_face_values_only_for_top_boundary_cells);
+        p_face_value_and_stress_state_modifier->SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(apply_feedback_of_face_values_for_top_boundary_cells_and_cells_above_reservoir);
+        p_face_value_and_stress_state_modifier->SetStripStartYLocation(strip_start_y_location);
+
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfCellCellAdhesion(if_consider_feedback_of_cell_cell_adhesion);
         p_face_value_and_stress_state_modifier->SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
             EMA_dont_decrease, CCA_dont_decrease, CCA_increasing_has_a_threshold_of_edge_length, CCA_increasing_threshold_of_edge_length_percentage);

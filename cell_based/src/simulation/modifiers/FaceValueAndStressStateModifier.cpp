@@ -41,6 +41,8 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mIfConsiderFeedbackOfFaceValues(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
+      mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(false),
+      mStripStartYLocation(0.0),
       mIfConsiderFeedbackOfCellCellAdhesion(false),
 
       mEMADontDecreaseWhenEdgeShrink(false),
@@ -49,6 +51,7 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mCCAIncreasingThresholdOfEdgeLengthPercentage(0.5),
 
       mEdgeLengthAtRest(sqrt(M_PI/(6*sqrt(3)/4))),
+      mKLForFeedback(1.0),
       mFeedbackStrengthForMyosinActivity(1.0),
       mHillCoefficientForMyosinActivity(8.0),
       mFeedbackStrengthForAdhesion(1.0),
@@ -153,10 +156,28 @@ void FaceValueAndStressStateModifier<DIM>::UpdateFaceValuesAndStressStates(Abstr
                 }
                 else
                 {
-                    this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
+                    if (mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior)
+                    {
+                        VertexElement<DIM-1, DIM>* p_face = p_mesh->GetFace(face_index);
+                        double face_y_location = 0.5*( p_face->GetNode(0)->rGetLocation()[1] + p_face->GetNode(1)->rGetLocation()[1] );
+
+                        if (p_mesh->IsFaceContainedByATopBoundaryElement(face_index) || face_y_location>mStripStartYLocation)
+                        {
+                            this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
+
+                            if (mIfConsiderFeedbackOfCellCellAdhesion)
+                                this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
+                        }
+
+                    }
+                    else
+                    {
+                        this->UpdateUnifiedEdgeMyosinActivtyOfFace(p_mesh, face_index);
+                        
+                        if (mIfConsiderFeedbackOfCellCellAdhesion)
+                            this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
+                    }
                     
-                    if (mIfConsiderFeedbackOfCellCellAdhesion)
-                        this->UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(p_mesh, face_index);
                 }
             }
         }
@@ -213,10 +234,19 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         double sum_adhe_XX = 0.0;
         double sum_adhe_YY = 0.0;
         double sum_adhe_XY = 0.0;
+        double sum_shape_tensor_XX = 0.0;
+        double sum_shape_tensor_YY = 0.0;
+        double sum_shape_tensor_XY = 0.0;
 
         double myosin_weighted_perimeter = 0.0;
         unsigned local_index_lowest_vertex = 0;
         double y_coor_lowest_vertex = 10000.0;
+
+        c_vector<double,DIM> centroid_relate_to_first_node = zero_vector<double>(DIM);
+
+        double myosin_activity_max = 0.0;
+        double myosin_activity_average = 0.0;
+
         for (unsigned local_index =0; local_index < p_element->GetNumNodes(); local_index++)
         {
             Node<DIM>* pNode = p_element->GetNode(local_index);
@@ -233,10 +263,14 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             {
                 VertexElement<DIM-1,  DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
                 double m_ab = pFace->GetUnifiedEdgeMyosinActivty();
+                myosin_activity_max = std::max(myosin_activity_max, m_ab);
+                myosin_activity_average += 1.0/p_element->GetNumNodes()*m_ab;
                 myosin_weighted_perimeter += sqrt(m_ab)*l_ab;
             }
             else
                 myosin_weighted_perimeter += l_ab;
+
+            centroid_relate_to_first_node += 1.0/p_element->GetNumNodes() * p_mesh->GetVectorFromAtoB(p_element->GetNode(0)->rGetLocation(), pNode->rGetLocation());
         }
         pCell->GetCellData()->SetItem("LocalIndexOfLowestVertex", local_index_lowest_vertex);
 
@@ -435,6 +469,11 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             sum_XX += sqrt(myo_ab)*(vec_ab[0]/l_ab)*vec_ab[0];
             sum_YY += sqrt(myo_ab)*(vec_ab[1]/l_ab)*vec_ab[1];
             sum_XY += sqrt(myo_ab)*(vec_ab[0]/l_ab)*vec_ab[1];
+            c_vector<double, DIM> node_location_ralate_to_centroid = p_mesh->GetVectorFromAtoB(p_element->GetNode(0)->rGetLocation(), pNodeA->rGetLocation()) - centroid_relate_to_first_node;
+
+            sum_shape_tensor_XX += node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[0];
+            sum_shape_tensor_YY += node_location_ralate_to_centroid[1]*node_location_ralate_to_centroid[1];
+            sum_shape_tensor_XY += node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[1];
 
         } // end of iteration of vertices of the element, for calculation of force contributions and stress summation.
 
@@ -450,6 +489,45 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         pCell->GetCellData()->SetItem("StressXY", stress_XY);
         pCell->GetCellData()->SetItem("Stress1", stress_1);
         pCell->GetCellData()->SetItem("Stress2", stress_2);
+
+        double shape_XX = 1.0/p_element->GetNumNodes()*sum_shape_tensor_XX;
+        double shape_YY = 1.0/p_element->GetNumNodes()*sum_shape_tensor_YY;
+        double shape_XY = 1.0/p_element->GetNumNodes()*sum_shape_tensor_XY;
+        assert((shape_XX + shape_YY + shape_XY) < DOUBLE_UNSET );
+
+        // A=[xx, xy; xy, yy], A-xI = [xx-x, xy; xy, yy-x], |A-xI|=(xx-x)(yy-x)-xy^2=x^2 -(xx+yy)x +(xx*yy-xy*xy)=0
+        // x1,x2=1/2*(xx+yy +/-sqrt(delta)); delta=(xx^2+yy^2-2xx*yy+4xy*xy)
+        // A-x1*I=[xx-x1, xy;...]; A-x2*I=[];
+        // let x1>=x2, vec1=[xy, x1-xx]/sqrt();
+        double delta = (shape_XX-shape_YY)*(shape_XX-shape_YY) +4*shape_XY*shape_XY;
+        double lambda_1 = 0.5*(shape_XX+shape_YY+sqrt(delta));
+        double lambda_2 = 0.5*(shape_XX+shape_YY-sqrt(delta));
+        double ratio = sqrt(lambda_1/lambda_2);
+        pCell->GetCellData()->SetItem("AspectRatio", ratio);
+
+        c_vector<double, DIM> eigen_vec_1 = zero_vector<double>(DIM);
+        eigen_vec_1[0] = shape_XY/sqrt( shape_XY*shape_XY+(lambda_1-shape_XX)*(lambda_1-shape_XX) );
+        eigen_vec_1[1] = (lambda_1-shape_XX)/sqrt( shape_XY*shape_XY+(lambda_1-shape_XX)*(lambda_1-shape_XX) );
+        double principal_axis_of_shape = abs(atan(eigen_vec_1[1]/eigen_vec_1[0]));
+        pCell->GetCellData()->SetItem("PrincipalAxisOfShape", principal_axis_of_shape);
+
+
+        // double R_shape = sqrt( pow((shape_XX-shape_YY)/2, 2) + pow(shape_XY, 2) );
+        // double shape_1 = (shape_XX + shape_YY)/2 + R;
+        // double shape_2 = (shape_XX + shape_YY)/2 - R;
+        // double aspect_ratio = sqrt(shape_1/shape_2);
+        // double principal_axis_angle = shape_XY>0.0 ? -0.5*acos( (shape_XX-0.5*(shape_XX+shape_YY))/R_shape ) : 0.5*acos( (shape_XX-0.5*(shape_XX+shape_YY))/R_shape );
+        // pCell->GetCellData()->SetItem("AspectRatio", aspect_ratio);
+        // pCell->GetCellData()->SetItem("PrincipalAxis", principal_axis_angle);
+
+        double principal_axis_stress = 0.5*acos( (stress_XX-0.5*(stress_XX+stress_YY))/R );
+        pCell->GetCellData()->SetItem("PrincipalAxisOfStress", principal_axis_stress);
+
+        if (mIfConsiderFeedbackOfFaceValues)
+        {
+            pCell->GetCellData()->SetItem("Myosin Activity Max", myosin_activity_max);
+            pCell->GetCellData()->SetItem("Myosin Activity Averaged", myosin_activity_average);
+        }
     }
 
 }
@@ -580,12 +658,12 @@ template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
 {
     double dt = SimulationTime::Instance()->GetTimeStep();
-    double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
-    double n = this->mHillCoefficientForMyosinActivity;
     double edge_length_at_rest = this->mEdgeLengthAtRest;
-    double alpha = 2.0*feedback_strength;
+    double KL = this->mKLForFeedback;
+    double n = this->mHillCoefficientForMyosinActivity;
+    double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
+    double alpha = (1.0+KL)*feedback_strength;
     double beta = 1.0*feedback_strength;
-    double KL = 1.0;
 
     VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
     double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
@@ -666,6 +744,33 @@ void FaceValueAndStressStateModifier<DIM>::UpdateCellAreaOfCell(AbstractCellPopu
 
     double cell_area = p_mesh->GetVolumeOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
     pCell->GetCellData()->SetItem("cell area", cell_area);
+
+    double cell_perimeter = p_mesh->GetSurfaceAreaOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+    pCell->GetCellData()->SetItem("cell perimeter", cell_perimeter);
+
+    double centroid_x = p_mesh->GetCentroidOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )(0);
+    double centroid_y = p_mesh->GetCentroidOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )(1);
+    pCell->GetCellData()->SetItem("centroid x", centroid_x);
+    pCell->GetCellData()->SetItem("centroid y", centroid_y);
+
+    VertexElement<DIM, DIM>* pLeadingElement = nullptr;
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(*cell_iter) );
+        if (pElement->GetIsLeadingCell())
+        {
+            pLeadingElement = pElement;
+            break;
+        }
+    }
+    if (pLeadingElement!=nullptr)
+    {
+        double distance_to_leading_cell = norm_2( p_mesh->GetCentroidOfElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )-p_mesh->GetCentroidOfElement(pLeadingElement->GetIndex()) );
+        pCell->GetCellData()->SetItem("Distance to leading cell", distance_to_leading_cell);
+    }
+
 }
 
 template<unsigned DIM>

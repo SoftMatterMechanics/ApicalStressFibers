@@ -68,6 +68,8 @@ protected:
     bool mIfConsiderFeedbackOfFaceValues;
     bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
     bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
+    bool mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
+    double mStripStartYLocation;
     bool mIfConsiderFeedbackOfCellCellAdhesion;
 
     bool mEMADontDecreaseWhenEdgeShrink;
@@ -76,6 +78,7 @@ protected:
     double mCCAIncreasingThresholdOfEdgeLengthPercentage;
 
     double mEdgeLengthAtRest;
+    double mKLForFeedback;
     double mFeedbackStrengthForMyosinActivity;
     double mHillCoefficientForMyosinActivity;
     double mFeedbackStrengthForAdhesion;
@@ -166,6 +169,16 @@ public:
       mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells = ifConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
     }
 
+    void SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(bool applyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior)
+    {
+      mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior = applyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
+    }
+
+    void SetStripStartYLocation(double stripStartYLocation)
+    {
+      mStripStartYLocation = stripStartYLocation;
+    }
+
     void SetConsiderFeedbackOfCellCellAdhesion(bool ifConsiderFeedbackOfCellCellAdhesion)
     {
       mIfConsiderFeedbackOfCellCellAdhesion = ifConsiderFeedbackOfCellCellAdhesion;
@@ -188,6 +201,11 @@ public:
     void SetEdgeLengthAtRest(double edgeLengthAtRest)
     {
       this->mEdgeLengthAtRest = edgeLengthAtRest;
+    }
+
+    void SetKLForFeedback(double kLForFeedback)
+    {
+      mKLForFeedback = kLForFeedback;
     }
 
     void SetFeedbackStrengthForMyosinActivity(double feedbackStrengthForMyosinActivity)

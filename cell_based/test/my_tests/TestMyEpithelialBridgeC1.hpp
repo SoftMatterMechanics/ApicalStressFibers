@@ -82,22 +82,31 @@ public:
         bool if_consider_substrate_adhesion = true;
         bool if_consider_reservoir_substrate_adhesion = true && if_consider_substrate_adhesion;// true for default
         bool if_consider_feedback_of_face_values = true;
-        double set_node_radius = 1.0/pow(2.0,2.0)*50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
+        double set_node_radius = 1.0/pow(1.0,2.0)*50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
 
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 4.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 2.0*0.01125/(M_PI/reference_area);//Fb
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+        double feedback_strength_for_myosin_activity = 50*0.01125/(M_PI/reference_area);//Fb
+
+        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double hill_coefficient_for_myosin_activity = 2.0; // 8.0 for default
+
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
+        bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
+        bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
         bool if_use_larger_strip_distance = true;
         double strip_dis_multiplied = 40.0/12.0;
+
+        bool use_longer_mesh = true;
+        int num_ele_up_multiplied = 2;
 
         int move_mesh_right_for_N_periods = 0;
 
@@ -110,7 +119,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 200.0*(M_PI/reference_area);
+        double end_time = 100.0*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 
@@ -141,9 +150,6 @@ public:
 /******/// double target_shape_index = 0.0;
         // Cell-boundary adhesion:
         bool consider_consistency_of_the_influence_of_CBAdhe = false;
-
-        // Feedback:
-/******/// feedback_strength_for_myosin_activity = 0.0;
 
         // Polarity:
 /*----*/bool add_random_force = true;
@@ -228,7 +234,6 @@ public:
         bool if_mesh_has_two_period = false;
         if (if_mesh_has_two_period)
           one_period_only = false;
-        bool use_longer_mesh = false;
         
         // Energy parameters:
         // Use equation form: 0.5*KA*(A-A0)^2 + 0.5*Gamma*P^2 + 1.0*Lambda*P. ( Lambda=-Ga*P0, p0=P0/sqrt(A0) );
@@ -258,31 +263,6 @@ public:
         bool if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         // bool if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default
         
-        // Feedback:
-        bool is_default_feedback_form = true;
-        int case_number_of_membrane_surface_energy_form = 2; // 2, for default, 2 for new membr_surf_energy form1, 3 for form2.
-        // bool if_consider_feedback_of_face_values = true;
-/******/// bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
-        bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
-        bool if_consider_feedback_of_cell_cell_adhesion = true;
-        bool EMA_dont_decrease = false;
-        bool CCA_dont_decrease = false;
-        bool CCA_increasing_has_a_threshold_of_edge_length = true;
-        double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
-        double hill_coefficient_for_myosin_activity = 8.0;
-        double feedback_strength_for_adhesion = 0;
-        double hill_coefficient_for_adhesion = 8.0;
-          // for consistency of feedback form:
-        if (feedback_strength_for_myosin_activity == 0.0)
-          if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
-        if (feedback_strength_for_adhesion == 0.0)
-          if_consider_feedback_of_cell_cell_adhesion = false;
-        if (if_consider_feedback_of_face_values)
-          assert(case_number_of_membrane_surface_energy_form != 0);
-        else
-          case_number_of_membrane_surface_energy_form = 0;
-        if (is_default_feedback_form)
-          assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
         
         // Random force and polarity:
         bool consider_polarity = true;
@@ -309,7 +289,7 @@ public:
 
         unsigned num_ele_up = 8;
         if (use_longer_mesh)
-          num_ele_up *=2;
+          num_ele_up *= num_ele_up_multiplied;
 
 /******/// int move_mesh_right_for_N_periods = 1;
 
@@ -388,6 +368,7 @@ public:
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
         double strip_start_y_location = 1.5*num_ele_up*1/sqrt(3)*sqrt(initial_area/(sqrt(3)/2));
 
+        int case_number_of_membrane_surface_energy_form = 2; // 2, for default, 2 for new membr_surf_energy form1, 3 for form2.
         p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
         bool if_use_face_element_to_get_adhesion_parameter = if_consider_feedback_of_face_values;
         p_force->SetUseFaceElementToGetAdhesionParameterBoolean(if_use_face_element_to_get_adhesion_parameter);
@@ -484,17 +465,54 @@ public:
         /*------------------------START: !!!!!Feedback: FaceValueAndStressStateModifier: need modification---------------*/
         MAKE_PTR_ARGS(FaceValueAndStressStateModifier<2>, p_face_value_and_stress_state_modifier, ());
                 
+        // Feedback information
+        bool is_default_feedback_form = true;
+
+        // bool if_consider_feedback_of_face_values = true;
+        // bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+        // bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
+
+        bool if_consider_feedback_of_cell_cell_adhesion = true;
+        bool EMA_dont_decrease = false;
+        bool CCA_dont_decrease = false;
+        bool CCA_increasing_has_a_threshold_of_edge_length = true;
+        double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
+
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValues(if_consider_feedback_of_face_values);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(if_apply_feedback_of_face_values_only_for_boundary_cells);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(if_apply_feedback_of_face_values_only_for_top_boundary_cells);
+        p_face_value_and_stress_state_modifier->SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir);
+        p_face_value_and_stress_state_modifier->SetStripStartYLocation(strip_start_y_location);
+
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfCellCellAdhesion(if_consider_feedback_of_cell_cell_adhesion);
         p_face_value_and_stress_state_modifier->SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
             EMA_dont_decrease, CCA_dont_decrease, CCA_increasing_has_a_threshold_of_edge_length, CCA_increasing_threshold_of_edge_length_percentage);
         
-        // Feedback information
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
+        // double kL_for_feedback = 1.0; // 1.0 for defaut
+        // double feedback_strength_for_myosin_activity = 0.0;
+        // double hill_coefficient_for_myosin_activity = 8.0;
+        double feedback_strength_for_adhesion = 0;
+        double hill_coefficient_for_adhesion = 8.0;
+
+        // Consistency of feedback form:
+        if (feedback_strength_for_myosin_activity == 0.0)
+          if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
+        if (feedback_strength_for_adhesion == 0.0)
+          if_consider_feedback_of_cell_cell_adhesion = false;
+        if (if_consider_feedback_of_face_values)
+          assert(case_number_of_membrane_surface_energy_form != 0);
+        else
+        {
+          case_number_of_membrane_surface_energy_form = 0;
+          p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
+        }
+        if (is_default_feedback_form)
+          assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
+
         p_face_value_and_stress_state_modifier->SetFixedTargetArea(reference_area);
         p_face_value_and_stress_state_modifier->SetEdgeLengthAtRest(edge_length_at_rest);
+        p_face_value_and_stress_state_modifier->SetKLForFeedback(kL_for_feedback);
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForMyosinActivity(feedback_strength_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForMyosinActivity(hill_coefficient_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
@@ -588,8 +606,11 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity
-            << "_p0=" << std::fixed << setprecision(2) << target_shape_index
+        oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
+        if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
+          oss << "_KL=" << std::fixed << setprecision(1) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
+
+        oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
         if (add_random_force&&(!is_no_brownian_random_force))
@@ -614,11 +635,13 @@ public:
             oss << "_Multiple_lead_tops=1";
         }
         if (use_longer_mesh)
-          oss << "_LongMesh";
+          oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
         if (!run_with_birth)
           oss << "_NoDivi";
+        else
+          oss << "_Divi=1";
         if (move_mesh_right_for_N_periods!=0)
           oss << "_MvRight=" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
         if (has_myo_depression)
@@ -734,10 +757,14 @@ public:
           // feedback parameters
           output_directory += "_|FeedbackPara:";
           oss.str("");
+          oss << std::fixed << setprecision(1) << kL_for_feedback;
+          output_directory += "_KL=" + oss.str();
+
+          oss.str("");
           oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(4) << feedback_strength_for_myosin_activity ;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
-          oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity ;
+          oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
           output_directory += "_MyoHill=" + oss.str();
           if (if_consider_feedback_of_cell_cell_adhesion)
           {
