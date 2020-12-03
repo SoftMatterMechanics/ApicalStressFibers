@@ -42,6 +42,8 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
       mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(false),
+      mStripWidth(1.0),
+      mStripStartXLocation(0.0),
       mStripStartYLocation(0.0),
       mIfConsiderFeedbackOfCellCellAdhesion(false),
 
@@ -74,6 +76,8 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mWriteGroupNumberToCell(false),
 
       mMarkLeadingCells(false),
+      mMultipleLeadingCells(false),
+      mLeadingCellNumber(1),
 
       mIfOutputModifierInformation(false)
 {
@@ -844,7 +848,8 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
         VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
 
         unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
-        if (fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - 0.0)< 1e-1)
+        if (    ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation/2.0)&&(!mMultipleLeadingCells)&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< 1e-1) ) 
+             || ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation/2.0)&&mMultipleLeadingCells&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< mStripWidth/2.0) ) )
         {
             bool is_leading_cell = false;
             for (unsigned index=0; index< pElement->GetNumNodes(); index++)

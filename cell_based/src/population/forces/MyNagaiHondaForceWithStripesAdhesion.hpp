@@ -172,6 +172,8 @@ protected:
 
     bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
 
+    unsigned mLeadingCellNumber;
+
     double mPullingForceOnLeadingCell;
 
     bool mKeepMovingForward;
@@ -429,6 +431,11 @@ public:
     void SetAddPullingForceEvenlyOnNodesOfLeadingCell(bool addPullingForceEvenlyOnNodesOfLeadingCell)
     {
       mAddPullingForceEvenlyOnNodesOfLeadingCell = addPullingForceEvenlyOnNodesOfLeadingCell;
+    }
+
+    void SetLeadingCellNumber(unsigned leadingCellNumber)
+    {
+      mLeadingCellNumber = leadingCellNumber;
     }
 
     void SetPullingForceOnLeadingCell(double pullingForceOnLeadingCell)

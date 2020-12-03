@@ -46,7 +46,9 @@ MyNagaiHondaForceWithStripesAdhesion<DIM>::MyNagaiHondaForceWithStripesAdhesion(
      mUseFixedTargetArea(true),
      mCaseNumberOfMembraneSurfaceEnergyForm(0),
      mIfUseFaceElementToGetAdhesionParameter(false),
-     mOutputInformationForNagaiHondaForce(false)
+     mOutputInformationForNagaiHondaForce(false),
+     mLeadingCellNumber(1),
+     mPullingForceOnLeadingCell(0.0)
 {
 }
 
@@ -912,10 +914,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 ++iter)
             {
                 if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
-                {
                     node_belongs_to_leading_cell = true;
-                    break;
-                }
             }
 
             if (node_belongs_to_leading_cell)
@@ -923,7 +922,25 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 assert(num_nodes_leading_cell_top!=0);
                 double t_now = SimulationTime::Instance()->GetTime();
                 if ( !(mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium) )
-                    force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
+                {
+                    if (mLeadingCellNumber==1)
+                        force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
+                    else
+                    {
+                        assert(mLeadingCellNumber >= 2);
+                        for (std::set<unsigned>::iterator iter = containing_elem_indices.begin();
+                            iter != containing_elem_indices.end();
+                            ++iter)
+                        {
+                            if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
+                            {
+                                unsigned num_nodes_of_this_leading_cell = p_cell_population->GetElement(*iter)->GetNumNodes();
+                                force_on_node[1] += (mPullingForceOnLeadingCell/mLeadingCellNumber)/num_nodes_of_this_leading_cell;
+                            }
+                        }
+
+                    }
+                }
             }
         }
 

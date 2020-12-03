@@ -69,6 +69,8 @@ protected:
     bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
     bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
     bool mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
+    double mStripWidth;
+    double mStripStartXLocation;
     double mStripStartYLocation;
     bool mIfConsiderFeedbackOfCellCellAdhesion;
 
@@ -101,6 +103,8 @@ protected:
     bool mWriteGroupNumberToCell;
 
     bool mMarkLeadingCells;
+    bool mMultipleLeadingCells;
+    unsigned mLeadingCellNumber;
     double mLamellipodiumMaturationRate;
     double mLamellipodiumDestructionRate;
 
@@ -172,6 +176,16 @@ public:
     void SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(bool applyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior)
     {
       mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior = applyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
+    }
+
+    void SetStripWidth(double stripWidth)
+    {
+      mStripWidth = stripWidth;
+    }
+
+    void SetStripStartXLocation(double stripStartXLocation)
+    {
+      mStripStartXLocation = stripStartXLocation;
     }
 
     void SetStripStartYLocation(double stripStartYLocation)
@@ -300,6 +314,16 @@ public:
     void SetMarkLeadingCells(bool markLeadingCells)
     {
       mMarkLeadingCells = markLeadingCells;
+    }
+
+    void SetMultipleLeadingCells(bool multipleLeadingCells)
+    {
+      mMultipleLeadingCells = multipleLeadingCells;
+    }
+
+    void SetLeadingCellNumber(unsigned leadingCellNumber)
+    {
+      mLeadingCellNumber = leadingCellNumber;
     }
 
     void SetLamellipodiumMaturationRate(double lamellipodiumMaturationRate)
