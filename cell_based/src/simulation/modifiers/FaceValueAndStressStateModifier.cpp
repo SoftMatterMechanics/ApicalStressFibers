@@ -79,7 +79,13 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mMultipleLeadingCells(false),
       mLeadingCellNumber(1),
 
-      mIfOutputModifierInformation(false)
+      mIfOutputModifierInformation(false),
+
+      mTimeForChangingFeedback(DOUBLE_UNSET),
+      mChangedKLForFeedback(1.0),
+      mChangedFeedbackStrength(0.0),
+      mChangedMyosinActivityBaseValue(1.0)
+
 {
 }
 
@@ -661,12 +667,19 @@ void FaceValueAndStressStateModifier<DIM>::UpdateCellDataOfForcesFromNeighboring
 template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
 {
+    double time_now = SimulationTime::Instance()->GetTime();
     double dt = SimulationTime::Instance()->GetTimeStep();
     double edge_length_at_rest = this->mEdgeLengthAtRest;
     double KL = this->mKLForFeedback;
+    if ( time_now>mTimeForChangingFeedback && mChangedKLForFeedback!=mKLForFeedback)
+        KL = mChangedKLForFeedback;
     double n = this->mHillCoefficientForMyosinActivity;
     double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
+    if ( time_now>mTimeForChangingFeedback && mChangedFeedbackStrength!=mFeedbackStrengthForMyosinActivity)
+        feedback_strength = mChangedFeedbackStrength;
     double alpha = (1.0+KL)*feedback_strength;
+    if ( time_now>mTimeForChangingFeedback && mChangedMyosinActivityBaseValue!=1.0 )
+        alpha *= mChangedMyosinActivityBaseValue;
     double beta = 1.0*feedback_strength;
 
     VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);

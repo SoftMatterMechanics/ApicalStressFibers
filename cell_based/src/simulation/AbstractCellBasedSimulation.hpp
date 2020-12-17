@@ -156,6 +156,8 @@ protected:
      */
     bool mOutputCellVelocities;
 
+    bool mMyOutputCellVelocities;
+
     /** Results file for cell velocities. */
     out_stream mpCellVelocitiesFile;
 
@@ -521,6 +523,11 @@ public:
      * @param outputCellVelocities the new value of mOutputCellVelocities
      */
     void SetOutputCellVelocities(bool outputCellVelocities);
+
+    void SetMyOutputCellVelocities(bool myOutputCellVelocities)
+    {
+      mMyOutputCellVelocities = myOutputCellVelocities;
+    }
 
     /**
      * Outputs simulation parameters to file

@@ -74,9 +74,9 @@ public:
     {
         // assert(false);
 
-        bool strip_width_doubled = true;
+        bool strip_width_doubled = false;
         double strip_width_mutiple = 8.0;
-        bool multiple_leading_cells = true;
+        bool multiple_leading_cells = false;
         unsigned leading_cell_number = 4;
 
         double reference_area = M_PI;
@@ -97,8 +97,14 @@ public:
 
         double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 0.25; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
+        
+        // change feedback after a time.
+        double time_for_changing_feedback = DOUBLE_UNSET;
+        double changed_KL_for_feedback = 0.5;
+        double changed_feedback_strength = feedback_strength_for_myosin_activity;
+        double changed_myosin_activity_base_value = 1.0;
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
@@ -529,6 +535,12 @@ public:
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForAdhesion(hill_coefficient_for_adhesion);
 
+        // changed feedback
+        p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedKLForFeedback(changed_KL_for_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedFeedbackStrength(changed_feedback_strength);
+        p_face_value_and_stress_state_modifier->SetChangedMyosinActivityBaseValue(changed_myosin_activity_base_value);
+
         // my stress state modifier
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
         p_face_value_and_stress_state_modifier->SetIfSetCellDataOfEachForceContributions(if_set_cell_data_of_detailed_force_contributions);
@@ -651,6 +663,8 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        if (multiple_leading_cells)
+          oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
           oss << "_NoDivi";
         else

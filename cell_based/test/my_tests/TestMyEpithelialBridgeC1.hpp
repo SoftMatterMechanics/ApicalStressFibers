@@ -74,6 +74,10 @@ public:
     {
         // assert(false);
 
+        bool strip_width_doubled = false;
+        double strip_width_mutiple = 1.0;
+        bool multiple_leading_cells = false;
+        unsigned leading_cell_number = 1;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -87,13 +91,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 0.0;//p0
+        double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.0*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
@@ -113,7 +117,7 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.0;
+        double polarity_magnitude = 0.1;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -359,11 +363,15 @@ public:
         MAKE_PTR(MyNagaiHondaForceWithStripesAdhesion<2>, p_force);
         
         // Strips structure of substrate adhesion
-        double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
+        double strip_width = 20*sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
+        if (strip_width_doubled)
+          strip_width = strip_width*strip_width_mutiple;
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= strip_dis_multiplied;
         double strip_start_x_location = 0.0;
+        if (strip_width_doubled)
+          strip_start_x_location += sqrt(initial_area/(sqrt(3)/2))/2;
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
         double strip_start_y_location = 1.5*num_ele_up*1/sqrt(3)*sqrt(initial_area/(sqrt(3)/2));
@@ -388,6 +396,7 @@ public:
         p_force->SetHomogeneousSubstrateAdhesionParameter(homogeneous_substrate_adhesion_parameter);
         p_force->SetAddPullingForceOnNodeIndividually(add_pulling_force_on_node_individually);
         p_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
+        p_force->SetLeadingCellNumber(leading_cell_number);
         p_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
         p_force->SetSubstrateAdhesionLeadingTopLength(substrate_adhesion_leading_top_length);
         p_force->SetBasicSSA(basic_SSA);
@@ -482,6 +491,8 @@ public:
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(if_apply_feedback_of_face_values_only_for_boundary_cells);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(if_apply_feedback_of_face_values_only_for_top_boundary_cells);
         p_face_value_and_stress_state_modifier->SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir);
+        p_face_value_and_stress_state_modifier->SetStripWidth(strip_width);
+        p_face_value_and_stress_state_modifier->SetStripStartXLocation(strip_start_x_location);
         p_face_value_and_stress_state_modifier->SetStripStartYLocation(strip_start_y_location);
 
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfCellCellAdhesion(if_consider_feedback_of_cell_cell_adhesion);
@@ -535,6 +546,8 @@ public:
 
         // new SSA distribution rule
         p_face_value_and_stress_state_modifier->SetMarkLeadingCells(mark_leading_cells);
+        p_face_value_and_stress_state_modifier->SetMultipleLeadingCells(multiple_leading_cells);
+        p_face_value_and_stress_state_modifier->SetLeadingCellNumber(leading_cell_number);
         p_face_value_and_stress_state_modifier->SetLamellipodiumMaturationRate(lamellipodium_maturation_rate);
         p_face_value_and_stress_state_modifier->SetLamellipodiumDestructionRate(lamellipodium_destruction_rate);
         // outout information
@@ -638,6 +651,8 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        if (multiple_leading_cells)
+          oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
           oss << "_NoDivi";
         else

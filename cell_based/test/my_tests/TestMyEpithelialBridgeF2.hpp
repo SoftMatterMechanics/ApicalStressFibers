@@ -74,7 +74,7 @@ public:
     {
         // assert(false);
 
-        bool strip_width_doubled = true;
+        bool strip_width_doubled = false;
         double strip_width_mutiple = 8.0;
         bool multiple_leading_cells = true;
         unsigned leading_cell_number = 4;
@@ -91,13 +91,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;//p0
+        double target_shape_index = 0.0;//p0
 
         double pulling_force_on_leading_cell = 4.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 2.0; // 1.0 for defaut
+        double kL_for_feedback = 1.0; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
@@ -106,13 +106,13 @@ public:
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
-        bool if_use_larger_strip_distance = true;
+        bool if_use_larger_strip_distance = false;
         double strip_dis_multiplied = 40.0/12.0;
 
         bool use_longer_mesh = true;
         int num_ele_up_multiplied = 2;
 
-        int move_mesh_right_for_N_periods = 0;
+        int move_mesh_right_for_N_periods = -1;
 
         bool run_with_birth =false;
 
@@ -123,7 +123,7 @@ public:
         bool has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 0.2*(M_PI/reference_area);
         double time_for_equilibrium = 0.0;
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
 

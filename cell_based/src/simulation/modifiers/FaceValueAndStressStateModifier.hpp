@@ -114,6 +114,11 @@ protected:
     double mMyosinActivityDepressedTime;
     double mMyosinActivityDepressingRate;
 
+    double mTimeForChangingFeedback;
+    double mChangedKLForFeedback;
+    double mChangedFeedbackStrength;
+    double mChangedMyosinActivityBaseValue;
+
 public:
 
     /**
@@ -356,6 +361,29 @@ public:
     {
       mMyosinActivityDepressingRate = myosinActivityDepressingRate;
     }
+
+    // for changing feedback after a particulat time
+    void SetTimeForChangingFeedback(double timeForChangingFeedback)
+    {
+      mTimeForChangingFeedback = timeForChangingFeedback;
+    }
+
+    void SetChangedKLForFeedback(double changedKLForFeedback)
+    {
+      mChangedKLForFeedback = changedKLForFeedback;
+    }
+
+    void SetChangedFeedbackStrength(double changedFeedbackStrength)
+    {
+      mChangedFeedbackStrength = changedFeedbackStrength;
+    }
+
+    void SetChangedMyosinActivityBaseValue(double changedMyosinActivityBaseValue)
+    {
+      mChangedMyosinActivityBaseValue = changedMyosinActivityBaseValue;
+    }
+
+
 
     /**
      * Overridden OutputSimulationModifierParameters() method.

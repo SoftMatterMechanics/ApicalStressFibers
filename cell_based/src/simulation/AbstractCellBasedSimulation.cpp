@@ -62,6 +62,7 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mNumDeaths(0),
       mOutputDivisionLocations(false),
       mOutputCellVelocities(false),
+      mMyOutputCellVelocities(false),
       mSamplingTimestepMultiple(1),
       mOmitFileNameResultsFromTimeX(false),
       mOutputSimulationInformationToFile(false)
@@ -475,9 +476,19 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
             // tmp???????
             // Offset as doing this before we increase time by mDt
             if (mApplySamplingTimeInsteadOfSamplingTimestep)
-                *mpCellVelocitiesFile << p_time->GetTime() + mAdaptiveDt<< "\t";
+            {
+                if (mMyOutputCellVelocities)
+                    *mpCellVelocitiesFile << p_time->GetTime() + mAdaptiveDt<< "\n";
+                else
+                    *mpCellVelocitiesFile << p_time->GetTime() + mAdaptiveDt<< "\t";
+            }
             else
-                *mpCellVelocitiesFile << p_time->GetTime() + mDt<< "\t";
+            {
+                if (mMyOutputCellVelocities)
+                    *mpCellVelocitiesFile << p_time->GetTime() + mDt<< "\n";
+                else
+                    *mpCellVelocitiesFile << p_time->GetTime() + mDt<< "\t";
+            }
 
             for (typename AbstractCellPopulation<ELEMENT_DIM, SPACE_DIM>::Iterator cell_iter = mrCellPopulation.Begin();
                  cell_iter != mrCellPopulation.End();
@@ -487,9 +498,13 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 const c_vector<double,SPACE_DIM>& position = mrCellPopulation.GetLocationOfCellCentre(*cell_iter);
 
                 c_vector<double, SPACE_DIM> velocity; // Two lines for profile build
-                velocity = (position - old_cell_locations[*cell_iter])/mDt;
+                velocity = (position - old_cell_locations[*cell_iter])/(mApplyMyChangesToMakeTimestepAdaptive? mAdaptiveDt:mDt);
 
-                *mpCellVelocitiesFile << index  << " ";
+                if (mMyOutputCellVelocities)
+                    *mpCellVelocitiesFile << index  << "\t";
+                else
+                    *mpCellVelocitiesFile << index  << " ";
+
                 for (unsigned i=0; i<SPACE_DIM; i++)
                 {
                     *mpCellVelocitiesFile << position[i] << " ";
@@ -499,6 +514,8 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 {
                     *mpCellVelocitiesFile << velocity[i] << " ";
                 }
+                if (mMyOutputCellVelocities)
+                    *mpCellVelocitiesFile << "\t";
             }
             *mpCellVelocitiesFile << "\n";
         }

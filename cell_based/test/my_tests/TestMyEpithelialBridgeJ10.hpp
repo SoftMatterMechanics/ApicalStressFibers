@@ -74,10 +74,11 @@ public:
     {
         // assert(false);
 
-        bool strip_width_doubled = true;
-        double strip_width_mutiple = 8.0;
-        bool multiple_leading_cells = true;
-        unsigned leading_cell_number = 4;
+        bool strip_width_doubled = false;
+        double strip_width_mutiple = 1.0;
+        bool multiple_leading_cells = false;
+        unsigned leading_cell_number = 1;
+
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -91,13 +92,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = -1.0;//p0
+        double target_shape_index = 0.0;//p0
 
         double pulling_force_on_leading_cell = 4.0*10/pow((M_PI/reference_area),1.5);// Fy
 
         double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
@@ -112,7 +113,7 @@ public:
         bool use_longer_mesh = true;
         int num_ele_up_multiplied = 2;
 
-        int move_mesh_right_for_N_periods = 0;
+        int move_mesh_right_for_N_periods = 1;
 
         bool run_with_birth =false;
 
@@ -651,6 +652,8 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        if (multiple_leading_cells)
+          oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
           oss << "_NoDivi";
         else
