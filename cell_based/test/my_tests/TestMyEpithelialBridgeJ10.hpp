@@ -75,10 +75,11 @@ public:
         // assert(false);
 
         bool strip_width_doubled = false;
-        double strip_width_mutiple = 1.0;
+        double strip_width_mutiple = 8.0;
         bool multiple_leading_cells = false;
         unsigned leading_cell_number = 1;
-
+        if (!multiple_leading_cells)
+          leading_cell_number = 1;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -92,32 +93,38 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 0.0;//p0
+        double target_shape_index = 0.5;//p0
 
-        double pulling_force_on_leading_cell = 4.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10; // 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.1; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1; // 1.0 for defaut
+        double kL_for_feedback = 1.0; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
+        // change feedback after a time.
+        double time_for_changing_feedback = DOUBLE_UNSET; // 100.0; // DOUBLE_UNSET;
+        double changed_KL_for_feedback = 0.5;
+        double changed_feedback_strength = feedback_strength_for_myosin_activity;
+        double changed_myosin_activity_base_value = 1;
+
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
-        bool if_use_larger_strip_distance = true;
+        bool if_use_larger_strip_distance = false;
         double strip_dis_multiplied = 40.0/12.0;
 
-        bool use_longer_mesh = true;
+        bool use_longer_mesh = false;
         int num_ele_up_multiplied = 2;
 
-        int move_mesh_right_for_N_periods = 1;
+        int move_mesh_right_for_N_periods = 0;
 
         bool run_with_birth =false;
 
-        bool is_no_brownian_random_force = true;
+        bool is_no_brownian_random_force = false;
         double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
@@ -335,6 +342,11 @@ public:
 
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetNoBirth(!run_with_birth);
+        // output cell velocity:
+        bool my_output_cell_velocity = true;
+        simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
+        bool output_cell_velocity = true;
+        simulator.SetOutputCellVelocities(output_cell_velocity);
 
 
         /*--------------------------------START: TargetAreaModifier------------------------------*/
@@ -529,6 +541,12 @@ public:
         p_face_value_and_stress_state_modifier->SetHillCoefficientForMyosinActivity(hill_coefficient_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForAdhesion(hill_coefficient_for_adhesion);
+
+        // changed feedback
+        p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedKLForFeedback(changed_KL_for_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedFeedbackStrength(changed_feedback_strength);
+        p_face_value_and_stress_state_modifier->SetChangedMyosinActivityBaseValue(changed_myosin_activity_base_value);
 
         // my stress state modifier
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
