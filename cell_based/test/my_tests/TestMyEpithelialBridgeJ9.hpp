@@ -75,10 +75,11 @@ public:
         // assert(false);
 
         bool strip_width_doubled = false;
-        double strip_width_mutiple = 1.0;
+        double strip_width_mutiple = 8.0;
         bool multiple_leading_cells = false;
         unsigned leading_cell_number = 1;
-
+        if (!multiple_leading_cells)
+          leading_cell_number = 1;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -92,13 +93,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;//p0
+        double target_shape_index = 4.5;//p0
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10; // 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.01; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1; // 1.0 for defaut
+        double kL_for_feedback = 1.0; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         // change feedback after a time.
