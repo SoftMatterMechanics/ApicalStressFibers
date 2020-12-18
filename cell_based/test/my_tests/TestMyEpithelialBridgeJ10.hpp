@@ -97,9 +97,9 @@ public:
 
         double pulling_force_on_leading_cell = 10; // 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.1; // 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0025; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 0.1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         // change feedback after a time.
@@ -640,7 +640,7 @@ public:
 
         oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
-          oss << "_KL=" << std::fixed << setprecision(1) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
+          oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 

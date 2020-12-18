@@ -76,7 +76,7 @@ public:
 
         bool strip_width_doubled = false;
         double strip_width_mutiple = 8.0;
-        bool multiple_leading_cells = false;
+        bool multiple_leading_cells = true;
         unsigned leading_cell_number = 4;
 
         double reference_area = M_PI;
@@ -93,18 +93,12 @@ public:
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 4.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 0.25; // 1.0 for defaut
+        double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
-        
-        // change feedback after a time.
-        double time_for_changing_feedback = DOUBLE_UNSET;
-        double changed_KL_for_feedback = 0.5;
-        double changed_feedback_strength = feedback_strength_for_myosin_activity;
-        double changed_myosin_activity_base_value = 1.0;
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
@@ -123,7 +117,7 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.0;
+        double polarity_magnitude = 0.1;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -369,7 +363,7 @@ public:
         MAKE_PTR(MyNagaiHondaForceWithStripesAdhesion<2>, p_force);
         
         // Strips structure of substrate adhesion
-        double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
+        double strip_width = 20*sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
         if (strip_width_doubled)
           strip_width = strip_width*strip_width_mutiple;
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
@@ -535,12 +529,6 @@ public:
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForAdhesion(hill_coefficient_for_adhesion);
 
-        // changed feedback
-        p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
-        p_face_value_and_stress_state_modifier->SetChangedKLForFeedback(changed_KL_for_feedback);
-        p_face_value_and_stress_state_modifier->SetChangedFeedbackStrength(changed_feedback_strength);
-        p_face_value_and_stress_state_modifier->SetChangedMyosinActivityBaseValue(changed_myosin_activity_base_value);
-
         // my stress state modifier
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
         p_face_value_and_stress_state_modifier->SetIfSetCellDataOfEachForceContributions(if_set_cell_data_of_detailed_force_contributions);
@@ -633,7 +621,7 @@ public:
 
         oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
-          oss << "_KL=" << std::fixed << setprecision(1) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
+          oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
