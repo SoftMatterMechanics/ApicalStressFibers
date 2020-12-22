@@ -99,7 +99,7 @@ public:
 
         double feedback_strength_for_myosin_activity = 0.0025; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 0.5; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         // change feedback after a time.

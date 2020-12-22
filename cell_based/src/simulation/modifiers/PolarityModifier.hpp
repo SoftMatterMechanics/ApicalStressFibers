@@ -72,6 +72,10 @@ protected:
 
     double mAngleForInitialization;
 
+    bool mSeedManually;
+
+    unsigned mSeedForInitialRandomPolarity;
+
 public:
 
     /**
@@ -97,6 +101,16 @@ public:
     void SetAngleForInitialization (double angleForInitialization)
     {
       mAngleForInitialization = angleForInitialization;
+    }
+
+    void SetSeedManually(bool seedManually)
+    {
+      mSeedManually = seedManually;
+    }
+
+    void SetSeedForInitialRandomPolarity(unsigned seedForInitialRandomPolarity)
+    {
+      mSeedForInitialRandomPolarity = seedForInitialRandomPolarity;
     }
 
     virtual void UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation);

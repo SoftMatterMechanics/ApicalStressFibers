@@ -79,6 +79,9 @@ protected:
     bool mCCAIncreasingHasAThresholdOfEdgeLength;
     double mCCAIncreasingThresholdOfEdgeLengthPercentage;
 
+    bool mEMADontDecreaseBelowAThreshold;
+    double mEMADontDecreaseBelowThisThreshold;
+
     double mEdgeLengthAtRest;
     double mKLForFeedback;
     double mFeedbackStrengthForMyosinActivity;
@@ -215,6 +218,13 @@ public:
       mCCAIncreasingHasAThresholdOfEdgeLength = CCAIncreasingHasAThresholdOfEdgeLength;
       mCCAIncreasingThresholdOfEdgeLengthPercentage = CCAIncreasingThresholdOfEdgeLengthPercentage;
     }
+
+    void SetEMADontDecreaseBelowAThreshold_ThisThreshold(bool EMADontDecreaseBelowAThreshold, double EMADontDecreaseBelowThisThreshold)
+    {
+      mEMADontDecreaseBelowAThreshold = EMADontDecreaseBelowAThreshold;
+      mEMADontDecreaseBelowThisThreshold = EMADontDecreaseBelowThisThreshold;
+    }
+
 
     // detailed feedback information:
     void SetEdgeLengthAtRest(double edgeLengthAtRest)

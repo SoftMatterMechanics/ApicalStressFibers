@@ -52,6 +52,9 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mCCAIncreasingHasAThresholdOfEdgeLength(false),
       mCCAIncreasingThresholdOfEdgeLengthPercentage(0.5),
 
+      mEMADontDecreaseBelowAThreshold(false),
+      mEMADontDecreaseBelowThisThreshold(0.0),
+
       mEdgeLengthAtRest(sqrt(M_PI/(6*sqrt(3)/4))),
       mKLForFeedback(1.0),
       mFeedbackStrengthForMyosinActivity(1.0),
@@ -691,6 +694,10 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(
     double unified_edge_myosin_activty = p_face->GetUnifiedEdgeMyosinActivty();
     double changing_rate = alpha*pow(lambda,n)/(KL+pow(lambda,n))-beta*unified_edge_myosin_activty;
     if (mEMADontDecreaseWhenEdgeShrink && lambda<1.0)
+    {
+        changing_rate = 0.0;
+    }
+    if (mEMADontDecreaseBelowAThreshold && unified_edge_myosin_activty<mEMADontDecreaseBelowThisThreshold && changing_rate<0.0)
     {
         changing_rate = 0.0;
     }

@@ -76,8 +76,8 @@ public:
 
         bool strip_width_doubled = false;
         double strip_width_mutiple = 8.0;
-        bool multiple_leading_cells = true;
-        unsigned leading_cell_number = 4;
+        bool multiple_leading_cells = false;
+        unsigned leading_cell_number = 1;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -117,7 +117,9 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.1;
+        double polarity_magnitude = 0.25;
+        bool seed_manually = false;//
+        unsigned seed_for_initial_random_polarity = 3u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -465,6 +467,8 @@ public:
         {
           MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
           p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
+          p_polarity_modifier->SetSeedManually(seed_manually);
+          p_polarity_modifier->SetSeedForInitialRandomPolarity(seed_for_initial_random_polarity);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
           simulator.AddSimulationModifier(p_polarity_modifier);
         }
@@ -630,8 +634,11 @@ public:
           oss << "_Brown:Dtr=" << std::scientific << setprecision(2) << translational_diffusion_constant;
         else
           oss << "_Brown=0";
-        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
-            << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
+        if (seed_manually)
+          oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
+
+        oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
         if(if_check_for_T4_swaps)
           oss << "_T4swaps=1";
@@ -747,6 +754,10 @@ public:
         }
         else
           output_directory += "NoCellDivi";
+
+        output_directory += "_|Structure:";
+        oss << "StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        oss << "_StripWid=" << std::fixed << setprecision(3) << strip_width;
 
         if (if_consider_feedback_of_face_values)
         {

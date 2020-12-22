@@ -42,7 +42,9 @@ PolarityModifier<DIM>::PolarityModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
       mD(0.1),
       mPolarityMagnitude(0.1),
-      mAngleForInitialization(M_PI)
+      mAngleForInitialization(M_PI),
+      mSeedManually(false),
+      mSeedForInitialRandomPolarity(0u)
 {
 }
 
@@ -71,6 +73,8 @@ template<unsigned DIM>
 void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
     srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
+    if (mSeedManually)
+        srand(mSeedForInitialRandomPolarity);
     for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
          cell_iter != rCellPopulation.rGetCells().end();
          ++cell_iter)
@@ -78,6 +82,8 @@ void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM
         double angle = mAngleForInitialization; //angle: 0-PI
         double polarity_angle = (rand()%int(round((M_PI+angle)*1e5)))/1e5-0.5*angle;// Err: 0-PI-->>(0-x)-(PI+x)
         polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
+        if (mSeedManually)
+            polarity_angle = 2*M_PI* (rand()%int(1e5))/double(1e5);
         SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
     }
 }

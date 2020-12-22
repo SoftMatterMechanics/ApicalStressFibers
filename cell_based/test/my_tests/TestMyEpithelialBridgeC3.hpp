@@ -93,13 +93,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 3.5;//p0
+        double target_shape_index = 4.75;//p0
 
         double pulling_force_on_leading_cell = 10; // 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.0025; // 400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.1; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1.0; // 1.0 for defaut
+        double kL_for_feedback = 0.1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         // change feedback after a time.
@@ -111,6 +111,9 @@ public:
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
+
+        bool EMA_dont_decrease_below_a_threshold = true;
+        double EMA_dont_decrease_below_this_threshold = 0.9;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
@@ -512,6 +515,8 @@ public:
         p_face_value_and_stress_state_modifier->SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
             EMA_dont_decrease, CCA_dont_decrease, CCA_increasing_has_a_threshold_of_edge_length, CCA_increasing_threshold_of_edge_length_percentage);
         
+        p_face_value_and_stress_state_modifier->SetEMADontDecreaseBelowAThreshold_ThisThreshold(EMA_dont_decrease_below_a_threshold, EMA_dont_decrease_below_this_threshold);
+
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
         // double kL_for_feedback = 1.0; // 1.0 for defaut
         // double feedback_strength_for_myosin_activity = 0.0;
@@ -642,6 +647,10 @@ public:
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
 
+        if (EMA_dont_decrease_below_a_threshold)
+          oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
+        oss << "_Dt=" << std::scientific << setprecision(1) << dt;
+
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
@@ -693,7 +702,7 @@ public:
         
         // Concise information written to directoory.
         oss.str("");
-        oss << std::fixed << setprecision(3) << dt;
+        oss << std::fixed << setprecision(4) << dt;
         output_directory += "/Dt=" + oss.str();
         oss.str("");
         oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
@@ -787,6 +796,12 @@ public:
                 output_directory += "_CCAInrThresh=" + oss.str();
               }
             }
+          }
+          if (EMA_dont_decrease_below_a_threshold)
+          {
+            oss.str("");
+            oss << "_EMADecrThresh=" << EMA_dont_decrease_below_this_threshold;
+            output_directory += oss.str();
           }
           // feedback parameters
           output_directory += "_|FeedbackPara:";
