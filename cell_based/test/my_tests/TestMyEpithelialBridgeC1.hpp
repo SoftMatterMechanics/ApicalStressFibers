@@ -73,8 +73,9 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
+        // codes for phase diagram(alpha-p0) with fp(0.1). 
 
-        bool strip_width_doubled = false;
+        bool strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
         bool multiple_leading_cells = false;
         unsigned leading_cell_number = 1;
@@ -384,14 +385,14 @@ public:
         
         // Strips structure of substrate adhesion
         double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
-        if (strip_width_doubled)
+        if (strip_width_doubled_for_multiple_leading_cells)
           strip_width = strip_width*strip_width_mutiple;
         strip_width *= strip_width_multiple_for_sliding;
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= strip_dis_multiplied;
         double strip_start_x_location = 0.0;
-        if (strip_width_doubled)
+        if (strip_width_doubled_for_multiple_leading_cells)
           strip_start_x_location += sqrt(initial_area/(sqrt(3)/2))/2;
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
@@ -650,7 +651,7 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
+        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
@@ -825,7 +826,7 @@ public:
           output_directory += "_KL=" + oss.str();
 
           oss.str("");
-          oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(4) << feedback_strength_for_myosin_activity ;
+          oss << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
