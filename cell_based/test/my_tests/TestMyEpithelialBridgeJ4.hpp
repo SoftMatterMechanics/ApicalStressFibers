@@ -97,11 +97,11 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 3.0;//p0
-        target_shape_index -= 0.25;
+        // target_shape_index -= 0.25;
 
         double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.0; //0.0*400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.005/4.0*1; //0.0*400*0.01125/(M_PI/reference_area);//Fb
 
         double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
@@ -132,7 +132,7 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = false;
-        double polarity_magnitude = 0.0;
+        double polarity_magnitude = 0.1;
         bool seed_manually = false;//
         unsigned seed_for_initial_random_polarity = 1u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);

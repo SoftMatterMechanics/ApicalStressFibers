@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef TESTMYEPITHELIALBRIDGEJ10_HPP_
-#define TESTMYEPITHELIALBRIDGEJ10_HPP_
+#ifndef TESTMYEPITHELIALBRIDGEJ3_HPP_
+#define TESTMYEPITHELIALBRIDGEJ3_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "CheckpointArchiveTypes.hpp"
@@ -66,7 +66,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // #include <ctime>
 
-class TestMyEpithelialBridgeJ10 : public AbstractCellBasedTestSuite
+class TestMyEpithelialBridgeJ3 : public AbstractCellBasedTestSuite
 {
 public:
 
@@ -96,8 +96,8 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;//p0
-        // target_shape_index -= 0.25;
+        double target_shape_index = 3.5;//p0
+        target_shape_index -= 0.25;
 
         double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
@@ -934,4 +934,4 @@ public:
 
 };
 
-#endif /* TESTMYEPITHELIALBRIDGEJ10_HPP_ */
+#endif /* TESTMYEPITHELIALBRIDGEJ3_HPP_ */

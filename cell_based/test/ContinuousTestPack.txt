@@ -20,3 +20,13 @@ my_tests/TestMyEpithelialBridgeJ7.hpp
 my_tests/TestMyEpithelialBridgeJ8.hpp
 my_tests/TestMyEpithelialBridgeJ9.hpp
 my_tests/TestMyEpithelialBridgeJ10.hpp
+my_tests/TestMyEpithelialBridgeK1.hpp
+my_tests/TestMyEpithelialBridgeK2.hpp
+my_tests/TestMyEpithelialBridgeK3.hpp
+my_tests/TestMyEpithelialBridgeK4.hpp
+my_tests/TestMyEpithelialBridgeK5.hpp
+my_tests/TestMyEpithelialBridgeK6.hpp
+my_tests/TestMyEpithelialBridgeK7.hpp
+my_tests/TestMyEpithelialBridgeK8.hpp
+my_tests/TestMyEpithelialBridgeK9.hpp
+my_tests/TestMyEpithelialBridgeK10.hpp

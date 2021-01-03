@@ -72,7 +72,7 @@ public:
 
     void TestStripSubstrateAdhesion()
     {
-        // assert(false);
+        assert(false);
         // codes for phase diagram(alpha-p0) with fp(0.1). 
 
         bool strip_width_doubled_for_multiple_leading_cells = false;
@@ -97,7 +97,7 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
-        // target_shape_index -= 0.25;
+        target_shape_index -= 0.25;
 
         double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
