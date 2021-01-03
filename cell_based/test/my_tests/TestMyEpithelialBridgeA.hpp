@@ -82,7 +82,7 @@ public:
         if (!multiple_leading_cells)
           leading_cell_number = 1;
 
-        double strip_width_multiple_for_sliding = 20.0;
+        double strip_width_multiple_for_sliding = 10.0;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -131,9 +131,10 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.1;
-        bool seed_manually = false;//
-        unsigned seed_for_initial_random_polarity = 1u;
+        double polarity_magnitude = 0.2;
+        bool seed_manually = true;//
+        unsigned seed_for_initial_random_polarity = 0u;
+        seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -353,6 +354,8 @@ public:
         // output cell velocity:
         bool my_output_cell_velocity = true;
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
+        if (my_output_cell_velocity && seed_manually)
+          simulator.SetMySeed(seed_for_initial_random_polarity);
         bool output_cell_velocity = true;
         simulator.SetOutputCellVelocities(output_cell_velocity);
 
@@ -670,6 +673,8 @@ public:
         oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         if (seed_manually)
           oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
+        else
+          oss << "_RndSeedPolr=N";
 
         oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 

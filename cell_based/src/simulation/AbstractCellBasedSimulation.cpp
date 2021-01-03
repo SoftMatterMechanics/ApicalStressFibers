@@ -63,6 +63,7 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mOutputDivisionLocations(false),
       mOutputCellVelocities(false),
       mMyOutputCellVelocities(false),
+      mMySeed(0u),
       mSamplingTimestepMultiple(1),
       mOmitFileNameResultsFromTimeX(false),
       mOutputSimulationInformationToFile(false)
@@ -375,7 +376,17 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
     if (mOutputCellVelocities)
     {
         OutputFileHandler output_file_handler2(this->mSimulationOutputDirectory+"/", false);
-        mpCellVelocitiesFile = output_file_handler2.OpenOutputFile("cellvelocities.dat");
+        std::string output_file_for_cell_velocities;
+        if (!mMyOutputCellVelocities)
+            output_file_for_cell_velocities = "cellvelocities.dat";
+        else
+        {
+            std::ostringstream file_string;
+            file_string << std::to_string(mMySeed) << ".dat";
+            output_file_for_cell_velocities = file_string.str();
+        }
+
+        mpCellVelocitiesFile = output_file_handler2.OpenOutputFile(output_file_for_cell_velocities);
     }
 
     if (PetscTools::AmMaster())

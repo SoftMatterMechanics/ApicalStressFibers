@@ -158,6 +158,8 @@ protected:
 
     bool mMyOutputCellVelocities;
 
+    unsigned mMySeed;
+
     /** Results file for cell velocities. */
     out_stream mpCellVelocitiesFile;
 
@@ -527,6 +529,11 @@ public:
     void SetMyOutputCellVelocities(bool myOutputCellVelocities)
     {
       mMyOutputCellVelocities = myOutputCellVelocities;
+    }
+
+    void SetMySeed(unsigned mySeed)
+    {
+      mMySeed = mySeed;
     }
 
     /**

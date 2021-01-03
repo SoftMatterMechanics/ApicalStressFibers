@@ -96,7 +96,8 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;//p0
+        double target_shape_index = 4.5;//p0
+        target_shape_index -= 0.25;
 
         double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
@@ -131,7 +132,7 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = false;
-        double polarity_magnitude = 0.1;
+        double polarity_magnitude = 0.0;
         bool seed_manually = false;//
         unsigned seed_for_initial_random_polarity = 1u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
@@ -353,6 +354,8 @@ public:
         // output cell velocity:
         bool my_output_cell_velocity = true;
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
+        if (my_output_cell_velocity && seed_manually)
+          simulator.SetMySeed(seed_for_initial_random_polarity);
         bool output_cell_velocity = true;
         simulator.SetOutputCellVelocities(output_cell_velocity);
 
@@ -670,6 +673,8 @@ public:
         oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         if (seed_manually)
           oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
+        else
+          oss << "_RndSeedPolr=N";
 
         oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
@@ -691,6 +696,7 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        oss << "_StpWid=" << std::fixed << setprecision(1) << strip_width;
         if (multiple_leading_cells)
           oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
