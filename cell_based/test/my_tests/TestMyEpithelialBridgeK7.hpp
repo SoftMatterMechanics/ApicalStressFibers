@@ -101,7 +101,7 @@ public:
 
         double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.005/4.0*1; //0.0*400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0*0.005/4.0; //0.0*400*0.01125/(M_PI/reference_area);//Fb
 
         double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
@@ -132,7 +132,7 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = false;
-        double polarity_magnitude = 0.1;
+        double polarity_magnitude = 0.2;
         bool seed_manually = false;//
         unsigned seed_for_initial_random_polarity = 1u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
@@ -645,6 +645,11 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
 
+        // to put multiple files in one folder.
+        oss.str("");
+        oss << "Fb=" << feedback_strength_for_myosin_activity << " (fp=" << (consider_polarity? polarity_magnitude : 0.0) << ")/";
+        output_directory += oss.str();
+        
         oss.str("");
         if (if_substrate_adhesion_is_homogeneous)
         {
@@ -654,7 +659,7 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity;
+        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=1 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
@@ -832,7 +837,7 @@ public:
           output_directory += "_KL=" + oss.str();
 
           oss.str("");
-          oss << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
+          oss << ((feedback_strength_for_myosin_activity>=1 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
