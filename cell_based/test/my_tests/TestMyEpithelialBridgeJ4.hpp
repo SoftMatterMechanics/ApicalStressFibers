@@ -73,7 +73,7 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
-        // codes for phase diagram(alpha-p0) with fp(0.1). 
+        // codes for sliding.
 
         bool strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
@@ -82,7 +82,7 @@ public:
         if (!multiple_leading_cells)
           leading_cell_number = 1;
 
-        double strip_width_multiple_for_sliding = 1.0;
+        double strip_width_multiple_for_sliding = 15.0;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -96,12 +96,11 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 3.0;//p0
-        // target_shape_index -= 0.25;
+        double target_shape_index = 4.75;//p0
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0*0.005/4.0; //0.0*400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
 
         double kL_for_feedback = 1; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
@@ -112,7 +111,7 @@ public:
         double changed_feedback_strength = feedback_strength_for_myosin_activity;
         double changed_myosin_activity_base_value = 1;
 
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
 
@@ -121,20 +120,21 @@ public:
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
-        bool if_use_larger_strip_distance = false;
+        bool if_use_larger_strip_distance = true;
         double strip_dis_multiplied = 40.0/12.0;
 
-        bool use_longer_mesh = false;
+        bool use_longer_mesh = true;
         int num_ele_up_multiplied = 2;
 
         int move_mesh_right_for_N_periods = 0;
 
         bool run_with_birth =false;
 
-        bool is_no_brownian_random_force = false;
+        bool is_no_brownian_random_force = true;
         double polarity_magnitude = 0.2;
-        bool seed_manually = false;//
-        unsigned seed_for_initial_random_polarity = 1u;
+        bool seed_manually = true;//
+        unsigned seed_for_initial_random_polarity = 3u;
+        // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -158,7 +158,7 @@ public:
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.1*(M_PI/reference_area);
+/*----*/double dt = 0.25*0.1*(M_PI/reference_area);
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
         double sampling_time = 1.0*(M_PI/reference_area);
@@ -189,7 +189,7 @@ public:
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
 /******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 1.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
         
         // Strip substrate adhesion form:
         bool consider_consistency_for_SSA = true;
@@ -645,11 +645,6 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
 
-        // to put multiple files in one folder.
-        oss.str("");
-        oss << "Fb=" << feedback_strength_for_myosin_activity << " (fp=" << (consider_polarity? polarity_magnitude : 0.0) << ")/";
-        output_directory += oss.str();
-        
         oss.str("");
         if (if_substrate_adhesion_is_homogeneous)
         {
@@ -659,7 +654,7 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=1 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
+        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
@@ -837,7 +832,7 @@ public:
           output_directory += "_KL=" + oss.str();
 
           oss.str("");
-          oss << ((feedback_strength_for_myosin_activity>=1 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
+          oss << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;

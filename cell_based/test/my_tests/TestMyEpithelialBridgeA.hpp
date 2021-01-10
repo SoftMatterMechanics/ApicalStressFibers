@@ -82,7 +82,7 @@ public:
         if (!multiple_leading_cells)
           leading_cell_number = 1;
 
-        double strip_width_multiple_for_sliding = 10.0;
+        double strip_width_multiple_for_sliding = 15.0;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -133,8 +133,8 @@ public:
         bool is_no_brownian_random_force = true;
         double polarity_magnitude = 0.2;
         bool seed_manually = true;//
-        unsigned seed_for_initial_random_polarity = 0u;
-        seed_for_initial_random_polarity += 10;
+        unsigned seed_for_initial_random_polarity = 1u;
+        // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;

@@ -73,11 +73,16 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
+        // codes for foece chain. 
 
-        bool strip_width_doubled = false;
+        bool strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
         bool multiple_leading_cells = false;
         unsigned leading_cell_number = 1;
+        if (!multiple_leading_cells)
+          leading_cell_number = 1;
+
+        double strip_width_multiple_for_sliding = 1.0;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -92,17 +97,27 @@ public:
 
         // FOR PHASE DIAGRAM SEARCH:
         double target_shape_index = 4.75;//p0
+        // target_shape_index -= 0.25;
 
-        double pulling_force_on_leading_cell = 0.0*10/pow((M_PI/reference_area),1.5);// Fy
-        double set_homogeneous_substrate_adhesion_parameter = -2.0/(M_PI/reference_area);
-        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
+        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double kL_for_feedback = 1; // 1.0 for defaut
+        double feedback_strength_for_myosin_activity = 4.5; //0.0*400*0.01125/(M_PI/reference_area);//Fb
+
+        double kL_for_feedback = 0.25; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
+
+        // change feedback after a time.
+        double time_for_changing_feedback = DOUBLE_UNSET; // 100.0; // DOUBLE_UNSET;
+        double changed_KL_for_feedback = 0.5;
+        double changed_feedback_strength = feedback_strength_for_myosin_activity;
+        double changed_myosin_activity_base_value = 1;
 
         bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
+
+        bool EMA_dont_decrease_below_a_threshold = false;
+        double EMA_dont_decrease_below_this_threshold = 0.5;
 
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
@@ -117,9 +132,9 @@ public:
         bool run_with_birth =false;
 
         bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.25;
-        bool seed_manually = true;//
-        unsigned seed_for_initial_random_polarity = 6u;
+        double polarity_magnitude = 0.2;
+        bool seed_manually = false;//
+        unsigned seed_for_initial_random_polarity = 1u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -174,8 +189,7 @@ public:
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
 /******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = basic_SSA;
-        homogeneous_substrate_adhesion_parameter = set_homogeneous_substrate_adhesion_parameter;
+        double homogeneous_substrate_adhesion_parameter = 1.0*basic_SSA;
         
         // Strip substrate adhesion form:
         bool consider_consistency_for_SSA = true;
@@ -340,6 +354,8 @@ public:
         // output cell velocity:
         bool my_output_cell_velocity = true;
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
+        if (my_output_cell_velocity && seed_manually)
+          simulator.SetMySeed(seed_for_initial_random_polarity);
         bool output_cell_velocity = true;
         simulator.SetOutputCellVelocities(output_cell_velocity);
 
@@ -371,14 +387,15 @@ public:
         MAKE_PTR(MyNagaiHondaForceWithStripesAdhesion<2>, p_force);
         
         // Strips structure of substrate adhesion
-        double strip_width = 20*sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
-        if (strip_width_doubled)
+        double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
+        if (strip_width_doubled_for_multiple_leading_cells)
           strip_width = strip_width*strip_width_mutiple;
+        strip_width *= strip_width_multiple_for_sliding;
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= strip_dis_multiplied;
         double strip_start_x_location = 0.0;
-        if (strip_width_doubled)
+        if (strip_width_doubled_for_multiple_leading_cells)
           strip_start_x_location += sqrt(initial_area/(sqrt(3)/2))/2;
         if (if_mesh_has_two_period)
           strip_start_x_location = -3*sqrt(initial_area/(sqrt(3)/2));
@@ -509,6 +526,8 @@ public:
         p_face_value_and_stress_state_modifier->SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
             EMA_dont_decrease, CCA_dont_decrease, CCA_increasing_has_a_threshold_of_edge_length, CCA_increasing_threshold_of_edge_length_percentage);
         
+        p_face_value_and_stress_state_modifier->SetEMADontDecreaseBelowAThreshold_ThisThreshold(EMA_dont_decrease_below_a_threshold, EMA_dont_decrease_below_this_threshold);
+
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
         // double kL_for_feedback = 1.0; // 1.0 for defaut
         // double feedback_strength_for_myosin_activity = 0.0;
@@ -538,6 +557,12 @@ public:
         p_face_value_and_stress_state_modifier->SetHillCoefficientForMyosinActivity(hill_coefficient_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
         p_face_value_and_stress_state_modifier->SetHillCoefficientForAdhesion(hill_coefficient_for_adhesion);
+
+        // changed feedback
+        p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedKLForFeedback(changed_KL_for_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedFeedbackStrength(changed_feedback_strength);
+        p_face_value_and_stress_state_modifier->SetChangedMyosinActivityBaseValue(changed_myosin_activity_base_value);
 
         // my stress state modifier
         p_face_value_and_stress_state_modifier->SetCalculateStressStateBoolean(true);
@@ -629,9 +654,14 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
+        oss << "_Fb=" << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
+        if (time_for_changing_feedback<end_time)
+          oss << "_KL_changed=" << changed_KL_for_feedback;
+        if (EMA_dont_decrease_below_a_threshold)
+          oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
+        oss << "_Dt=" << std::scientific << setprecision(1) << dt;
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
@@ -643,6 +673,8 @@ public:
         oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         if (seed_manually)
           oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
+        else
+          oss << "_RndSeedPolr=N";
 
         oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
@@ -664,6 +696,7 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplied;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
+        oss << "_StpWid=" << std::fixed << setprecision(1) << strip_width;
         if (multiple_leading_cells)
           oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
@@ -687,7 +720,7 @@ public:
         
         // Concise information written to directoory.
         oss.str("");
-        oss << std::fixed << setprecision(3) << dt;
+        oss << std::fixed << setprecision(4) << dt;
         output_directory += "/Dt=" + oss.str();
         oss.str("");
         oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
@@ -786,6 +819,12 @@ public:
               }
             }
           }
+          if (EMA_dont_decrease_below_a_threshold)
+          {
+            oss.str("");
+            oss << "_EMADecrThresh=" << EMA_dont_decrease_below_this_threshold;
+            output_directory += oss.str();
+          }
           // feedback parameters
           output_directory += "_|FeedbackPara:";
           oss.str("");
@@ -793,7 +832,7 @@ public:
           output_directory += "_KL=" + oss.str();
 
           oss.str("");
-          oss << ((feedback_strength_for_myosin_activity<=100.0)? std::fixed : std::scientific) << setprecision(4) << feedback_strength_for_myosin_activity ;
+          oss << ((feedback_strength_for_myosin_activity>=0.01 || feedback_strength_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_strength_for_myosin_activity;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
