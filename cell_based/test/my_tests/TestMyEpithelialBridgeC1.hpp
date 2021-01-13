@@ -73,7 +73,7 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
-        // codes for phase diagram(alpha-p0) with fp(0.1). 
+        // codes for phase diagram(alpha-p0) with fp or not. 
 
         bool strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
@@ -96,10 +96,10 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.5;//p0
-        target_shape_index -= 0.25;
+        double target_shape_index = 4.75;//p0
+        // target_shape_index -= 0.25;
 
-        double pulling_force_on_leading_cell = 1.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 1.4*10/pow((M_PI/reference_area),1.5);// Fy
 
         double feedback_strength_for_myosin_activity = 0.0; //0.0*400*0.01125/(M_PI/reference_area);//Fb
 
@@ -643,6 +643,11 @@ public:
             "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: ";
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
+        output_directory += oss.str();
+
+        oss.str("");
+        oss << "Fb=" << feedback_strength_for_myosin_activity << "(Fy=" << pulling_force_on_leading_cell
+            << ",fp=" << (consider_polarity?polarity_magnitude:0) << ")/";
         output_directory += oss.str();
 
         oss.str("");
