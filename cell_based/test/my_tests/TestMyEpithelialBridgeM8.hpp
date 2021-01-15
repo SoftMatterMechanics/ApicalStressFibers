@@ -99,7 +99,7 @@ public:
         double target_shape_index = 1.5;//p0
         // target_shape_index -= 0.25;
 
-        double pulling_force_on_leading_cell = 1.4*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.6*10/pow((M_PI/reference_area),1.5);// Fy
 
         double feedback_strength_for_myosin_activity = 0.015; //0.0*400*0.01125/(M_PI/reference_area);//Fb
 
