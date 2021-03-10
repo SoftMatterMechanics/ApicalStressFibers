@@ -50,4 +50,5 @@ my_tests/TestMyEpithelialBridgeM7.hpp
 my_tests/TestMyEpithelialBridgeM8.hpp
 my_tests/TestMyEpithelialBridgeM9.hpp
 my_tests/TestMyEpithelialBridgeM10.hpp
-
+Edited_Chaste/TestEB.hpp
+Edited_Chaste/EB.hpp
