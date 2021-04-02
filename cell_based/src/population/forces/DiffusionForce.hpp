@@ -72,13 +72,13 @@ private :
     static const double msBoltzmannConstant;
 
     // my changes
-    bool mIsNoBrownianRandomForce;
+    bool mHasBrownianRandomForce;
 
     bool mUseTheSameNodeRadius;
 
     double mTheSameNodeRadius;
 
-    bool mConsiderPolarity;
+    bool mHasPolarity;
     bool mOnePeriodOnly;
 
     bool mIfEquilibrateForAWhile;
@@ -119,9 +119,9 @@ public :
     ~DiffusionForce();
 
     // my changes
-    void SetIsNoBrownianRandomForce(bool isNoBrownianRandomForce)
+    void SetHasBrownianRandomForce(bool HasBrownianRandomForce)
     {
-      mIsNoBrownianRandomForce = isNoBrownianRandomForce;
+      mHasBrownianRandomForce = HasBrownianRandomForce;
     }
 
     void SetUseTheSameNodeRadius(bool useTheSameNodeRadius)
@@ -134,9 +134,9 @@ public :
       mTheSameNodeRadius = theSameNodeRadius;
     }
     
-    void SetConsiderPolarity(bool considerPolarity)
+    void SetHasPolarity(bool hasPolarity)
     {
-      mConsiderPolarity = considerPolarity;
+      mHasPolarity = hasPolarity;
     }
 
     void SetOnePeriodOnly(bool onePeriodOnly)

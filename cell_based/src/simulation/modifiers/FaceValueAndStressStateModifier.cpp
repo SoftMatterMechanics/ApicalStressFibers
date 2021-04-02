@@ -57,10 +57,10 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
 
       mEdgeLengthAtRest(sqrt(M_PI/(6*sqrt(3)/4))),
       mKLForFeedback(1.0),
-      mFeedbackStrengthForMyosinActivity(1.0),
-      mHillCoefficientForMyosinActivity(8.0),
-      mFeedbackStrengthForAdhesion(1.0),
-      mHillCoefficientForAdhesion(8.0),
+      mFeedbackRateForMyosinActivity(1.0),
+      mHillPowerForMyosinActivity(8.0),
+      mFeedbackRateForAdhesion(1.0),
+      mHillPowerForAdhesion(8.0),
 
       mIfCalculateStressState(true),
       mIfSetCellDataOfEachForceContributions(false),
@@ -86,7 +86,7 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
 
       mTimeForChangingFeedback(DOUBLE_UNSET),
       mChangedKLForFeedback(1.0),
-      mChangedFeedbackStrength(0.0),
+      mChangedFeedbackRate(0.0),
       mChangedMyosinActivityBaseValue(1.0)
 
 {
@@ -237,7 +237,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         if (mUseFixedTargetArea)
             target_area = mFixedTargetArea;
         else
-            target_area = pCell->GetCellData()->GetItem("target area");
+/**/            target_area = pCell->GetCellData()->GetItem("target area");
 
         double Ga= this->mNagaiHondaMembraneSurfaceEnergyParameter;
 
@@ -275,7 +275,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             if (mIfConsiderFeedbackOfFaceValues)
             {
                 VertexElement<DIM-1,  DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
-                double m_ab = pFace->GetUnifiedEdgeMyosinActivty();
+/****/                double m_ab = pFace->GetUnifiedEdgeMyosinActivty();
                 myosin_activity_max = std::max(myosin_activity_max, m_ab);
                 myosin_activity_average += 1.0/p_element->GetNumNodes()*m_ab;
                 myosin_weighted_perimeter += sqrt(m_ab)*l_ab;
@@ -320,7 +320,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
                                 elements_containing_nodeC.end(),
                                 elements_containing_nodeA.begin(),
                                 elements_containing_nodeA.end(),
-                                std::inserter(shared_elements0, shared_elements0.begin()));
+/**/                                std::inserter(shared_elements0, shared_elements0.begin()));
             // Check that the nodes have a common edge
             assert(!shared_elements0.empty());
             if (shared_elements0.size() >= 3)
@@ -524,7 +524,6 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         double principal_axis_of_shape = abs(atan(eigen_vec_1[1]/eigen_vec_1[0]));
         pCell->GetCellData()->SetItem("PrincipalAxisOfShape", principal_axis_of_shape);
 
-
         // double R_shape = sqrt( pow((shape_XX-shape_YY)/2, 2) + pow(shape_XY, 2) );
         // double shape_1 = (shape_XX + shape_YY)/2 + R;
         // double shape_2 = (shape_XX + shape_YY)/2 - R;
@@ -676,14 +675,14 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(
     double KL = this->mKLForFeedback;
     if ( time_now>mTimeForChangingFeedback && mChangedKLForFeedback!=mKLForFeedback)
         KL = mChangedKLForFeedback;
-    double n = this->mHillCoefficientForMyosinActivity;
-    double feedback_strength = this->mFeedbackStrengthForMyosinActivity;
-    if ( time_now>mTimeForChangingFeedback && mChangedFeedbackStrength!=mFeedbackStrengthForMyosinActivity)
-        feedback_strength = mChangedFeedbackStrength;
-    double alpha = (1.0+KL)*feedback_strength;
+    double feedback_rate = this->mFeedbackRateForMyosinActivity;
+    if ( time_now>mTimeForChangingFeedback && mChangedFeedbackRate!=mFeedbackRateForMyosinActivity)
+        feedback_rate = mChangedFeedbackRate;
+    double alpha = (1.0+KL)*feedback_rate;
     if ( time_now>mTimeForChangingFeedback && mChangedMyosinActivityBaseValue!=1.0 )
         alpha *= mChangedMyosinActivityBaseValue;
-    double beta = 1.0*feedback_strength;
+    double beta = 1.0*feedback_rate;
+    double n = this->mHillPowerForMyosinActivity;
 
     VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);
     double edge_length = pMesh->GetDistanceBetweenNodes(p_face->GetNodeGlobalIndex(0), p_face->GetNodeGlobalIndex(1));
@@ -707,7 +706,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedEdgeMyosinActivtyOfFace(
     {
         std::cout << std::endl<< "In FaceValueAndStressStateModifier::UpdateUnifiedEdgeMyosinActivityOfFace: the new UnifiedEdgeMyosinActivty=";
         std::cout << p_face->GetUnifiedEdgeMyosinActivty();
-        std::cout << std::endl<< "feedback_strength=" << feedback_strength << " alpha=" << alpha << " beta=" <<beta << " KL=" << KL;
+        std::cout << std::endl<< "feedback_rate=" << feedback_rate << " alpha=" << alpha << " beta=" <<beta << " KL=" << KL;
         std::cout << " n=" << n << " edge_length_at_rest=" << edge_length_at_rest << " the edge length=" << edge_length << " lambda=" << lambda;
         std::cout << " changing_rate=" << changing_rate;
     }
@@ -717,11 +716,11 @@ template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex)
 {
     double dt = SimulationTime::Instance()->GetTimeStep();
-    double feedback_strength = this->mFeedbackStrengthForAdhesion;
-    double n = this->mHillCoefficientForAdhesion;
+    double feedback_rate = this->mFeedbackRateForAdhesion;
+    double n = this->mHillPowerForAdhesion;
     double edge_length_at_rest = this->mEdgeLengthAtRest;
-    double alpha = 2.0*feedback_strength;
-    double beta = 1.0*feedback_strength;
+    double alpha = 2.0*feedback_rate;
+    double beta = 1.0*feedback_rate;
     double KL = 1.0;
 
     VertexElement<DIM-1, DIM>* p_face = pMesh->GetFace(faceIndex);

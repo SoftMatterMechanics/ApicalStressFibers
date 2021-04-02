@@ -1,3 +1,4 @@
+Edited_Chaste/NonAdhMigPat.hpp
 my_tests/TestMyNewEB.hpp
 my_tests/TestMyEB.hpp
 my_tests/TestMyEpithelialBridgeA.hpp
@@ -50,5 +51,3 @@ my_tests/TestMyEpithelialBridgeM7.hpp
 my_tests/TestMyEpithelialBridgeM8.hpp
 my_tests/TestMyEpithelialBridgeM9.hpp
 my_tests/TestMyEpithelialBridgeM10.hpp
-Edited_Chaste/TestEB.hpp
-Edited_Chaste/EB.hpp

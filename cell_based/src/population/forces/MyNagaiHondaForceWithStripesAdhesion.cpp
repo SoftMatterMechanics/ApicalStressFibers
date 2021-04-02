@@ -225,7 +225,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 {
                     unsigned this_node_global_index = p_element->GetNodeGlobalIndex(i);
                     unsigned next_node_global_index = p_element->GetNodeGlobalIndex((i + 1) % p_element->GetNumNodes());
-                    double edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(this_node_global_index, next_node_global_index);
+                    double   edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(this_node_global_index, next_node_global_index);
                     unsigned face_local_index = p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(this_node_global_index,next_node_global_index);
                     sum1 += sqrt(p_element->GetFace(face_local_index)->GetUnifiedEdgeMyosinActivty())*edge_length;
                 }
@@ -274,7 +274,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 double stripe_distance = this->mStripDistance;
                 double strip_start_x_location = this->mStripStartXLocation;
                 double strip_start_y_location = this->mStripStartYLocation;
-                bool if_substrate_adhesion_is_homogeneous = this->mIfSubstrateAdhesionIsHomogeneous;
+                bool   if_substrate_adhesion_is_homogeneous = this->mIfSubstrateAdhesionIsHomogeneous;
                 double substrate_adhesion_leading_top_length = this->mSubstrateAdhesionLeadingTopLength;
 
                 double small_change = mSmallChangeForAreaCalculation;
@@ -283,7 +283,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 c_vector<double, DIM> centroid = p_cell_population->rGetMesh().GetCentroidOfElement(elem_index);
                 int stripe_num = round((centroid[0] - strip_start_x_location)/stripe_distance);
 
-                double stripe_location = strip_start_x_location+ stripe_distance*stripe_num;
+                double stripe_location = strip_start_x_location + stripe_distance*stripe_num;
                 double stripe_left = stripe_location - stripe_width/2;
                 double stripe_right = stripe_location + stripe_width/2;
 
@@ -336,10 +336,11 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 }
                 else
                     has_substrate_adhesion_area = false;
+
                 unsigned num_across = 0;
                 unsigned num_up = 0;
                 unsigned sample_num = 0;
-                double sample_area = 0.0;
+                double   sample_area = 0.0;
 
                 if (has_substrate_adhesion_area)
                 {
@@ -384,7 +385,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                                 {
                                     SSA = mBasicSSA + (mSmallSSAForInitialTime - mBasicSSA)*p_element->GetLamellipodiumStrength();
                                 }
-                                if(mKeepMovingForward)
+                                if (mKeepMovingForward)
                                 {
                                     if (p_element->GetIsLeadingCellBottom())
                                     {

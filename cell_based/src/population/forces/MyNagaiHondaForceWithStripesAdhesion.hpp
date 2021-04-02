@@ -95,7 +95,7 @@ protected:
     double mNagaiHondaMembraneSurfaceEnergyParameter;
 
     /**
-     * Cell-cell adhesion energy parameter. Has has units of kg (cell size at equilibrium rest length)^2 s^-2.
+     * Cell-cell adhesion energy parameter. Has units of kg (cell size at equilibrium rest length)^2 s^-2.
      * This parameter corresponds to 1/2 of the sigma parameter introduced in the original paper.
      * This slight difference comes from the fact that when we apply the forces to a particular node, each
      * edge is visited twice - and hence the force originating from that edge is applied twice.
@@ -108,9 +108,9 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
-    bool mIfConsiderSubstrateAdhesion;
+    bool   mIfConsiderSubstrateAdhesion;
 
-    bool mIfSubstrateAdhesionIsHomogeneous;
+    bool   mIfSubstrateAdhesionIsHomogeneous;
 
     double mSubstrateAdhesionParameterChangePerUnitLength;
 
@@ -122,13 +122,13 @@ protected:
 
     double mSSAForMatureLamellipodium;
 
-    bool mIfConsiderReservoirSubstrateAdhesion;
+    bool   mIfConsiderReservoirSubstrateAdhesion;
 
     double mReservoirSubstrateAdhesionParameter;
 
-    bool mIfIgnoreReservoirSubstrateAdhesionAtTop;
+    bool   mIfIgnoreReservoirSubstrateAdhesionAtTop;
 
-    bool mIfIgnoreReservoirSubstrateAdhesionAtBottom;
+    bool   mIfIgnoreReservoirSubstrateAdhesionAtBottom;
     
     double mStripWidth;
 
@@ -148,47 +148,47 @@ protected:
 
     double mCenterOfWidth;
 
-    bool mIfConsiderIntervalSubstrateRepulsion;
+    bool   mIfConsiderIntervalSubstrateRepulsion;
 
-    bool mUseFixedTargetArea;
+    bool   mUseFixedTargetArea;
 
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
 
-    bool mIfUseFaceElementToGetAdhesionParameter;
+    bool   mIfUseFaceElementToGetAdhesionParameter;
 
-    bool mOutputInformationForNagaiHondaForce;
+    bool   mOutputInformationForNagaiHondaForce;
 
-    bool mConsiderConsistencyForSSA;
+    bool   mConsiderConsistencyForSSA;
 
     double mSmallChangeForAreaCalculation;
 
-    bool mUseMyDetachPatternMethod;
+    bool   mUseMyDetachPatternMethod;
 
-    bool mIfUseNewSSADistributionRule;
+    bool   mIfUseNewSSADistributionRule;
 
-    bool mSSAStrengthenedOnlyInYDirection;
+    bool   mSSAStrengthenedOnlyInYDirection;
 
-    bool mAddPullingForceOnNodeIndividually;
+    bool   mAddPullingForceOnNodeIndividually;
 
-    bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
+    bool   mAddPullingForceEvenlyOnNodesOfLeadingCell;
 
     unsigned mLeadingCellNumber;
 
     double mPullingForceOnLeadingCell;
 
-    bool mKeepMovingForward;
+    bool   mKeepMovingForward;
 
     double mSSABottomDecrease;
 
     double mSlowlyMovingForwardAfterThisHeight;
 
-    bool mSmallSSAAtFirst;
+    bool   mSmallSSAAtFirst;
 
     double mInitialTimeForSmallSSA;
 
     double mSmallSSAForInitialTime;
 
-    bool mIfEquilibrateForAWhile;
+    bool   mIfEquilibrateForAWhile;
 
     double mTimeForEquilibrium;
 
@@ -299,7 +299,7 @@ public:
       mStripStartYLocation = stripStartYLocation;
     }
     
-    void SetUseFixedTargetArea(double useFixedTargetArea)
+    void SetUseFixedTargetArea(bool useFixedTargetArea)
     {
       mUseFixedTargetArea = useFixedTargetArea;
     }
@@ -324,16 +324,17 @@ public:
     {
       mCenterOfWidth = centerOfWidth;
     }
+
     // tmp
     void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
     {
       mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
     }
-
     void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
     {
       mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
     }
+
     // SSA
     void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
     {

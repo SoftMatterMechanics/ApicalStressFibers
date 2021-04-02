@@ -65,34 +65,34 @@ class FaceValueAndStressStateModifier : public AbstractCellBasedSimulationModifi
 
 protected:
 
-    bool mIfConsiderFeedbackOfFaceValues;
-    bool mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
-    bool mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
-    bool mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
+    bool   mIfConsiderFeedbackOfFaceValues;
+    bool   mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
+    bool   mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
+    bool   mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
     double mStripWidth;
     double mStripStartXLocation;
     double mStripStartYLocation;
-    bool mIfConsiderFeedbackOfCellCellAdhesion;
+    bool   mIfConsiderFeedbackOfCellCellAdhesion;
 
-    bool mEMADontDecreaseWhenEdgeShrink;
-    bool mCCADontDecreaseWhenEdgeExpand;
-    bool mCCAIncreasingHasAThresholdOfEdgeLength;
+    bool   mEMADontDecreaseWhenEdgeShrink;
+    bool   mCCADontDecreaseWhenEdgeExpand;
+    bool   mCCAIncreasingHasAThresholdOfEdgeLength;
     double mCCAIncreasingThresholdOfEdgeLengthPercentage;
 
-    bool mEMADontDecreaseBelowAThreshold;
+    bool   mEMADontDecreaseBelowAThreshold;
     double mEMADontDecreaseBelowThisThreshold;
 
     double mEdgeLengthAtRest;
     double mKLForFeedback;
-    double mFeedbackStrengthForMyosinActivity;
-    double mHillCoefficientForMyosinActivity;
-    double mFeedbackStrengthForAdhesion;
-    double mHillCoefficientForAdhesion;
+    double mFeedbackRateForMyosinActivity;
+    double mHillPowerForMyosinActivity;
+    double mFeedbackRateForAdhesion;
+    double mHillPowerForAdhesion;
 
-    bool mIfCalculateStressState;
-    bool mIfSetCellDataOfEachForceContributions;
+    bool   mIfCalculateStressState;
+    bool   mIfSetCellDataOfEachForceContributions;
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
-    bool mUseFixedTargetArea;
+    bool   mUseFixedTargetArea;
     double mFixedTargetArea;
     double mFixedTargetPerimeter;
     double mNagaiHondaDeformationEnergyParameter;
@@ -100,26 +100,26 @@ protected:
     double mNagaiHondaCellCellAdhesionEnergyParameter;
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
-    bool mUseMyDivisionRuleAlongWithModifier;
+    bool   mUseMyDivisionRuleAlongWithModifier;
     double mDivisionTime;
 
-    bool mWriteGroupNumberToCell;
+    bool   mWriteGroupNumberToCell;
 
-    bool mMarkLeadingCells;
-    bool mMultipleLeadingCells;
+    bool   mMarkLeadingCells;
+    bool   mMultipleLeadingCells;
     unsigned mLeadingCellNumber;
     double mLamellipodiumMaturationRate;
     double mLamellipodiumDestructionRate;
 
-    bool mIfOutputModifierInformation;
+    bool   mIfOutputModifierInformation;
 
-    bool mHasMyosinActivityDepression;
+    bool   mHasMyosinActivityDepression;
     double mMyosinActivityDepressedTime;
     double mMyosinActivityDepressingRate;
 
     double mTimeForChangingFeedback;
     double mChangedKLForFeedback;
-    double mChangedFeedbackStrength;
+    double mChangedFeedbackRate;
     double mChangedMyosinActivityBaseValue;
 
 public:
@@ -237,24 +237,24 @@ public:
       mKLForFeedback = kLForFeedback;
     }
 
-    void SetFeedbackStrengthForMyosinActivity(double feedbackStrengthForMyosinActivity)
+    void SetFeedbackRateForMyosinActivity(double feedbackRateForMyosinActivity)
     {
-      this->mFeedbackStrengthForMyosinActivity = feedbackStrengthForMyosinActivity;
+      this->mFeedbackRateForMyosinActivity = feedbackRateForMyosinActivity;
     }
 
-    void SetHillCoefficientForMyosinActivity(double hillCoefficientForMyosinActivity)
+    void SetHillPowerForMyosinActivity(double hillPowerForMyosinActivity)
     {
-      this->mHillCoefficientForMyosinActivity = hillCoefficientForMyosinActivity;
+      this->mHillPowerForMyosinActivity = hillPowerForMyosinActivity;
     }
 
-    void SetFeedbackStrengthForAdhesion(double feedbackStrengthForAdhesion)
+    void SetFeedbackRateForAdhesion(double feedbackRateForAdhesion)
     {
-      mFeedbackStrengthForAdhesion = feedbackStrengthForAdhesion;
+      mFeedbackRateForAdhesion = feedbackRateForAdhesion;
     }
     
-    void SetHillCoefficientForAdhesion(double hillCoefficientForAdhesion)
+    void SetHillPowerForAdhesion(double hillPowerForAdhesion)
     {
-      mHillCoefficientForAdhesion = hillCoefficientForAdhesion;
+      mHillPowerForAdhesion = hillPowerForAdhesion;
     }
 
     // stress state
@@ -383,9 +383,9 @@ public:
       mChangedKLForFeedback = changedKLForFeedback;
     }
 
-    void SetChangedFeedbackStrength(double changedFeedbackStrength)
+    void SetChangedFeedbackRate(double changedFeedbackRate)
     {
-      mChangedFeedbackStrength = changedFeedbackStrength;
+      mChangedFeedbackRate = changedFeedbackRate;
     }
 
     void SetChangedMyosinActivityBaseValue(double changedMyosinActivityBaseValue)
