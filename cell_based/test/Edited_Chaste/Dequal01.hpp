@@ -238,7 +238,7 @@ public:
         double polarity_magnitude = 0.05;
         bool   seed_manually = true;
         unsigned seed_for_initial_random_polarity = 1u;
-        double rotational_diffusion_constant = 0.01/(M_PI/reference_area);
+        double rotational_diffusion_constant = 0.1/(M_PI/reference_area);
 
         if (polarity_magnitude==0.0)
            has_polarity = false;

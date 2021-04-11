@@ -97,13 +97,14 @@ void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM
          ++cell_iter)
     {
         double x = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
-        double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD*dt)*x;
+    //    double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD*dt)*x;
+        double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD)*x*dt;
         if (polarity_angle>=2*M_PI)
             polarity_angle -= 2*M_PI;
         else if (polarity_angle < 0.0)
             polarity_angle += 2*M_PI;
         SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
-    }    
+    }
 }
 
 template<unsigned DIM>

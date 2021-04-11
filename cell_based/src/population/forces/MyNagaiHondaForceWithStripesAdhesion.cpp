@@ -200,13 +200,14 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             // Add the force contribution from this cell's membrane surface tension (note the minus sign)
             c_vector<double, DIM> element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
 
-            double cell_target_perimeter = 0.0;            
+        //    double cell_target_perimeter = 0.0;            
             unsigned case_number_of_membrane_surface_energy_form = this->GetCaseNumberOfMembraneSurfaceEnergyForm();
             
             // case 0:typical *membrane surface tension*
             if (case_number_of_membrane_surface_energy_form ==0)
             {
-                membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*1.0*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+            //    membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*1.0*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+                membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*1.0*element_perimeters[elem_index]*element_perimeter_gradient;
             }
             
             // case 1: MA feedback incorporated in *membrane surface tension*
@@ -215,6 +216,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 // to do later.
                 // myosin_activity = p_cell->GetMyosinActivity();
                 // membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*myosin_activity*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+                double element_myosin_activity = p_element->GetElementMyosinActivity();                
+                membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*element_myosin_activity*element_perimeters[elem_index]*element_perimeter_gradient;                
             }
             
             // case 2: EMA feedback incorporated in *membrane surface tension*
@@ -236,8 +239,8 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
                 unsigned previous_face_local_index = p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(previous_node_global_index ,this_node_global_index);
                 unsigned next_face_local_index = p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(this_node_global_index,next_node_global_index);
-                c_vector<double, DIM> sum2 = sqrt(p_element->GetFace(previous_face_local_index)->GetUnifiedEdgeMyosinActivty())
-                        *previous_edge_gradient + sqrt(p_element->GetFace(next_face_local_index)->GetUnifiedEdgeMyosinActivty())*next_edge_gradient;
+                c_vector<double, DIM> sum2 = sqrt(p_element->GetFace(previous_face_local_index)->GetUnifiedEdgeMyosinActivty())*previous_edge_gradient + 
+                                             sqrt(p_element->GetFace(next_face_local_index)->GetUnifiedEdgeMyosinActivty())*next_edge_gradient;
                 membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*sum1*sum2;                
             }
 

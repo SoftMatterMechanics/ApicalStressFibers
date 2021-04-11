@@ -1474,6 +1474,13 @@ c_vector<double, SPACE_DIM> VertexMesh<ELEMENT_DIM, SPACE_DIM>::GetNextEdgeGradi
     unsigned next_global_index = pElement->GetNodeGlobalIndex(next_local_index);
 
     double next_edge_length = this->GetDistanceBetweenNodes(this_global_index, next_global_index);
+//    if (next_edge_length >= 0.01)
+//    {
+//        std::cout<< "edge_length="<< next_edge_length << std::endl;
+//        Node<SPACE_DIM>* pNode = pElement->GetNode(localIndex);
+//        std::cout<< "node_location="<< pNode->rGetLocation()<< std::endl;
+//        std::cout<< "node_index="<< localIndex<< std::endl;
+//    }
     assert(next_edge_length > DBL_EPSILON);
 
     c_vector<double, SPACE_DIM> next_edge_gradient = this->GetVectorFromAtoB(pElement->GetNodeLocation(next_local_index), pElement->GetNodeLocation(localIndex)) / next_edge_length;

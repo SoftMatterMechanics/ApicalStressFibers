@@ -1,3 +1,8 @@
+Edited_Chaste/UnequalSubstrateAdhesion.hpp
+Edited_Chaste/Dequal1.hpp
+Edited_Chaste/Dequal01.hpp
+Edited_Chaste/Dequal001.hpp
+Edited_Chaste/D001M02.hpp
 Edited_Chaste/NonAdhMigPat.hpp
 my_tests/TestMyNewEB.hpp
 my_tests/TestMyEB.hpp

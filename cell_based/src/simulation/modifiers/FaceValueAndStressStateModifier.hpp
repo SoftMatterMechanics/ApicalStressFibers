@@ -40,6 +40,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/serialization/base_object.hpp>
 #include "AbstractCellBasedSimulationModifier.hpp"
 #include "MutableVertexMesh.hpp"
+#include "VertexBasedCellPopulation.hpp"
 
 /**
  * A modifier class in which the target area property of each cell is updated.
@@ -70,6 +71,7 @@ protected:
     bool   mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
     bool   mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
     double mStripWidth;
+    double mStripDistance; // change made by Chao
     double mStripStartXLocation;
     double mStripStartYLocation;
     bool   mIfConsiderFeedbackOfCellCellAdhesion;
@@ -83,9 +85,10 @@ protected:
     double mEMADontDecreaseBelowThisThreshold;
 
     double mEdgeLengthAtRest;
-    double mKLForFeedback;
+    double mKmForMyosinFeedback;
     double mFeedbackRateForMyosinActivity;
     double mHillPowerForMyosinActivity;
+    double mKsForAdhesionFeedback;
     double mFeedbackRateForAdhesion;
     double mHillPowerForAdhesion;
 
@@ -118,9 +121,20 @@ protected:
     double mMyosinActivityDepressingRate;
 
     double mTimeForChangingFeedback;
-    double mChangedKLForFeedback;
+    double mChangedKmForMyosinFeedback;
     double mChangedFeedbackRate;
     double mChangedMyosinActivityBaseValue;
+
+    // start of change made by Chao
+    double mSmallChangeForAreaCalculation;
+
+    double mStripSubstrateAdhesionParameter;
+    double mReservoirSubstrateAdhesionParameter;   
+
+    double mWidth;
+    double mCenterOfWidth;
+    bool   mConsiderConsistencyForSSA;
+    // end of change made by Chao
 
 public:
 
@@ -139,16 +153,29 @@ public:
     virtual void SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory);
     
     // my chagnes
-    void UpdateFaceValuesAndStressStates(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
-
-    void UpdateUnifiedEdgeMyosinActivtyOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
-
-    void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(MutableVertexMesh<DIM, DIM>* pMesh, unsigned faceIndex);
+    void UpdateMyosinActivityAndCellCellAdhesionAndStressState(AbstractCellPopulation<DIM,DIM>& rCellPopulation); // change made by Chao
 
     void UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
     
     void UpdateCellDataOfForcesFromNeighboringCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
     
+    void UpdateMyosinActivtyOfElement(MutableVertexMesh<DIM, DIM>* pMesh, unsigned elem_index);  // change made by Chao
+
+    void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(AbstractCellPopulation<DIM,DIM>& rCellPopulation, unsigned faceIndex);
+
+  // start of change made by Chao
+    c_vector<double, DIM> GetStripSubstrateAdhesionAreaGradientOfElementAtNode(AbstractCellPopulation<DIM>& rCellPopulation,VertexElement<DIM,DIM>* pElement, unsigned localIndex);
+
+    c_vector<double, DIM> GetReservoirSubstrateAdhesionAreaGradientOfElementAtNode(AbstractCellPopulation<DIM>& rCellPopulation, VertexElement<DIM,DIM>* pElement, unsigned localIndex);
+
+    void InitializeShapeTensorOfCell(CellPtr pCell);
+
+    void InitializeStressOfCell(CellPtr pCell);
+
+    void InitializeMyosinActivity(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+  //end of change made by Chao
+
     void UpdateCellAreas(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     
     void UpdateCellAreaOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
@@ -191,6 +218,21 @@ public:
       mStripWidth = stripWidth;
     }
 
+    // start of change made by Chao
+    void SetStripDistance(double stripDistance)   
+    {
+      mStripDistance = stripDistance;
+    }
+    void SetWidth(double width)
+    {
+      mWidth = width;
+    }
+    void SetCenterOfWidth(double centerOfWidth)
+    {
+      mCenterOfWidth = centerOfWidth;
+    }
+    // end of change made by Chao
+
     void SetStripStartXLocation(double stripStartXLocation)
     {
       mStripStartXLocation = stripStartXLocation;
@@ -232,9 +274,9 @@ public:
       this->mEdgeLengthAtRest = edgeLengthAtRest;
     }
 
-    void SetKLForFeedback(double kLForFeedback)
+    void SetKmForMyosinFeedback(double kmForMyosinFeedback)
     {
-      mKLForFeedback = kLForFeedback;
+      mKmForMyosinFeedback = kmForMyosinFeedback;
     }
 
     void SetFeedbackRateForMyosinActivity(double feedbackRateForMyosinActivity)
@@ -245,6 +287,11 @@ public:
     void SetHillPowerForMyosinActivity(double hillPowerForMyosinActivity)
     {
       this->mHillPowerForMyosinActivity = hillPowerForMyosinActivity;
+    }
+
+    void SetKsForAdhesionFeedback(double ksForAdhesionFeedback)
+    {
+      mKsForAdhesionFeedback = ksForAdhesionFeedback;
     }
 
     void SetFeedbackRateForAdhesion(double feedbackRateForAdhesion)
@@ -378,9 +425,9 @@ public:
       mTimeForChangingFeedback = timeForChangingFeedback;
     }
 
-    void SetChangedKLForFeedback(double changedKLForFeedback)
+    void SetChangedKmForMyosinFeedback(double changedKmForMyosinFeedback)
     {
-      mChangedKLForFeedback = changedKLForFeedback;
+      mChangedKmForMyosinFeedback = changedKmForMyosinFeedback;
     }
 
     void SetChangedFeedbackRate(double changedFeedbackRate)
@@ -393,8 +440,25 @@ public:
       mChangedMyosinActivityBaseValue = changedMyosinActivityBaseValue;
     }
 
+    void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)   // change made by Chao
+    {
+      mSmallChangeForAreaCalculation = smallChangeForAreaCalculation;
+    }
 
+    void SetStripSubstrateAdhesionParameter(double stripSubstrateAdhesionParameter)  // change made by Chao
+    {
+      mStripSubstrateAdhesionParameter = stripSubstrateAdhesionParameter;
+    }
 
+    void SetReservoirSubstrateAdhesionParameter(double reservoirSubstrateAdhesionParameter)  // change made by Chao
+    {
+      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
+    }
+
+    void SetConsiderConsistencyForSSA(bool considerConsistencyForSSA)    // change made by Chao
+    {
+      mConsiderConsistencyForSSA = considerConsistencyForSSA;
+    }
     /**
      * Overridden OutputSimulationModifierParameters() method.
      * Output any simulation modifier parameters to file.

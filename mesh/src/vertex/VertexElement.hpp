@@ -82,6 +82,8 @@ private:
 
     double mLamellipodiumStrength;
 
+    double mElementMyosinActivity; // change made by Chao
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
     /**
@@ -494,6 +496,16 @@ public:
       this->mOrientations.erase(this->mOrientations.begin()+faceLocalIndex);
     }
 
+    void SetElementMyosinActivity( double elementMyosinActivity)   // change made by Chao
+    {
+      this->mElementMyosinActivity = elementMyosinActivity;
+    }
+
+    double GetElementMyosinActivity()   // change made by Chao
+    {
+      return mElementMyosinActivity;
+    }
+
     // For solving instantialization problem here! this should only be used as a face method!
     double GetUnifiedEdgeMyosinActivty()
     {
@@ -556,6 +568,8 @@ private:
     // may be wrong
     bool mIsDeleted;
 
+    double mElementMyosinActivity; // change made by Chao
+
 public:
 
     /**
@@ -614,6 +628,16 @@ public:
     void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
     {
       this->mUnifiedEdgeMyosinActivty = unifiedEdgeMyosinActivty;
+    }
+
+    void SetElementMyosinActivity( double elementMyosinActivity)   // change made by Chao
+    {
+      this->mElementMyosinActivity = elementMyosinActivity;
+    }
+
+    double GetElementMyosinActivity()   // change made by Chao
+    {
+      return 0.0;
     }
 
     void SetUnifiedCellCellAdhesionEnergyParameter(double unifiedCellCellAdhesionEnergyParameter)
@@ -749,6 +773,8 @@ public:
     {
       return 0.0;
     }
+
+
 
 };
 

@@ -235,7 +235,7 @@ public:
 
         // Cell polarity
         bool   has_polarity = true;
-        double polarity_magnitude = 0.05;
+        double polarity_magnitude = 0.2;
         bool   seed_manually = true;
         unsigned seed_for_initial_random_polarity = 1u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area);
