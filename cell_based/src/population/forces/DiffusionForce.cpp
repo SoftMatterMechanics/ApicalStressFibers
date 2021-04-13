@@ -48,7 +48,7 @@ DiffusionForce<DIM>::DiffusionForce()
       mHasBrownianRandomForce(false),
       mUseTheSameNodeRadius(false),
       mTheSameNodeRadius(10.0),
-      mHasPolarity(true),
+      mHasPolarity(false),
       mIfEquilibrateForAWhile(false)
 {
 }
@@ -96,9 +96,6 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
     double dt = SimulationTime::Instance()->GetTimeStep();
 
     double t_now = SimulationTime::Instance()->GetTime();
-
-    if (mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium)
-        return;
 
     // Iterate over the nodes
     for (typename AbstractMesh<DIM, DIM>::NodeIterator node_iter = rCellPopulation.rGetMesh().GetNodeIteratorBegin();
@@ -161,7 +158,12 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
                 {
                     double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
                     double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
-                    force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    double polarity_magnitude_for_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitudeEquilibrium");
+                    if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
+                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    else
+                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
+
                 }
             }
         }

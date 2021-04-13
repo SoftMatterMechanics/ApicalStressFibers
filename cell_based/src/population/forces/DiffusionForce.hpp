@@ -82,7 +82,7 @@ private :
     bool mOnePeriodOnly;
 
     bool mIfEquilibrateForAWhile;
-    double mTimeForEquilibrium;
+    double mEndTimeForEquilibrium;
 
 
 
@@ -149,9 +149,9 @@ public :
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
     }
 
-    void SetTimeForEquilibrium(double timeForEquilibrium)
+    void SetEndTimeForEquilibrium(double endTimeForEquilibrium)
     {
-      mTimeForEquilibrium = timeForEquilibrium;
+      mEndTimeForEquilibrium = endTimeForEquilibrium;
     }
 
 

@@ -73,6 +73,10 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
+        // codes for sliding.
+        // codes for phase diagram(alpha-p0) with fp or not. 
+        // codes for foece chain. 
+
 
         bool strip_width_doubled = false;
         double strip_width_mutiple = 8.0;
@@ -80,8 +84,6 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
           leading_cell_number = 1;
-
-        double strip_width_multiple_for_sliding = 20.0;
 
         double reference_area = M_PI;
         double multiply_results_by = 1.0;
@@ -95,13 +97,13 @@ public:
         bool if_set_cell_data_of_detailed_force_contributions = false;
 
         // FOR PHASE DIAGRAM SEARCH:
-        double target_shape_index = 4.75;//p0
+        double target_shape_index = 0.5;//p0
 
-        double pulling_force_on_leading_cell = 0.0*10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10; // 1.0*10/pow((M_PI/reference_area),1.5);// Fy
 
-        double feedback_strength_for_myosin_activity = 0.0*400*0.01125/(M_PI/reference_area);//Fb
+        double feedback_strength_for_myosin_activity = 0.0025; // 400*0.01125/(M_PI/reference_area);//Fb
 
-        double kL_for_feedback = 1; // 1.0 for defaut
+        double kL_for_feedback = 0.5; // 1.0 for defaut
         double hill_coefficient_for_myosin_activity = 8.0; // 8.0 for default
 
         // change feedback after a time.
@@ -110,29 +112,24 @@ public:
         double changed_feedback_strength = feedback_strength_for_myosin_activity;
         double changed_myosin_activity_base_value = 1;
 
-        bool if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
+        bool if_apply_feedback_of_face_values_only_for_boundary_cells = true; // for testing fluid inside
         bool if_apply_feedback_of_face_values_only_for_top_boundary_cells = true; // for testing fluid inside
         bool apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
 
-        bool EMA_dont_decrease_below_a_threshold = false;
-        double EMA_dont_decrease_below_this_threshold = 0.5;
-
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Ga
 
-        bool if_use_larger_strip_distance = true;
+        bool if_use_larger_strip_distance = false;
         double strip_dis_multiplied = 40.0/12.0;
 
-        bool use_longer_mesh = true;
+        bool use_longer_mesh = false;
         int num_ele_up_multiplied = 2;
 
         int move_mesh_right_for_N_periods = 0;
 
         bool run_with_birth =false;
 
-        bool is_no_brownian_random_force = true;
-        double polarity_magnitude = 0.1;
-        bool seed_manually = false;//
-        unsigned seed_for_initial_random_polarity = 1u;
+        bool has_brownian_random_force = true;
+        double polarity_magnitude = 0.0;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area); //0.2*2.0*(M_PI/reference_area);
 
         bool has_myo_depression = false;
@@ -156,7 +153,7 @@ public:
         
         /*-----------------------START: Frequently changed parameters-------------------------*/
         // Time:
-/*----*/double dt = 0.25*0.1*(M_PI/reference_area);
+/*----*/double dt = 0.1*(M_PI/reference_area);
 /******/// double end_time = 400.0;
 /******/// double time_for_equilibrium = 50.0;
         double sampling_time = 1.0*(M_PI/reference_area);
@@ -172,11 +169,10 @@ public:
 
         // Polarity:
 /*----*/bool add_random_force = true;
-/******/// bool is_no_brownian_random_force = true;
         double translational_diffusion_constant = 0.0;
 /******/// double polarity_magnitude = 0.00;
 /******/// double rotational_diffusion_constant = 0.2*2.0*(M_PI/reference_area);
-        if (is_no_brownian_random_force&&polarity_magnitude==0.0)
+        if ((!has_brownian_random_force)&&polarity_magnitude==0.0)
           add_random_force = false;
         if (polarity_magnitude!=0.0)
           assert(add_random_force==true);
@@ -187,7 +183,7 @@ public:
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
 /******/// double pulling_force_on_leading_cell = 11.0;
         double reservoir_substrate_adhesion_parameter = basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = basic_SSA;
         
         // Strip substrate adhesion form:
         bool consider_consistency_for_SSA = true;
@@ -284,9 +280,9 @@ public:
         
         
         // Random force and polarity:
-        bool consider_polarity = true;
+        bool has_polarity = true;
         if (polarity_magnitude==0.0)
-          consider_polarity = false;
+          has_polarity = false;
 
         // EquilibrateForAWhile
         bool if_equilibrate_for_a_while = true;
@@ -386,7 +382,6 @@ public:
         double strip_width = sqrt(initial_area/(sqrt(3)/2))/2; // =0.952~1.05
         if (strip_width_doubled)
           strip_width = strip_width*strip_width_mutiple;
-        strip_width *= strip_width_multiple_for_sliding;
         double strip_distance = 6*sqrt(initial_area/(sqrt(3)/2)); // =11.428~12.60
         if(if_use_larger_strip_distance)
           strip_distance *= strip_dis_multiplied;
@@ -469,10 +464,10 @@ public:
           else
             node_radius = set_node_radius; // 50*1e2*((M_PI/reference_area)*(M_PI/reference_area));
           translational_diffusion_constant = p_force2->GetDiffusionScalingConstant()/node_radius;
-          p_force2->SetIsNoBrownianRandomForce(is_no_brownian_random_force);
+          p_force2->SetHasBrownianRandomForce(has_brownian_random_force);
           p_force2->SetUseTheSameNodeRadius(use_the_same_node_radius);
           p_force2->SetTheSameNodeRadius(node_radius);
-          p_force2->SetConsiderPolarity(consider_polarity);
+          p_force2->SetHasPolarity(has_polarity);
           p_force2->SetOnePeriodOnly(one_period_only);
 
           p_force2->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
@@ -482,12 +477,10 @@ public:
         }
 
         // Polarity modifier
-        if (consider_polarity)
+        if (has_polarity)
         {
           MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
           p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
-          p_polarity_modifier->SetSeedManually(seed_manually);
-          p_polarity_modifier->SetSeedForInitialRandomPolarity(seed_for_initial_random_polarity);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
           simulator.AddSimulationModifier(p_polarity_modifier);
         }
@@ -522,8 +515,6 @@ public:
         p_face_value_and_stress_state_modifier->SetEMADontDecrease_CCADontDecrease_HasAThreshold_Threshold(
             EMA_dont_decrease, CCA_dont_decrease, CCA_increasing_has_a_threshold_of_edge_length, CCA_increasing_threshold_of_edge_length_percentage);
         
-        p_face_value_and_stress_state_modifier->SetEMADontDecreaseBelowAThreshold_ThisThreshold(EMA_dont_decrease_below_a_threshold, EMA_dont_decrease_below_this_threshold);
-
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
         // double kL_for_feedback = 1.0; // 1.0 for defaut
         // double feedback_strength_for_myosin_activity = 0.0;
@@ -548,16 +539,16 @@ public:
 
         p_face_value_and_stress_state_modifier->SetFixedTargetArea(reference_area);
         p_face_value_and_stress_state_modifier->SetEdgeLengthAtRest(edge_length_at_rest);
-        p_face_value_and_stress_state_modifier->SetKLForFeedback(kL_for_feedback);
-        p_face_value_and_stress_state_modifier->SetFeedbackStrengthForMyosinActivity(feedback_strength_for_myosin_activity);
-        p_face_value_and_stress_state_modifier->SetHillCoefficientForMyosinActivity(hill_coefficient_for_myosin_activity);
-        p_face_value_and_stress_state_modifier->SetFeedbackStrengthForAdhesion(feedback_strength_for_adhesion);
-        p_face_value_and_stress_state_modifier->SetHillCoefficientForAdhesion(hill_coefficient_for_adhesion);
+        p_face_value_and_stress_state_modifier->SetKmForMyosinFeedback(kL_for_feedback);
+        p_face_value_and_stress_state_modifier->SetFeedbackRateForMyosinActivity(feedback_strength_for_myosin_activity);
+        p_face_value_and_stress_state_modifier->SetHillPowerForMyosinActivity(hill_coefficient_for_myosin_activity);
+        p_face_value_and_stress_state_modifier->SetFeedbackRateForAdhesion(feedback_strength_for_adhesion);
+        p_face_value_and_stress_state_modifier->SetHillPowerForAdhesion(hill_coefficient_for_adhesion);
 
         // changed feedback
         p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
-        p_face_value_and_stress_state_modifier->SetChangedKLForFeedback(changed_KL_for_feedback);
-        p_face_value_and_stress_state_modifier->SetChangedFeedbackStrength(changed_feedback_strength);
+        p_face_value_and_stress_state_modifier->SetChangedKmForMyosinFeedback(changed_KL_for_feedback);
+        p_face_value_and_stress_state_modifier->SetChangedFeedbackRate(changed_feedback_strength);
         p_face_value_and_stress_state_modifier->SetChangedMyosinActivityBaseValue(changed_myosin_activity_base_value);
 
         // my stress state modifier
@@ -653,24 +644,16 @@ public:
         oss << "_Fb=" << std::fixed << setprecision(4) << feedback_strength_for_myosin_activity;
         if (kL_for_feedback!=1.0 || hill_coefficient_for_myosin_activity!=8.0)
           oss << "_KL=" << std::fixed << setprecision(2) << kL_for_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_coefficient_for_myosin_activity;
-        if (time_for_changing_feedback<end_time)
-          oss << "_KL_changed=" << changed_KL_for_feedback;
-        if (EMA_dont_decrease_below_a_threshold)
-          oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
-        oss << "_Dt=" << std::scientific << setprecision(1) << dt;
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
             << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
-        if (add_random_force&&(!is_no_brownian_random_force))
+        if (add_random_force&&has_brownian_random_force)
           oss << "_Brown:Dtr=" << std::scientific << setprecision(2) << translational_diffusion_constant;
         else
           oss << "_Brown=0";
-        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
-        if (seed_manually)
-          oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
-
-        oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude
+            << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
         if(if_check_for_T4_swaps)
           oss << "_T4swaps=1";
@@ -713,7 +696,7 @@ public:
         
         // Concise information written to directoory.
         oss.str("");
-        oss << std::fixed << setprecision(4) << dt;
+        oss << std::fixed << setprecision(3) << dt;
         output_directory += "/Dt=" + oss.str();
         oss.str("");
         oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
@@ -787,10 +770,6 @@ public:
         else
           output_directory += "NoCellDivi";
 
-        output_directory += "_|Structure:";
-        oss << "StripDis=" << std::fixed << setprecision(3) << strip_distance;
-        oss << "_StripWid=" << std::fixed << setprecision(3) << strip_width;
-
         if (if_consider_feedback_of_face_values)
         {
           // feedback form
@@ -811,12 +790,6 @@ public:
                 output_directory += "_CCAInrThresh=" + oss.str();
               }
             }
-          }
-          if (EMA_dont_decrease_below_a_threshold)
-          {
-            oss.str("");
-            oss << "_EMADecrThresh=" << EMA_dont_decrease_below_this_threshold;
-            output_directory += oss.str();
           }
           // feedback parameters
           output_directory += "_|FeedbackPara:";
@@ -843,13 +816,13 @@ public:
 
         if (add_random_force)
         {
-          if (!is_no_brownian_random_force)
+          if (has_brownian_random_force)
           {
             oss.str("");
             oss << std::scientific << setprecision(2) << translational_diffusion_constant;
             output_directory += "_|D_trans=" + oss.str();
           }
-          if (consider_polarity)
+          if (has_polarity)
           {
             oss.str("");
             oss << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;

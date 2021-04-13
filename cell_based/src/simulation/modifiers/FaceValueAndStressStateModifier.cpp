@@ -79,7 +79,9 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mDivisionTime(DOUBLE_UNSET),
 
       mWriteGroupNumberToCell(false),
-
+      mWriteVertexVelocityAndForceToCellData(false),
+      mWriteForcesFromNeighboringCellsToCellData(false),
+      
       mMarkLeadingCells(false),
       mMultipleLeadingCells(false),
       mLeadingCellNumber(1),
@@ -295,11 +297,14 @@ void FaceValueAndStressStateModifier<DIM>::UpdateMyosinActivityAndCellCellAdhesi
             UpdateStressStateOfCell(rCellPopulation, *cell_iter);
         }
 
-        for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
-            cell_iter != rCellPopulation.rGetCells().end();
-            ++cell_iter)
+        if (mWriteForcesFromNeighboringCellsToCellData)
         {
-            UpdateCellDataOfForcesFromNeighboringCell(rCellPopulation, *cell_iter);
+            for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+                cell_iter != rCellPopulation.rGetCells().end();
+                ++cell_iter)
+            {
+                UpdateCellDataOfForcesFromNeighboringCell(rCellPopulation, *cell_iter);
+            }
         }
 
     }
@@ -782,7 +787,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         //    c_vector<double, DIM> previous_edge_gradient = p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, previous_node_local_index);
         //    c_vector<double, DIM> next_edge_gradient = p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, local_index);
         //    c_vector<double, DIM> perimeter_gradient_at_node = previous_edge_gradient - next_edge_gradient;
-            c_vector<double, DIM> F_Tens = element_myosin_activity*Ga*perimeter*perimeter_gradient_at_node;
+            c_vector<double, DIM> F_Tens = -element_myosin_activity*Ga*perimeter*perimeter_gradient_at_node;
 
             if (mIfSetCellDataOfEachForceContributions)
             {
@@ -917,8 +922,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
                 }
             }
             
-            c_vector<double,DIM> F_Strip_Adh = mStripSubstrateAdhesionParameter*strip_substrate_adhesion_area_gradient;
-            c_vector<double,DIM> F_Res_Adh = mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
+            c_vector<double,DIM> F_Strip_Adh = -mStripSubstrateAdhesionParameter*strip_substrate_adhesion_area_gradient;
+            c_vector<double,DIM> F_Res_Adh = -mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
 
             c_vector<double,DIM> Force = zero_vector<double>(DIM);
             Force[0] = F_Press[0] +F_Tens[0] +F_Adhe[0] +F_Strip_Adh[0] +F_Res_Adh[0];
@@ -930,43 +935,39 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             shape_tensor_YY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[1]*node_location_ralate_to_centroid[1];
             shape_tensor_XY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[1];
 
-            static_stress_XX += 1.0/area*node_location_ralate_to_centroid[0]*Force[0];
-            static_stress_YY += 1.0/area*node_location_ralate_to_centroid[1]*Force[1];
-            static_stress_XY += 1.0/area*node_location_ralate_to_centroid[0]*Force[1];
-            static_stress_YX += 1.0/area*node_location_ralate_to_centroid[1]*Force[0];
+            // use the opposite of inner force.
+            static_stress_XX += 1.0/area*node_location_ralate_to_centroid[0]*(-1)*Force[0];
+            static_stress_YY += 1.0/area*node_location_ralate_to_centroid[1]*(-1)*Force[1];
+            static_stress_XY += 1.0/area*node_location_ralate_to_centroid[0]*(-1)*Force[1];
+            static_stress_YX += 1.0/area*node_location_ralate_to_centroid[1]*(-1)*Force[0];
 
-            oss.str("");
-            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                    << "_Fx";
-            name_item = oss.str();
-            pCell->GetCellData()->SetItem(name_item, Force[0]);
-            oss.str("");
-            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                    << "_Fy";
-            name_item = oss.str();
-            pCell->GetCellData()->SetItem(name_item, Force[1]);
-
-            // output velocity of vertices
-            oss.str("");
-            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                    << "_vx";
-            name_item = oss.str();
-            pCell->GetCellData()->SetItem(name_item, pNodeA->rGetAppliedForce()[0]);
-            oss.str("");
-            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                    << "_vy";
-            name_item = oss.str();
-            pCell->GetCellData()->SetItem(name_item, pNodeA->rGetAppliedForce()[1]);
-
-            // output face values of edges
-            if (mIfConsiderFeedbackOfFaceValues)
+            if (mWriteVertexVelocityAndForceToCellData)
             {
                 oss.str("");
                 oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                        << "_elem_myo";
+                        << "_Fx";
                 name_item = oss.str();
-                pCell->GetCellData()->SetItem(name_item, p_element->GetElementMyosinActivity());
+                pCell->GetCellData()->SetItem(name_item, Force[0]);
+                oss.str("");
+                oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                        << "_Fy";
+                name_item = oss.str();
+                pCell->GetCellData()->SetItem(name_item, Force[1]);
+
+                // output velocity of vertices
+                oss.str("");
+                oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                        << "_vx";
+                name_item = oss.str();
+                pCell->GetCellData()->SetItem(name_item, pNodeA->rGetAppliedForce()[0]);
+                oss.str("");
+                oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                        << "_vy";
+                name_item = oss.str();
+                pCell->GetCellData()->SetItem(name_item, pNodeA->rGetAppliedForce()[1]);
             }
+
+            // output face values of edges
             if (mIfConsiderFeedbackOfFaceValues && mIfConsiderFeedbackOfCellCellAdhesion)
             {
                 oss.str("");
@@ -977,6 +978,18 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             }
 
         } // end of iteration of vertices of the element, for calculation of force contributions and stress summation.
+        
+        // output myosin activity of this cell(element) to CellData.     
+        if (true)
+        {
+            std::ostringstream oss;
+            std::string name_item;
+            oss.str("");
+            oss << "elem_myo";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, p_element->GetElementMyosinActivity());
+        }
+        
         assert((shape_tensor_XX + shape_tensor_YY + shape_tensor_XY) < DOUBLE_UNSET );
 
         double shape_tensor_XX_old = pCell->GetCellData()->GetItem("shape_tensor_xx");
@@ -1114,6 +1127,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateCellDataOfForcesFromNeighboring
         {
             std::cout<< std::endl << "Get error in FaceValueAndStressStateModifier::UpdateCellDataOfForcesFromNeighboringCell";
             std::cout<< std::endl << "Get shared elements more than 2 or less than 1.";
+            std::cout<< std::endl;
         }
 
         if (shared_elements.size()==1)
@@ -1387,7 +1401,11 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
 //        std::cout<<"normal_to_face="<<length_of_vector_normal_to_face<<std::endl;
 //        std::cout<<"principal_axis="<<length_of_vector_of_principal_axis<<std::endl;
 
-        pElement = pMesh->GetElement(*shared_elements.end());
+        // pElement = pMesh->GetElement(*shared_elements.end());
+        // // testing .end().
+        // std::cout << std::endl << "EleIndex by *set.end(): " << *shared_elements.end() << ". EleIndex by *++set.begin(): " << *(++shared_elements.begin()) << std::endl;
+        pElement = pMesh->GetElement(*(++shared_elements.begin()));
+
         pCell = rCellPopulation.GetCellUsingLocationIndex(pElement->GetIndex());
         stress1 = pCell->GetCellData()->GetItem("Stress1");
         stress2 = pCell->GetCellData()->GetItem("Stress2");

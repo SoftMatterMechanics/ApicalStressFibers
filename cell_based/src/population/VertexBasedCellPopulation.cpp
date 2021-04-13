@@ -433,6 +433,7 @@ void VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile(const std::string& rD
     }
 
     // When outputting any CellData, we assume that the first cell is representative of all cells
+    // my comments: this may lead to error, because different cells have different cell items in our simulation.
     unsigned num_cell_data_items = this->Begin()->GetCellData()->GetNumItems();
     std::vector<std::string> cell_data_names = this->Begin()->GetCellData()->GetKeys();
 
@@ -457,7 +458,18 @@ void VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile(const std::string& rD
 
         for (unsigned var=0; var<num_cell_data_items; var++)
         {
-            cell_data[var][elem_index] = p_cell->GetCellData()->GetItem(cell_data_names[var]);
+            // // my tmp changes:
+            // if (SimulationTime::Instance()->GetTime()>57.0)
+            //     std::cout << endl << "ElementIndex= " << elem_index << ". Getting item: " << cell_data_names[var];
+            try
+            {
+                cell_data[var][elem_index] = p_cell->GetCellData()->GetItem(cell_data_names[var]);
+            }
+            catch(...)
+            {
+                std::cout << std::endl << "Error in VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile: GetItem() of CellData, but won't effect a lot.";
+                std::cout << std::endl;
+            }
         }
     }
     for (unsigned var=0; var<num_cell_data_items; var++)

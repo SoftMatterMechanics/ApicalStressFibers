@@ -107,7 +107,9 @@ protected:
     double mDivisionTime;
 
     bool   mWriteGroupNumberToCell;
-
+    bool   mWriteVertexVelocityAndForceToCellData;
+    bool   mWriteForcesFromNeighboringCellsToCellData;
+    
     bool   mMarkLeadingCells;
     bool   mMultipleLeadingCells;
     unsigned mLeadingCellNumber;

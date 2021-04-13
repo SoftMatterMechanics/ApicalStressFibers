@@ -255,7 +255,7 @@ public:
         bool   use_my_division_rule_along_with_modifier = true;
 
         /* 8. Time */
-        double time_for_equilibrium = 0.0;
+        double time_for_equilibrium = 50.0;
         bool   if_equilibrate_for_a_while = true;
         if (time_for_equilibrium == 0.0)
            if_equilibrate_for_a_while = false;

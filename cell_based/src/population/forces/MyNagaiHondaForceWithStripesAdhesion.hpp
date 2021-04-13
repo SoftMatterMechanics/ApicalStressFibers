@@ -108,9 +108,9 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
-    bool   mIfConsiderSubstrateAdhesion;
+    bool   mIfConsiderStripSubstrateAdhesion;
 
-    bool   mIfSubstrateAdhesionIsHomogeneous;
+    bool   mIfStripSubstrateAdhesionIsHomogeneous;
 
     double mSubstrateAdhesionParameterChangePerUnitLength;
 
@@ -190,7 +190,7 @@ protected:
 
     bool   mIfEquilibrateForAWhile;
 
-    double mTimeForEquilibrium;
+    double mEndTimeForEquilibrium;
 
 public:
 
@@ -330,15 +330,15 @@ public:
     {
       mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
     }
-    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
+    void SetIfConsiderStripSubstrateAdhesion (bool ifConsiderStripSubstrateAdhesion)
     {
-      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
+      mIfConsiderStripSubstrateAdhesion = ifConsiderStripSubstrateAdhesion;
     }
 
     // SSA
-    void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
+    void SetIfStripSubstrateAdhesionIsHomogeneous(bool IfStripSubstrateAdhesionIsHomogeneous)
     {
-      mIfSubstrateAdhesionIsHomogeneous = ifSubstrateAdhesionIsHomogeneous;
+      mIfStripSubstrateAdhesionIsHomogeneous = IfStripSubstrateAdhesionIsHomogeneous;
     }
     void SetHomogeneousSubstrateAdhesionParameter(double homogeneousSubstrateAdhesionParameter)
     {
@@ -479,9 +479,9 @@ public:
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
     }
 
-    void SetTimeForEquilibrium(double timeForEquilibrium)
+    void SetEndTimeForEquilibrium(double endTimeForEquilibrium)
     {
-      mTimeForEquilibrium = timeForEquilibrium;
+      mEndTimeForEquilibrium = endTimeForEquilibrium;
     }
 
 };
