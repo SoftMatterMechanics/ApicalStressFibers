@@ -84,7 +84,7 @@ void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM
         polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
         if (mSeedManually)
             polarity_angle = 2*M_PI* (rand()%int(1e5))/double(1e5);
-        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude, mPolarityMagnitudeEquilibrium);
     }
 }
 
@@ -103,15 +103,16 @@ void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM
             polarity_angle -= 2*M_PI;
         else if (polarity_angle < 0.0)
             polarity_angle += 2*M_PI;
-        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude);
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude, mPolarityMagnitudeEquilibrium);
     }
 }
 
 template<unsigned DIM>
-void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude)
+void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude, double polarityMagnitudeEquilibrium)
 {
     pCell->GetCellData()->SetItem("PolarityAngle", polarityAngle);
     pCell->GetCellData()->SetItem("PolarityMagnitude", polarityMagnitude);
+    pCell->GetCellData()->SetItem("PolarityMagnitudeEquilibrium", polarityMagnitudeEquilibrium);
 }
 
 

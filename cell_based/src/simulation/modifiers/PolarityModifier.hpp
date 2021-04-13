@@ -76,6 +76,8 @@ protected:
 
     unsigned mSeedForInitialRandomPolarity;
 
+    double mPolarityMagnitudeEquilibrium;    
+
 public:
 
     /**
@@ -96,6 +98,11 @@ public:
     void SetPolarityMagnitude(double polarityMagnitude)
     {
       mPolarityMagnitude = polarityMagnitude;
+    }
+
+    void SetPolarityMagnitudeEquilibrium(double polarityMagnitudeEquilibrium)
+    {
+      mPolarityMagnitudeEquilibrium = polarityMagnitudeEquilibrium;
     }
 
     void SetAngleForInitialization (double angleForInitialization)
@@ -121,7 +128,7 @@ public:
 
     void UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     
-    void SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude);
+    void SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude, double polarityMagnitudeEquilibrium);
 
     /**
      * Overridden OutputSimulationModifierParameters() method.
