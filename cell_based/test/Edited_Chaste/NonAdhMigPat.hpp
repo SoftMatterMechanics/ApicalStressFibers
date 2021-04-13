@@ -80,7 +80,7 @@ public:
         double initial_area = reference_area;
         bool   is_default_feedback_form = true;
 
-        /* Strip Structure & Cell Mesh */
+/* Strip Structure & Cell Mesh */
         bool   strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
       //  double strip_width_multiple_for_sliding = 15.0;
@@ -118,18 +118,18 @@ public:
         double strip_start_y_location = 1.5*num_ele_up*1/sqrt(3)*sqrt(initial_area/(sqrt(3)/2));
 
         /* Energy equation form: 1/2*KA*(A-A0)^2 + 1/2*Gamma*P^2 + 1.0*Lambda*P - alpha*Sa. ( Lambda=-Ga*P0, p0=P0/sqrt(A0) ) */
-        /* 1. Area expansion resistance */
+/* 1. Area expansion resistance */
         double nagai_honda_deformation_energy_parameter = 1; // KA
         bool   use_fixed_target_area_without_modifier = true; // A0:
 
-        /* 2. Myosin activity */
+/* 2. Myosin activity */
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
-        bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 1.0; // 1.0 for defaut
+        bool   if_consider_feedback_of_face_values = false;
+        double Km_for_myosin_feedback = 1; // 1.0 for defaut
 //?        double feedback_rate_for_myosin_activity = 0.00*400*0.01125/(M_PI/reference_area);//beta
-        double feedback_rate_for_myosin_activity = 0.001/(M_PI/reference_area);//beta
+        double feedback_rate_for_myosin_activity = 0.01/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
         bool   if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
@@ -149,19 +149,19 @@ public:
         bool   has_myo_depression = false;
         double myosin_activity_depressing_rate = 0.05/(M_PI/reference_area);
 
-        /* 3. Cell-Cell adhesion */
+/* 3. Cell-Cell adhesion */
         double cell_cell_adhesion_parameter = -nagai_honda_membrane_surface_energy_parameter*(target_shape_index*sqrt(reference_area));
         double cell_boundary_adhesion_parameter = 0.0; // cell-cell adhesion at boundary
         
-        bool   if_consider_feedback_of_cell_cell_adhesion = true;
+        bool   if_consider_feedback_of_cell_cell_adhesion = false;
         double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
-        double feedback_rate_for_adhesion = 0.001;
+        double feedback_rate_for_adhesion = 0.01;
         double hill_power_for_adhesion = 8.0;
         bool   CCA_dont_decrease = false;
         bool   CCA_increasing_has_a_threshold_of_edge_length = false;
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
 
-        /* 4. Substrate Ahesion */
+/* 4. Substrate Ahesion */
         bool   if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
         bool   if_ignore_reservoir_substrate_adhesion_at_bottom = false;// false for default 
         bool   if_consider_substrate_adhesion = true;
@@ -171,8 +171,8 @@ public:
 
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
-        double reservoir_substrate_adhesion_parameter = basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 1.0*basic_SSA;
+        double reservoir_substrate_adhesion_parameter = 2.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 0.0*basic_SSA;
         
           // Strip substrate adhesion form:
         bool   consider_consistency_for_SSA = true;
@@ -187,7 +187,7 @@ public:
         double sampling_time = 1.0*(M_PI/reference_area);
         double small_change_for_area_calculation = 0.1/sqrt((M_PI/reference_area));
         
-        /* 5. Pulling Force */
+/* 5. Pulling Force */
         // Note that pulling force is realized by different ways for epithelial bridge and vortex formation
         // epithelial bridge: pulling force is directly applied on the nodes of leading cells
         // vortex formation: pulling force is treated equivalently by larger substrate adhesion on strip 
@@ -195,7 +195,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 1.0*12/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.0/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -225,7 +225,7 @@ public:
           // Strip substrate adhesion (SSA):
         assert( !(if_substrate_adhesion_is_homogeneous && (use_my_detach_pattern_method||use_new_SSA_distribution_rule) ) );
         assert( !(use_new_SSA_distribution_rule && use_my_detach_pattern_method) );        
-      /* 6. Random force */
+/* 6. Random force */
         bool   add_random_force = true;
 
         // Brownian random force
@@ -248,13 +248,13 @@ public:
         if (polarity_magnitude!=0.0)
            assert(add_random_force == true);
 
-        /* 7. Cell division */
+/* 7. Cell division */
         bool   run_with_birth = false;
         double time_for_one_division_of_cell_population = 25*(M_PI/reference_area);
         double growth_rate_for_target_area_after_division = 0.1/(M_PI/reference_area);
         bool   use_my_division_rule_along_with_modifier = true;
 
-        /* 8. Time */
+/* 8. Time */
         double time_for_equilibrium = 0.0;
         bool   if_equilibrate_for_a_while = true;
         if (time_for_equilibrium == 0.0)
@@ -269,10 +269,10 @@ public:
         if (apply_my_change_to_make_timestep_adaptive)
            assert(restrict_vertex_movement == false);
 
-        /* 9. Cell rearrangement */
+/* 9. Cell rearrangement */
         double set_cell_rearrangement_threshold = 0.01/sqrt((M_PI/reference_area)); // the minimum threshold distance for element T1 rearrangement 
 
-        /* 10. Output & display */
+/* 10. Output & display */
         bool   output_concise_swap_information_when_remesh = false;
         bool   output_detailed_swap_information_when_remesh = false;
         bool   output_numerical_method_information = false;

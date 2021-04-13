@@ -543,7 +543,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
                 oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
                         << "_edge_myo";
                 name_item = oss.str();
-                pCell->GetCellData()->SetItem(name_item, pFace->GetUnifiedEdgeMyosinActivty());
+            //    pCell->GetCellData()->SetItem(name_item, pFace->GetUnifiedEdgeMyosinActivity());
+                pCell->GetCellData()->SetItem(name_item, p_element->GetElementMyosinActivity());
             }
             if (mIfConsiderFeedbackOfFaceValues && mIfConsiderFeedbackOfCellCellAdhesion)
             {
@@ -647,9 +648,6 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
     VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation);
     unsigned elem_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
     VertexElement<DIM, DIM>* p_element = p_mesh->GetElement(elem_index);
-
-//    std::cout<<"elem_index="<<elem_index<<std::endl;
-//    std::cout<<"elemnumnodes="<<p_element->GetNumNodes()<<std::endl;
 
     double dt = SimulationTime::Instance()->GetTimeStep();
 
@@ -782,7 +780,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         //    c_vector<double, DIM> previous_edge_gradient = p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, previous_node_local_index);
         //    c_vector<double, DIM> next_edge_gradient = p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, local_index);
         //    c_vector<double, DIM> perimeter_gradient_at_node = previous_edge_gradient - next_edge_gradient;
-            c_vector<double, DIM> F_Tens = element_myosin_activity*Ga*perimeter*perimeter_gradient_at_node;
+            c_vector<double, DIM> F_Tens = -element_myosin_activity*Ga*perimeter*perimeter_gradient_at_node;
 
             if (mIfSetCellDataOfEachForceContributions)
             {
@@ -832,97 +830,122 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
                 pCell->GetCellData()->SetItem(name_item, F_Adhe[1]);
             }            
 
-            // Substrate adhesion
-            // consider periodicity: modify the node location!
-            if (dynamic_cast<MyXToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
-            {
-                bool triangle_straddles_left_right_boundary = false;
+            // // Substrate adhesion
+            // // consider periodicity: modify the node location!
+            // if (dynamic_cast<MyXToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
+            // {
+            //     bool triangle_straddles_left_right_boundary = false;
 
-                if (fabs(vec_ca[0]) > 0.5*mWidth)
-                    triangle_straddles_left_right_boundary = true;
-                if (fabs(vec_ab[0]) > 0.5*mWidth)
-                    triangle_straddles_left_right_boundary = true;
-                if (triangle_straddles_left_right_boundary)
-                {
-                    if (location_c[0] < mCenterOfWidth)
-                        location_c[0] += mWidth;
-                    if (location_a[0] < mCenterOfWidth)
-                        location_a[0] += mWidth;
-                    if (location_b[0] < mCenterOfWidth)
-                        location_b[0] += mWidth;
-                }
-            }
+            //     if (fabs(vec_ca[0]) > 0.5*mWidth)
+            //         triangle_straddles_left_right_boundary = true;
+            //     if (fabs(vec_ab[0]) > 0.5*mWidth)
+            //         triangle_straddles_left_right_boundary = true;
+            //     if (triangle_straddles_left_right_boundary)
+            //     {
+            //         if (location_c[0] < mCenterOfWidth)
+            //             location_c[0] += mWidth;
+            //         if (location_a[0] < mCenterOfWidth)
+            //             location_a[0] += mWidth;
+            //         if (location_b[0] < mCenterOfWidth)
+            //             location_b[0] += mWidth;
+            //     }
+            // }
 
-            double triangle_box_bottom = std::min(std::min(location_c[1],location_a[1]),location_b[1]);
-            double triangle_box_top = std::max(std::max(location_c[1],location_a[1]),location_b[1]);
-            double triangle_box_left = std::min(std::min(location_c[0],location_a[0]),location_b[0]);
-            double triangle_box_right = std::max(std::max(location_c[0],location_a[0]),location_b[0]);
+            // double triangle_box_bottom = std::min(std::min(location_c[1],location_a[1]),location_b[1]);
+            // double triangle_box_top = std::max(std::max(location_c[1],location_a[1]),location_b[1]);
+            // double triangle_box_left = std::min(std::min(location_c[0],location_a[0]),location_b[0]);
+            // double triangle_box_right = std::max(std::max(location_c[0],location_a[0]),location_b[0]);
 
-            bool full_strip_substrate_adhesion = false;
-            bool partial_strip_substrate_adhesion = false;
-            bool full_reservoir_substrate_adhesion = false;
-            bool partial_reservoir_substrate_adhesion = false;
-            bool no_substrate_adhesion = false;
+            // bool full_strip_substrate_adhesion = false;
+            // bool partial_strip_substrate_adhesion = false;
+            // bool full_reservoir_substrate_adhesion = false;
+            // bool partial_reservoir_substrate_adhesion = false;
+            // bool no_substrate_adhesion = false;
 
-            double strip_start_y_location = this->mStripStartYLocation;
-            double strip_right = this->mStripStartXLocation + this->mStripWidth/2.0;
-            double strip_left = this->mStripStartXLocation - this->mStripWidth/2.0;
-            // consider periodicity. Important!!!
-            // if (fabs(triangle_box_left-triangle_box_right) > strip_distance/2)
-            //    partial_strip_substrate_adhesion = false;
+            // double strip_start_y_location = this->mStripStartYLocation;
+            // double strip_right = this->mStripStartXLocation + this->mStripWidth/2.0;
+            // double strip_left = this->mStripStartXLocation - this->mStripWidth/2.0;
+            // // consider periodicity. Important!!!
+            // // if (fabs(triangle_box_left-triangle_box_right) > strip_distance/2)
+            // //    partial_strip_substrate_adhesion = false;
 
-            if (triangle_box_bottom >= strip_start_y_location)
-            {
-                if ((triangle_box_right <= strip_left) || (triangle_box_left >= strip_right))
-                    no_substrate_adhesion = true;
-                else if ((triangle_box_left >= strip_left) && (triangle_box_right <= strip_right) )
-                    full_strip_substrate_adhesion = true;
-                else
-                    partial_strip_substrate_adhesion = true;
-            }
-            else if ((triangle_box_top >= strip_start_y_location) && (triangle_box_bottom <= strip_start_y_location))
-            {
-                if ((triangle_box_right <= strip_left) || (triangle_box_left >= strip_right))
-                    partial_reservoir_substrate_adhesion = true;
-                else
-                {   
-                    partial_strip_substrate_adhesion = true;
-                    partial_reservoir_substrate_adhesion = true;
-                }
-            }
-            else if ((triangle_box_top <= strip_start_y_location) && (triangle_box_bottom >= 0.0))
-            {
-                full_reservoir_substrate_adhesion = true;
-            }
-            else if ((triangle_box_top <= strip_start_y_location) && (triangle_box_top >= 0.0) && (triangle_box_bottom <= 0.0))
-            {
-                partial_reservoir_substrate_adhesion = true;
-            }
-            else
-                no_substrate_adhesion = true;
+            // if (triangle_box_bottom >= strip_start_y_location)
+            // {
+            //     if ((triangle_box_right <= strip_left) || (triangle_box_left >= strip_right))
+            //         no_substrate_adhesion = true;
+            //     else if ((triangle_box_left >= strip_left) && (triangle_box_right <= strip_right) )
+            //         full_strip_substrate_adhesion = true;
+            //     else
+            //         partial_strip_substrate_adhesion = true;
+            // }
+            // else if ((triangle_box_top >= strip_start_y_location) && (triangle_box_bottom <= strip_start_y_location))
+            // {
+            //     if ((triangle_box_right <= strip_left) || (triangle_box_left >= strip_right))
+            //         partial_reservoir_substrate_adhesion = true;
+            //     else
+            //     {   
+            //         partial_strip_substrate_adhesion = true;
+            //         partial_reservoir_substrate_adhesion = true;
+            //     }
+            // }
+            // else if ((triangle_box_top <= strip_start_y_location) && (triangle_box_bottom >= 0.0))
+            // {
+            //     full_reservoir_substrate_adhesion = true;
+            // }
+            // else if ((triangle_box_top <= strip_start_y_location) && (triangle_box_top >= 0.0) && (triangle_box_bottom <= 0.0))
+            // {
+            //     partial_reservoir_substrate_adhesion = true;
+            // }
+            // else
+            //     no_substrate_adhesion = true;
 
-            c_vector<double, DIM> strip_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
-            c_vector<double, DIM> reservoir_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
-            if (!no_substrate_adhesion)
-                {if (full_strip_substrate_adhesion)
-                    strip_substrate_adhesion_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
-                else if (full_reservoir_substrate_adhesion)
-                    reservoir_substrate_adhesion_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);     
-                else 
-                {
-                    if (partial_strip_substrate_adhesion)
-                        strip_substrate_adhesion_area_gradient = this->GetStripSubstrateAdhesionAreaGradientOfElementAtNode(rCellPopulation, p_element, local_index);
-                    if (partial_reservoir_substrate_adhesion)
-                        reservoir_substrate_adhesion_area_gradient = this->GetReservoirSubstrateAdhesionAreaGradientOfElementAtNode(rCellPopulation, p_element, local_index);
-                }
-            }
+            // c_vector<double, DIM> strip_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
+            // c_vector<double, DIM> reservoir_substrate_adhesion_area_gradient = zero_vector<double>(DIM);
+            // if (!no_substrate_adhesion)
+            //     {if (full_strip_substrate_adhesion)
+            //         strip_substrate_adhesion_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
+            //     else if (full_reservoir_substrate_adhesion)
+            //         reservoir_substrate_adhesion_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);     
+            //     else 
+            //     {
+            //         if (partial_strip_substrate_adhesion)
+            //             strip_substrate_adhesion_area_gradient = this->GetStripSubstrateAdhesionAreaGradientOfElementAtNode(rCellPopulation, p_element, local_index);
+            //         if (partial_reservoir_substrate_adhesion)
+            //             reservoir_substrate_adhesion_area_gradient = this->GetReservoirSubstrateAdhesionAreaGradientOfElementAtNode(rCellPopulation, p_element, local_index);
+            //     }
+            // }
             
-            c_vector<double,DIM> F_Strip_Adh = mStripSubstrateAdhesionParameter*strip_substrate_adhesion_area_gradient;
-            c_vector<double,DIM> F_Res_Adh = mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
+            // c_vector<double,DIM> F_Strip_Adh = -mStripSubstrateAdhesionParameter*strip_substrate_adhesion_area_gradient;
+            // c_vector<double,DIM> F_Res_Adh = -mReservoirSubstrateAdhesionParameter*reservoir_substrate_adhesion_area_gradient;
+
+            // if (mIfSetCellDataOfEachForceContributions)
+            // {
+            //     oss.str("");
+            //     oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+            //             << "_F_Strip_Adh_x";
+            //     name_item = oss.str();
+            //     pCell->GetCellData()->SetItem(name_item, F_Strip_Adh[0]);
+            //     oss.str("");
+            //     oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+            //             << "_F_Strip_Adh_y";
+            //     name_item = oss.str();
+            //     pCell->GetCellData()->SetItem(name_item, F_Strip_Adh[1]);
+
+            //     oss.str("");
+            //     oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+            //             << "_F_Res_Adh_x";
+            //     name_item = oss.str();
+            //     pCell->GetCellData()->SetItem(name_item, F_Res_Adh[0]);
+            //     oss.str("");
+            //     oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+            //             << "_F_Res_Adh_y";
+            //     name_item = oss.str();
+            //     pCell->GetCellData()->SetItem(name_item, F_Res_Adh[1]);
+            // } 
 
             c_vector<double,DIM> Force = zero_vector<double>(DIM);
-            Force[0] = F_Press[0] +F_Tens[0] +F_Adhe[0] +F_Strip_Adh[0] +F_Res_Adh[0];
-            Force[1] = F_Press[1] +F_Tens[1] +F_Adhe[1] +F_Strip_Adh[1] +F_Res_Adh[1];
+            Force[0] = F_Press[0] +F_Tens[0] +F_Adhe[0];// +F_Strip_Adh[0] +F_Res_Adh[0];
+            Force[1] = F_Press[1] +F_Tens[1] +F_Adhe[1];// +F_Strip_Adh[1] +F_Res_Adh[1];
 
             // next: stress calculation
             c_vector<double,DIM> node_location_ralate_to_centroid =  p_mesh->GetVectorFromAtoB(centroid, location_a);
@@ -930,10 +953,10 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             shape_tensor_YY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[1]*node_location_ralate_to_centroid[1];
             shape_tensor_XY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[1];
 
-            static_stress_XX += 1.0/area*node_location_ralate_to_centroid[0]*Force[0];
-            static_stress_YY += 1.0/area*node_location_ralate_to_centroid[1]*Force[1];
-            static_stress_XY += 1.0/area*node_location_ralate_to_centroid[0]*Force[1];
-            static_stress_YX += 1.0/area*node_location_ralate_to_centroid[1]*Force[0];
+            static_stress_XX += -1.0/area*node_location_ralate_to_centroid[0]*Force[0];
+            static_stress_YY += -1.0/area*node_location_ralate_to_centroid[1]*Force[1];
+            static_stress_XY += -1.0/area*node_location_ralate_to_centroid[0]*Force[1];
+            static_stress_YX += -1.0/area*node_location_ralate_to_centroid[1]*Force[0];
 
             oss.str("");
             oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
@@ -997,40 +1020,30 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         double stress_YY = static_stress_YY + dynamic_stress_YY;
         double stress_XY = static_stress_XY + dynamic_stress_XY;
 
-        double R = sqrt( pow((stress_XX-stress_YY)/2, 2) + pow(stress_XY, 2) );
-        double stress_1 = (stress_XX + stress_YY)/2 + R;
-        double stress_2 = (stress_XX + stress_YY)/2 - R;
-    
+//        double R = sqrt( pow((stress_XX-stress_YY)/2, 2) + pow(stress_XY, 2) );
+//       double stress_1 = (stress_XX + stress_YY)/2 + R;
+//       double stress_2 = (stress_XX + stress_YY)/2 - R;
+
         double stress_delta = (stress_XX-stress_YY)*(stress_XX-stress_YY) + 4*stress_XY*stress_XY;
-        double stress_lambda1 = 0.5*(stress_XX + stress_YY + sqrt(stress_delta));
-        //    double stress_lambda2 = 0.5*(stress_XX + stress_YY - sqrt(stress_delta));
+        double stress_1 = 0.5*(stress_XX + stress_YY + sqrt(stress_delta));
+        double stress_2 = 0.5*(stress_XX + stress_YY - sqrt(stress_delta));
+//        if ((stress_XX + stress_YY)>=0.0)
+//            stress_lambda1 = 0.5*(stress_XX + stress_YY + sqrt(stress_delta));
+//        else
+//            stress_lambda1 = 0.5*(stress_XX + stress_YY - sqrt(stress_delta));
+
         c_vector<double, DIM> stress_eigen_vec_1 = zero_vector<double>(DIM);
         double principal_axis_of_stress = 0.0;
-        if (stress_lambda1==stress_XX)
+        if (stress_1==stress_XX)
             principal_axis_of_stress = 0.0;
-        else if (stress_lambda1==stress_YY)
+        else if (stress_1==stress_YY)
             principal_axis_of_stress = M_PI/2;
         else
         {
             stress_eigen_vec_1[0] = 1.0;
-            stress_eigen_vec_1[1] = (stress_lambda1-stress_XX)/stress_XY;
+            stress_eigen_vec_1[1] = (stress_1-stress_XX)/stress_XY;
             principal_axis_of_stress = atan(stress_eigen_vec_1[1]/stress_eigen_vec_1[0]);
         }
-        
-//        std::cout<<"elem_index="<<elem_index<<std::endl;
-//        std::cout<<"static_XX="<<static_stress_XX<<std::endl;
-//        std::cout<<"static_YY="<<static_stress_YY<<std::endl;
-//        std::cout<<"dynamic_XX="<<dynamic_stress_XX<<std::endl;
-//        std::cout<<"dynamic_YY="<<dynamic_stress_YY<<std::endl;
-//        std::cout<<"XX="<<stress_XX<<std::endl;
-//        std::cout<<"YY="<<stress_YY<<std::endl;
-//        std::cout<<"shear="<<stress_XY<<std::endl;
-//        std::cout<<"stress1="<<stress_1<<std::endl;
-//        std::cout<<"stress2="<<stress_2<<std::endl;
-//        std::cout<<"lambda1="<<stress_lambda1<<std::endl;
-//        std::cout<<"eigen_vector="<<stress_eigen_vec_1[1]<<std::endl;
-//        std::cout<<"factor="<<stress_lambda1-stress_XX<<std::endl;
-//        std::cout<<"axis="<<principal_axis_of_stress<<std::endl;
 
         double shape_delta = (shape_tensor_XX-shape_tensor_YY)*(shape_tensor_XX-shape_tensor_YY) +4*shape_tensor_XY*shape_tensor_XY;
         double shape_lambda1 = 0.5*(shape_tensor_XX+shape_tensor_YY+sqrt(shape_delta));
@@ -1049,6 +1062,23 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             shape_eigen_vec_1[1] = (shape_lambda1-shape_tensor_XX)/shape_tensor_XY;
             principal_axis_of_shape = atan(shape_eigen_vec_1[1]/shape_eigen_vec_1[0]);
         }
+
+        // double R_shape = sqrt( pow((shape_XX-shape_YY)/2, 2) + pow(shape_XY, 2) );
+        // double shape_1 = (shape_XX + shape_YY)/2 + R;
+        // double shape_2 = (shape_XX + shape_YY)/2 - R;
+        // double aspect_ratio = sqrt(shape_1/shape_2);
+        // double principal_axis_angle = shape_XY>0.0 ? -0.5*acos( (shape_XX-0.5*(shape_XX+shape_YY))/R_shape ) : 0.5*acos( (shape_XX-0.5*(shape_XX+shape_YY))/R_shape );
+        // pCell->GetCellData()->SetItem("AspectRatio", aspect_ratio);
+        // pCell->GetCellData()->SetItem("PrincipalAxis", principal_axis_angle);
+
+        // c_vector<double, DIM> eigen_vec_1 = zero_vector<double>(DIM);
+        // eigen_vec_1[0] = shape_tensor_XY/sqrt( shape_tensor_XY*shape_tensor_XY+(shape_lambda1-shape_tensor_XX)*(shape_lambda1-shape_tensor_XX) );
+        // eigen_vec_1[1] = (shape_lambda1-shape_tensor_XX)/sqrt( shape_tensor_XY*shape_tensor_XY+(shape_lambda1-shape_tensor_XX)*(shape_lambda1-shape_tensor_XX) );
+        // double principal_axis_of_shape = abs(atan(eigen_vec_1[1]/eigen_vec_1[0]));
+        // pCell->GetCellData()->SetItem("PrincipalAxisOfShape", principal_axis_of_shape);
+
+        // double principal_axis_of_stress = 0.5*acos( (stress_XX-0.5*(stress_XX+stress_YY))/R );
+        // pCell->GetCellData()->SetItem("PrincipalAxisOfStress", principal_axis_of_stress);
 
         pCell->GetCellData()->SetItem("StressXX", stress_XX);
         pCell->GetCellData()->SetItem("StressYY", stress_YY);
@@ -1387,7 +1417,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
 //        std::cout<<"normal_to_face="<<length_of_vector_normal_to_face<<std::endl;
 //        std::cout<<"principal_axis="<<length_of_vector_of_principal_axis<<std::endl;
 
-        pElement = pMesh->GetElement(*shared_elements.end());
+        pElement = pMesh->GetElement(*++shared_elements.begin());
         pCell = rCellPopulation.GetCellUsingLocationIndex(pElement->GetIndex());
         stress1 = pCell->GetCellData()->GetItem("Stress1");
         stress2 = pCell->GetCellData()->GetItem("Stress2");
