@@ -128,7 +128,6 @@ public:
 
         bool   if_consider_feedback_of_face_values = true;
         double Km_for_myosin_feedback = 1.0; // 1.0 for defaut
-//?        double feedback_rate_for_myosin_activity = 0.00*400*0.01125/(M_PI/reference_area);//beta
         double feedback_rate_for_myosin_activity = 0.01/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -263,7 +262,7 @@ public:
         
         double dt = 0.25*0.1*(M_PI/reference_area);
         double end_time = 400.0*(M_PI/reference_area);
-        double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area));
+        double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;
         bool   restrict_vertex_movement = false; // 
@@ -271,7 +270,7 @@ public:
            assert(restrict_vertex_movement == false);
 
 /* 9. Cell rearrangement */
-        double set_cell_rearrangement_threshold = 0.01/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
+        double cell_rearrangement_threshold = 0.01/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
 
 /* 10. Output & display */
         bool   output_concise_swap_information_when_remesh = false;
@@ -286,7 +285,6 @@ public:
 
         /*------------------------------START: Mesh Structure------------------------------*/
         // Strips structure of substrate adhesion
-        double cell_rearrangement_threshold = set_cell_rearrangement_threshold;
         bool   if_update_face_elements_in_mesh = if_consider_feedback_of_face_values;
         
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001/sqrt((M_PI/reference_area)));
@@ -603,7 +601,7 @@ public:
         struct tm * now = localtime(& raw_time);
 
         std::string output_directory = 
-            "EpithelialBridgeSimulation/PHASE-DIAGRAM/Simulation Results Start From: ";
+            "PHASE-DIAGRAM/Simulation Results Start From: ";
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
@@ -663,7 +661,7 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplier;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
-        oss << "_SWid=" << std::fixed << setprecision(1) << strip_width;
+        oss << "_SWid=" << std::fixed << setprecision(2) << strip_width;
         if (multiple_leading_cells)
           oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
@@ -676,6 +674,10 @@ public:
           oss << "_MyoDeprRate=" << std::scientific << setprecision(1)<< myosin_activity_depressing_rate;
         if (!if_apply_feedback_of_face_values_only_for_boundary_cells)
           oss << "_FbInside=1";
+        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
+        if (apply_my_change_to_make_timestep_adaptive)
+          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(2) << max_movement_per_timestep;
+
         output_directory += oss.str();
 
         oss.str("");
@@ -691,7 +693,7 @@ public:
         output_directory += "/Dt=" + oss.str();
         oss.str("");
         oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
-        output_directory += "_RearThr=" + oss.str();
+        output_directory += "_T1Thresh=" + oss.str();
         if (apply_my_change_to_make_timestep_adaptive)
         {
           oss.str("");
