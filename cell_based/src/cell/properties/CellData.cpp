@@ -55,7 +55,7 @@ double CellData::GetItem(const std::string& rVariableName) const
     std::map<std::string, double>::const_iterator it = mCellData.find(rVariableName);
     if (it == mCellData.end())
     {
-        std::cout << std::endl << "Error in CellData::GetItem. The item " << rVariableName << " is not stored" << std::endl;
+        // std::cout << std::endl << "Error in CellData::GetItem. The item " << rVariableName << " is not stored" << std::endl;
         EXCEPTION("The item " << rVariableName << " is not stored");
     }
     return(it->second);

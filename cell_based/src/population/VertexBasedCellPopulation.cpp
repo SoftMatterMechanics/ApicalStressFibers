@@ -467,8 +467,11 @@ void VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile(const std::string& rD
             }
             catch(...)
             {
-                std::cout << std::endl << "Error in VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile: GetItem() of CellData, but won't effect a lot.";
-                std::cout << std::endl;
+                if (false)
+                {
+                    std::cout << std::endl << "Error in VertexBasedCellPopulation<DIM>::WriteVtkResultsToFile: GetItem() of CellData, but won't effect a lot.";
+                    std::cout << std::endl;
+                }
             }
         }
     }

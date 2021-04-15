@@ -138,7 +138,7 @@ public:
 
         // change feedback after a time.
         double time_for_changing_feedback = DOUBLE_UNSET; // 100.0; // DOUBLE_UNSET;
-        double changed_Km_for_myosin_feedback = 0.5;
+        double changed_Km_for_myosin_feedback = 0.0;
         double changed_feedback_rate = feedback_rate_for_myosin_activity;
         double changed_myosin_activity_base_value = 1; // myosin_activity_base_value = 1 by default
 
@@ -154,12 +154,14 @@ public:
         double cell_boundary_adhesion_parameter = 0.0; // cell-cell adhesion at boundary
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
+        bool   cell_cell_adhesion_dont_decrease = true;
         double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.01;
         double hill_power_for_adhesion = 8.0;
-        bool   CCA_dont_decrease = false;
-        bool   CCA_increasing_has_a_threshold_of_edge_length = false;
-        double CCA_increasing_threshold_of_edge_length_percentage = 0.5;
+        double reference_stress_for_cc_adhesion = 1.0;
+        bool   CCA_dont_decrease = false; // not used now
+        bool   CCA_increasing_has_a_threshold_of_edge_length = false; // not used now
+        double CCA_increasing_threshold_of_edge_length_percentage = 0.5; // not used now
 
 /* 4. Substrate Ahesion */
         bool   if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
@@ -193,7 +195,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 2.0*12/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -257,7 +259,7 @@ public:
         bool   if_equilibrate_for_a_while = true;
         if (end_time_for_equilibrium <= 0.0)
            if_equilibrate_for_a_while = false;
-        double polarity_magnitude_equilibrium = 0.2;
+        double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.25*0.1*(M_PI/reference_area);
         double end_time = 400.0*(M_PI/reference_area);
@@ -269,7 +271,7 @@ public:
            assert(restrict_vertex_movement == false);
 
 /* 9. Cell rearrangement */
-        double set_cell_rearrangement_threshold = 0.01/sqrt((M_PI/reference_area)); // the minimum threshold distance for element T1 rearrangement 
+        double set_cell_rearrangement_threshold = 0.01/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
 
 /* 10. Output & display */
         bool   output_concise_swap_information_when_remesh = false;
@@ -495,9 +497,12 @@ public:
         p_face_value_and_stress_state_modifier->SetKmForMyosinFeedback(Km_for_myosin_feedback);
         p_face_value_and_stress_state_modifier->SetFeedbackRateForMyosinActivity(feedback_rate_for_myosin_activity);
         p_face_value_and_stress_state_modifier->SetHillPowerForMyosinActivity(hill_power_for_myosin_activity);
+        
+        p_face_value_and_stress_state_modifier->SetCellCellAdhesionDontDecrease(cell_cell_adhesion_dont_decrease);
         p_face_value_and_stress_state_modifier->SetKsForAdhesionFeedback(Ks_for_adhesion_feedback);
         p_face_value_and_stress_state_modifier->SetFeedbackRateForAdhesion(feedback_rate_for_adhesion);
         p_face_value_and_stress_state_modifier->SetHillPowerForAdhesion(hill_power_for_adhesion);
+        p_face_value_and_stress_state_modifier->SetReferenceStress(reference_stress_for_cc_adhesion);
 
         // changed feedback
         p_face_value_and_stress_state_modifier->SetTimeForChangingFeedback(time_for_changing_feedback);
@@ -538,6 +543,10 @@ public:
         p_face_value_and_stress_state_modifier->SetConsiderConsistencyForSSA(consider_consistency_for_SSA);
         p_face_value_and_stress_state_modifier->SetStripSubstrateAdhesionParameter(homogeneous_substrate_adhesion_parameter);
         p_face_value_and_stress_state_modifier->SetReservoirSubstrateAdhesionParameter(reservoir_substrate_adhesion_parameter);
+
+        // equilibrium related
+        p_face_value_and_stress_state_modifier->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_face_value_and_stress_state_modifier->SetEndTimeForEquilibrium(end_time_for_equilibrium);
 
         simulator.AddSimulationModifier(p_face_value_and_stress_state_modifier);
         /*-----------------------END: !!!!!!Feedback: FaceValueAndStressStateModifier: need modification---------------*/
@@ -608,13 +617,17 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_Fb=" << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_myosin_activity;
-        if (Km_for_myosin_feedback!=1.0 || hill_power_for_myosin_activity!=8.0)
-          oss << "_KL=" << std::fixed << setprecision(2) << Km_for_myosin_feedback << "_Hill=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
+        oss << "_FbMyo=" << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_myosin_activity;
+        oss << "_Km=" << std::fixed << setprecision(2) << Km_for_myosin_feedback << "_Hl=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
-          oss << "_KL_changed=" << changed_Km_for_myosin_feedback;
+          oss << "_Km_changed=" << changed_Km_for_myosin_feedback;
         if (EMA_dont_decrease_below_a_threshold)
           oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
+
+        oss << "_FbAdh=" << ((feedback_rate_for_adhesion>=0.01 || feedback_rate_for_adhesion==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_adhesion;
+        oss << "_Ks=" << std::fixed << setprecision(2) << Ks_for_adhesion_feedback << "_Hl=" << std::fixed << setprecision(1) << hill_power_for_adhesion;
+        oss << "_RefS=" << std::fixed << setprecision(2) << reference_stress_for_cc_adhesion;
+
         oss << "_Dt=" << std::scientific << setprecision(1) << dt;
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
@@ -626,9 +639,9 @@ public:
           oss << "_Brown=0";
         oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         if (seed_manually)
-          oss << "_RndSeedPolr=" << seed_for_initial_random_polarity;
+          oss << "_PSeed=" << seed_for_initial_random_polarity;
         else
-          oss << "_RndSeedPolr=N";
+          oss << "_PSeed=N";
 
         oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
 
@@ -650,7 +663,7 @@ public:
           oss << "_LongMesh=" << num_ele_up_multiplier;
         if (if_use_larger_strip_distance)
           oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
-        oss << "_StpWid=" << std::fixed << setprecision(1) << strip_width;
+        oss << "_SWid=" << std::fixed << setprecision(1) << strip_width;
         if (multiple_leading_cells)
           oss << "_LeadCells=" << leading_cell_number;
         if (!run_with_birth)
@@ -783,14 +796,14 @@ public:
           output_directory += "_|FeedbackPara:";
           oss.str("");
           oss << std::fixed << setprecision(1) << Km_for_myosin_feedback;
-          output_directory += "_KL=" + oss.str();
+          output_directory += "_Km=" + oss.str();
 
           oss.str("");
           oss << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(3) << feedback_rate_for_myosin_activity;
           output_directory += "MyoFeStr=" + oss.str();
           oss.str("");
           oss << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
-          output_directory += "_MyoHill=" + oss.str();
+          output_directory += "_MyoHl=" + oss.str();
           if (if_consider_feedback_of_cell_cell_adhesion)
           {
             oss.str("");
@@ -798,7 +811,7 @@ public:
             output_directory += "_AdhFeStr=" + oss.str();
             oss.str("");
             oss << std::fixed << setprecision(1) << hill_power_for_adhesion;
-            output_directory += "_AdhHill=" + oss.str();
+            output_directory += "_AdhHl=" + oss.str();
           }
         }
 

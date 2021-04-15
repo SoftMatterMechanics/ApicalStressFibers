@@ -63,6 +63,7 @@ FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
       mKsForAdhesionFeedback(1.0),
       mFeedbackRateForAdhesion(1.0),
       mHillPowerForAdhesion(8.0),
+      mReferenceStress(1.0),
 
       mIfCalculateStressState(true),
       mIfSetCellDataOfEachForceContributions(false),
@@ -112,6 +113,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPop
         UpdateGroupNumbers(rCellPopulation);
     if (mMarkLeadingCells)
         UpdateLamellipodiumInfoOfCells(rCellPopulation);
+    if (mIfEquilibrateForAWhile)
+        SetupLeaderCellAtTheEndOfEquilibrium(rCellPopulation);    
 }
 
 template<unsigned DIM>
@@ -137,6 +140,8 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM
         UpdateGroupNumbers(rCellPopulation);
     if (mMarkLeadingCells)
         SetupSolveForLamellipodiumInfoOfCells(rCellPopulation);
+    if (mIfEquilibrateForAWhile)
+        SetupLeaderCellAtTheEndOfEquilibrium(rCellPopulation);
 }
 
 template<unsigned DIM>
@@ -156,16 +161,16 @@ void FaceValueAndStressStateModifier<DIM>::InitializeShapeTensorOfCell(CellPtr p
 template<unsigned DIM>
 void FaceValueAndStressStateModifier<DIM>::InitializeStressOfCell(CellPtr pCell)
 {
-    double feedback_rate = this->mFeedbackRateForAdhesion;
-    assert(feedback_rate!=0);
-    double q = this->mHillPowerForAdhesion;
-    double Ks = this->mKsForAdhesionFeedback;
-    double pho = 2.0*feedback_rate;
-    double ksi = 1.0*feedback_rate;
-    double sigma_at_initial_equilibrium = pow(Ks*ksi/(pho-ksi),1.0/q);
+    // double feedback_rate = this->mFeedbackRateForAdhesion;
+    // assert(feedback_rate!=0);
+    // double q = this->mHillPowerForAdhesion;
+    // double Ks = this->mKsForAdhesionFeedback;
+    // double pho = 2.0*feedback_rate;
+    // double ksi = 1.0*feedback_rate;
+    // double reference_stress = mReferenceStress;
 
-    pCell->GetCellData()->SetItem("Stress1",sigma_at_initial_equilibrium);
-    pCell->GetCellData()->SetItem("Stress2",sigma_at_initial_equilibrium);
+    pCell->GetCellData()->SetItem("Stress1",mReferenceStress);
+    pCell->GetCellData()->SetItem("Stress2",mReferenceStress);
     pCell->GetCellData()->SetItem("PrincipalAxisOfStress",0.0);
 }
 
@@ -654,7 +659,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
     unsigned elem_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
     VertexElement<DIM, DIM>* p_element = p_mesh->GetElement(elem_index);
 
-    double dt = SimulationTime::Instance()->GetTimeStep();
+    // double dt = SimulationTime::Instance()->GetTimeStep();
 
     if (mCaseNumberOfMembraneSurfaceEnergyForm >= 0u)
     {
@@ -1017,23 +1022,23 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
         
         assert((shape_tensor_XX + shape_tensor_YY + shape_tensor_XY) < DOUBLE_UNSET );
 
-        double shape_tensor_XX_old = pCell->GetCellData()->GetItem("shape_tensor_xx");
-        double shape_tensor_YY_old = pCell->GetCellData()->GetItem("shape_tensor_yy");
-        double shape_tensor_XY_old = pCell->GetCellData()->GetItem("shape_tensor_xy");
+    //     double shape_tensor_XX_old = pCell->GetCellData()->GetItem("shape_tensor_xx");
+    //     double shape_tensor_YY_old = pCell->GetCellData()->GetItem("shape_tensor_yy");
+    //     double shape_tensor_XY_old = pCell->GetCellData()->GetItem("shape_tensor_xy");
 
-        double shape_tensor_XX_rate = (shape_tensor_XX - shape_tensor_XX_old)/dt;
-        double shape_tensor_YY_rate = (shape_tensor_YY - shape_tensor_YY_old)/dt;
-        double shape_tensor_XY_rate = (shape_tensor_XY - shape_tensor_XY_old)/dt;
-    //    double shape_tensor_YX_rate = shape_tensor_XY_rate;
+    //     double shape_tensor_XX_rate = (shape_tensor_XX - shape_tensor_XX_old)/dt;
+    //     double shape_tensor_YY_rate = (shape_tensor_YY - shape_tensor_YY_old)/dt;
+    //     double shape_tensor_XY_rate = (shape_tensor_XY - shape_tensor_XY_old)/dt;
+    // //    double shape_tensor_YX_rate = shape_tensor_XY_rate;
 
-        double dynamic_stress_XX = -1.0/2*shape_tensor_XX_rate;
-        double dynamic_stress_YY = -1.0/2*shape_tensor_YY_rate;
-        double dynamic_stress_XY = -1.0/2*shape_tensor_XY_rate;
-    //   double dynamic_stress_YX = -1.0/2*shape_tensor_YX_rate;
+    //     double dynamic_stress_XX = -1.0/2*shape_tensor_XX_rate;
+    //     double dynamic_stress_YY = -1.0/2*shape_tensor_YY_rate;
+    //     double dynamic_stress_XY = -1.0/2*shape_tensor_XY_rate;
+    // //   double dynamic_stress_YX = -1.0/2*shape_tensor_YX_rate;
 
-        double stress_XX = static_stress_XX + dynamic_stress_XX;
-        double stress_YY = static_stress_YY + dynamic_stress_YY;
-        double stress_XY = static_stress_XY + dynamic_stress_XY;
+        double stress_XX = static_stress_XX; // + dynamic_stress_XX;
+        double stress_YY = static_stress_YY; // + dynamic_stress_YY;
+        double stress_XY = static_stress_XY; // + dynamic_stress_XY;
 
 //        double R = sqrt( pow((stress_XX-stress_YY)/2, 2) + pow(stress_XY, 2) );
 //       double stress_1 = (stress_XX + stress_YY)/2 + R;
@@ -1372,9 +1377,9 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
     assert(feedback_rate!=0);
     double q = this->mHillPowerForAdhesion;
     double Ks = this->mKsForAdhesionFeedback;
-    double pho = 2.0*feedback_rate;
+    double pho = (1+Ks)*feedback_rate;
     double ksi = 1.0*feedback_rate;
-    double sigma_at_initial_equilibrium = pow(Ks*ksi/(pho-ksi),1.0/q);
+    double reference_stress = mReferenceStress;
 
     VertexElement<DIM-1, DIM>* pFace = pMesh->GetFace(faceIndex);
     Node<DIM>* pNodeA = pFace->GetNode(0);
@@ -1448,14 +1453,17 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
         angle = acos(dot_product/(length_of_vector_normal_to_face*length_of_vector_of_principal_axis));
         double stress_normal_to_face_in_second_element = (stress1+stress2)/2 + (stress1-stress2)/2*cos(2*angle);
 
-        double sigma = 1.0/2*(fabs(stress_normal_to_face_in_first_element)+fabs(stress_normal_to_face_in_second_element))/sigma_at_initial_equilibrium;
+        double sigma = 1.0/2*(fabs(stress_normal_to_face_in_first_element)+fabs(stress_normal_to_face_in_second_element))/reference_stress;
         double unified_cell_cell_adhesion_energy_parameter = pFace->GetUnifiedCellCellAdhesionEnergyParameter();
         double changing_rate = pho*pow(sigma,q)/(Ks+pow(sigma,q))-ksi*unified_cell_cell_adhesion_energy_parameter;
 
-        unified_cell_cell_adhesion_energy_parameter += changing_rate*dt;
+        if (mCellCellAdhesionDontDecrease && changing_rate<0.0 && unified_cell_cell_adhesion_energy_parameter<=1.0)
+            unified_cell_cell_adhesion_energy_parameter += 0.0;
+        else
+            unified_cell_cell_adhesion_energy_parameter += changing_rate*dt;
         pFace->SetUnifiedCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
 
-    //    std::cout<<"initial_sigma="<<sigma_at_initial_equilibrium<<std::endl;
+    //    std::cout<<"initial_sigma="<<reference_stress<<std::endl;
     //    std::cout<<"stress_in_element1="<<fabs(stress_normal_to_face_in_first_element)<<std::endl;
     //    std::cout<<"stress_in_element2="<<fabs(stress_normal_to_face_in_second_element)<<std::endl;
     //    std::cout<<"sigma="<<sigma<<std::endl;
@@ -1573,6 +1581,84 @@ void FaceValueAndStressStateModifier<DIM>::UpdateGroupNumberOfCell(AbstractCellP
 
     unsigned group_number = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) )->GetGroupNumber();
     pCell->GetCellData()->SetItem("group number", group_number);
+}
+
+template<unsigned DIM>
+void FaceValueAndStressStateModifier<DIM>::SetupLeaderCellAtTheEndOfEquilibrium(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+{
+    SimulationTime* p_time = SimulationTime::Instance();
+    if (! (mIfEquilibrateForAWhile && p_time->GetTime()<mEndTimeForEquilibrium && p_time->GetTime()>(mEndTimeForEquilibrium-2*p_time->GetTimeStep()) ) )
+        return;
+
+    if (dynamic_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh()) == nullptr)
+    {
+        EXCEPTION("MutableVertexMesh should to be used in the FaceValueAndStressStateModifier");
+    }
+    MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
+
+    assert(!mMultipleLeadingCells);
+    unsigned LeaderCellElementIndex = 10000000;
+    double LeaderCellDisToStrip = 100000.0;
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        CellPtr pCell = *cell_iter;
+        VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+        unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
+        for (unsigned index=0; index< pElement->GetNumNodes(); index++)
+        {
+            if (pElement->GetNode(index)->IsBoundaryNode())
+            {
+                // is_boundary_cell = true;
+                double dis = fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation);
+                if (p_mesh->GetCentroidOfElement(ele_index)[1]>mStripStartYLocation/2.0 && dis<LeaderCellDisToStrip)
+                {
+                    LeaderCellElementIndex = ele_index;
+                    LeaderCellDisToStrip = dis;
+                }
+                break;
+            }
+        }
+    }
+    assert(LeaderCellElementIndex!=10000000);
+
+    // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
+    for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+        cell_iter != rCellPopulation.rGetCells().end();
+        ++cell_iter)
+    {
+        CellPtr pCell = *cell_iter;
+        unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
+        VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+
+        if (ele_index == LeaderCellElementIndex)
+        {
+            pElement->SetIsLeadingCell(true);
+            pElement->SetIsLeadingCellTop(true);
+            pElement->SetIsLeadingCellBottom(false);
+            pElement->SetIsJustReAttached(false);
+            pElement->SetLamellipodiumStrength(1.0);
+            pCell->GetCellData()->SetItem("is_leading_cell", 1);
+            pCell->GetCellData()->SetItem("is_leading_cell_top", 1);
+            pCell->GetCellData()->SetItem("is_leading_cell_bottom", 0);
+            pCell->GetCellData()->SetItem("is_just_reattached", 0);
+            pCell->GetCellData()->SetItem("lamellipodium_strength", 1.0);
+        }
+        else
+        {
+            pElement->SetIsLeadingCell(false);
+            pElement->SetIsLeadingCellTop(false);
+            pElement->SetIsLeadingCellBottom(false);
+            pElement->SetIsJustReAttached(false);
+            pElement->SetLamellipodiumStrength(0.0);
+            pCell->GetCellData()->SetItem("is_leading_cell", 0);
+            pCell->GetCellData()->SetItem("is_leading_cell_top", 0);
+            pCell->GetCellData()->SetItem("is_leading_cell_bottom", 0);
+            pCell->GetCellData()->SetItem("is_just_reattached", 0);
+            pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
+        }
+    }
 }
 
 template<unsigned DIM>

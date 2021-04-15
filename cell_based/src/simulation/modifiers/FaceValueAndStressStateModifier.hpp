@@ -88,9 +88,11 @@ protected:
     double mKmForMyosinFeedback;
     double mFeedbackRateForMyosinActivity;
     double mHillPowerForMyosinActivity;
+    bool   mCellCellAdhesionDontDecrease;
     double mKsForAdhesionFeedback;
     double mFeedbackRateForAdhesion;
     double mHillPowerForAdhesion;
+    double mReferenceStress;
 
     bool   mIfCalculateStressState;
     bool   mIfSetCellDataOfEachForceContributions;
@@ -115,6 +117,8 @@ protected:
     unsigned mLeadingCellNumber;
     double mLamellipodiumMaturationRate;
     double mLamellipodiumDestructionRate;
+    bool   mIfEquilibrateForAWhile;
+    double mEndTimeForEquilibrium;
 
     bool   mIfOutputModifierInformation;
 
@@ -165,6 +169,16 @@ public:
 
     void UpdateUnifiedCellCellAdhesionEnergyParameterOfFace(AbstractCellPopulation<DIM,DIM>& rCellPopulation, unsigned faceIndex);
 
+    void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
+    {
+      mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
+    }
+
+    void SetEndTimeForEquilibrium(double endTimeForEquilibrium)
+    {
+      mEndTimeForEquilibrium = endTimeForEquilibrium;
+    }
+
   // start of change made by Chao
     c_vector<double, DIM> GetStripSubstrateAdhesionAreaGradientOfElementAtNode(AbstractCellPopulation<DIM>& rCellPopulation,VertexElement<DIM,DIM>* pElement, unsigned localIndex);
 
@@ -189,6 +203,8 @@ public:
     void UpdateGroupNumbers(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
     
     void UpdateGroupNumberOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+    void SetupLeaderCellAtTheEndOfEquilibrium(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
     void SetupSolveForLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
@@ -291,6 +307,11 @@ public:
       this->mHillPowerForMyosinActivity = hillPowerForMyosinActivity;
     }
 
+    void SetCellCellAdhesionDontDecrease(bool cellCellAdhesionDontDecrease)
+    {
+      mCellCellAdhesionDontDecrease = cellCellAdhesionDontDecrease;
+    }
+
     void SetKsForAdhesionFeedback(double ksForAdhesionFeedback)
     {
       mKsForAdhesionFeedback = ksForAdhesionFeedback;
@@ -304,6 +325,11 @@ public:
     void SetHillPowerForAdhesion(double hillPowerForAdhesion)
     {
       mHillPowerForAdhesion = hillPowerForAdhesion;
+    }
+
+    void SetReferenceStress(double referenceStress)
+    {
+      mReferenceStress = referenceStress;
     }
 
     // stress state
