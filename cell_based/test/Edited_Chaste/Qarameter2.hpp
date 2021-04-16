@@ -127,7 +127,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 1.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -194,7 +194,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 10/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 14/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;

@@ -127,7 +127,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 5.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -155,7 +155,7 @@ public:
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
         double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
-        double feedback_rate_for_adhesion = 0.01;
+        double feedback_rate_for_adhesion = 0.1;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
         bool   CCA_dont_decrease = false; // not used now
@@ -260,7 +260,7 @@ public:
            if_equilibrate_for_a_while = false;
         double polarity_magnitude_equilibrium = 0.5;
         
-        double dt = 0.25*0.1*(M_PI/reference_area);
+        double dt = 0.05*(M_PI/reference_area); // Previously 0.025
         double end_time = 400.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
@@ -601,7 +601,7 @@ public:
         struct tm * now = localtime(& raw_time);
 
         std::string output_directory = 
-            "PHASE-DIAGRAM/Simulation Results Start From: ";
+            "PHASE-DIAGRAM/Date: ";
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
@@ -615,36 +615,33 @@ public:
             oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
         }
 
-        oss << "_FbMyo=" << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_myosin_activity;
-        oss << "_Km=" << std::fixed << setprecision(2) << Km_for_myosin_feedback << "_Hl=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
+        oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index;        
+
+        oss << "_Myo:";
+        oss << "Km=" << std::fixed << setprecision(2) << Km_for_myosin_feedback;
+        oss << "_beta=" << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_myosin_activity;
+        oss << "_RefP=" << std::fixed << setprecision(2) << 6*sqrt( reference_area/(6*sqrt(3)/4) );
+        oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
           oss << "_Km_changed=" << changed_Km_for_myosin_feedback;
         if (EMA_dont_decrease_below_a_threshold)
           oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
 
-        oss << "_FbAdh=" << ((feedback_rate_for_adhesion>=0.01 || feedback_rate_for_adhesion==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_adhesion;
-        oss << "_Ks=" << std::fixed << setprecision(2) << Ks_for_adhesion_feedback << "_Hl=" << std::fixed << setprecision(1) << hill_power_for_adhesion;
+        oss << "_Adh:";
+        oss << "Kc=" << std::fixed << setprecision(2) << Ks_for_adhesion_feedback;
+        oss << "_beta=" << ((feedback_rate_for_adhesion>=0.01 || feedback_rate_for_adhesion==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_adhesion;
         oss << "_RefS=" << std::fixed << setprecision(2) << reference_stress_for_cc_adhesion;
+        oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_adhesion;
 
         oss << "_Dt=" << std::scientific << setprecision(1) << dt;
+        if (apply_my_change_to_make_timestep_adaptive)
+          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
+        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
 
-        oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index
-            << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
+        oss << "_A0=" << std::fixed << setprecision(2) << reference_area;
+        oss << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
-        if (add_random_force&&(has_brownian_random_force))
-          oss << "_Brown:Dtr=" << std::scientific << setprecision(2) << translational_diffusion_constant;
-        else
-          oss << "_Brown=0";
-        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
-        if (seed_manually)
-          oss << "_PSeed=" << seed_for_initial_random_polarity;
-        else
-          oss << "_PSeed=N";
 
-        oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
-
-        if(if_check_for_T4_swaps)
-          oss << "_T4swaps=1";
         if (if_strip_substrate_adhesion_is_homogeneous)
           oss << "_HomoSSA=" << std::fixed << setprecision(1) << homogeneous_substrate_adhesion_parameter;
         else
@@ -653,30 +650,46 @@ public:
             << "_basic=" << std::fixed << setprecision(1) << basic_SSA;
           if (use_new_SSA_distribution_rule)
             oss << "_NewSSARule:matu_rate=" << std::fixed << setprecision(2) << lamellipodium_maturation_rate
-                << "_destru_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
+                << "_destr_rate=" << std::fixed << setprecision(2) << lamellipodium_destruction_rate;
           else if (use_my_detach_pattern_method)
             oss << "_Multiple_lead_tops=1";
         }
-        if (use_longer_mesh)
-          oss << "_LongMesh=" << num_ele_up_multiplier;
-        if (if_use_larger_strip_distance)
-          oss << "_StripDis=" << std::fixed << setprecision(3) << strip_distance;
-        oss << "_SWid=" << std::fixed << setprecision(2) << strip_width;
+        if(if_check_for_T4_swaps)
+          oss << "_T4swaps=1";
+        oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
+        
+        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
+        if (polarity_magnitude!=0.0)
+        {
+          oss << "_Dr=" << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
+          if (seed_manually)
+            oss << "_PSeed=" << seed_for_initial_random_polarity;
+          else
+            oss << "_PSeed=N";
+        }
+        if (add_random_force&&(has_brownian_random_force))
+          oss << "_Brown:D=" << std::scientific << setprecision(2) << translational_diffusion_constant;
+        else
+          oss << "_Brown=0";
+
+        if (num_ele_up!=8)
+          oss << "_NumUp=" << num_ele_up;
+        if (num_ele_cross!=6)
+          oss << "_NumCr=" << num_ele_cross;
+        if ( fabs( strip_width - 0.5*sqrt(3)*sqrt(initial_area/(6*sqrt(3)/4)) )>1e-10 )
+          oss << "_SWid=" << std::fixed << setprecision(2) << strip_width;
+        if ( fabs(strip_distance - 6*sqrt(3)*sqrt(initial_area/(6*sqrt(3)/4)))>1e-10 )
+          oss << "_SDis=" << std::fixed << setprecision(3) << strip_distance; 
         if (multiple_leading_cells)
           oss << "_LeadCells=" << leading_cell_number;
-        if (!run_with_birth)
-          oss << "_NoDivi";
-        else
-          oss << "_Divi=1";
         if (move_mesh_right_for_N_periods!=0)
           oss << "_MvRight=" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
         if (has_myo_depression)
           oss << "_MyoDeprRate=" << std::scientific << setprecision(1)<< myosin_activity_depressing_rate;
-        if (!if_apply_feedback_of_face_values_only_for_boundary_cells)
-          oss << "_FbInside=1";
-        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
-        if (apply_my_change_to_make_timestep_adaptive)
-          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
+        if (if_apply_feedback_of_face_values_only_for_boundary_cells)
+          oss << "_FbInside=0";
+        if (run_with_birth)
+          oss << "_Divi";
 
         output_directory += oss.str();
 
