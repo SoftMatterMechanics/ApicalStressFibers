@@ -261,7 +261,7 @@ public:
         double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.25*0.1*(M_PI/reference_area);
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 1.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;
