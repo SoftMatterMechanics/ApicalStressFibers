@@ -157,7 +157,7 @@ public:
         double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.01;
         double hill_power_for_adhesion = 8.0;
-        double reference_stress_for_cc_adhesion = 1.0;
+        double reference_stress_for_cc_adhesion = 1.0; // sigma0.
         bool   CCA_dont_decrease = false; // not used now
         bool   CCA_increasing_has_a_threshold_of_edge_length = false; // not used now
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5; // not used now
@@ -674,9 +674,9 @@ public:
           oss << "_MyoDeprRate=" << std::scientific << setprecision(1)<< myosin_activity_depressing_rate;
         if (!if_apply_feedback_of_face_values_only_for_boundary_cells)
           oss << "_FbInside=1";
-        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
+        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
         if (apply_my_change_to_make_timestep_adaptive)
-          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(2) << max_movement_per_timestep;
+          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
 
         output_directory += oss.str();
 
@@ -692,12 +692,12 @@ public:
         oss << std::fixed << setprecision(4) << dt;
         output_directory += "/Dt=" + oss.str();
         oss.str("");
-        oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(2) << cell_rearrangement_threshold;
+        oss << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
         output_directory += "_T1Thresh=" + oss.str();
         if (apply_my_change_to_make_timestep_adaptive)
         {
           oss.str("");
-          oss << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(2) << max_movement_per_timestep;
+          oss << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
           output_directory += "_MaxMvDt=" + oss.str();
         }
         if (if_consider_strip_substrate_adhesion)
