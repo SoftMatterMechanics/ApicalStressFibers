@@ -1,5 +1,5 @@
 Edited_Chaste/NonAdhMigPat.hpp
-Edited_Chaste/ATmpParameter.hpp
+Edited_Chaste/ATmpPara.hpp
 Edited_Chaste/Parameter1.hpp
 Edited_Chaste/Parameter2.hpp
 Edited_Chaste/Parameter3.hpp
