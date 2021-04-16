@@ -270,7 +270,7 @@ public:
            assert(restrict_vertex_movement == false);
 
 /* 9. Cell rearrangement */
-        double cell_rearrangement_threshold = 0.03/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
+        double cell_rearrangement_threshold = 0.05/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
 
 /* 10. Output & display */
         bool   output_concise_swap_information_when_remesh = false;

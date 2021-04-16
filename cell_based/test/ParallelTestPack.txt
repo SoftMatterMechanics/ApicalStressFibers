@@ -1,1 +1,10 @@
-population/TestNodeBasedCellPopulationParallelMethods.hpp
+Edited_Chaste/Qarameter1.hpp
+Edited_Chaste/Qarameter2.hpp
+Edited_Chaste/Qarameter3.hpp
+Edited_Chaste/Qarameter4.hpp
+Edited_Chaste/Qarameter5.hpp
+Edited_Chaste/Qarameter6.hpp
+Edited_Chaste/Qarameter7.hpp
+Edited_Chaste/Qarameter8.hpp
+Edited_Chaste/Qarameter9.hpp
+Edited_Chaste/Qarameter10.hpp

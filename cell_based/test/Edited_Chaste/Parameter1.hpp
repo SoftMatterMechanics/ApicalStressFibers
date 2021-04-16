@@ -86,7 +86,7 @@ public:
       //  double strip_width_multiple_for_sliding = 15.0;
         bool   if_use_larger_strip_distance = false; 
         double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
-        bool   use_longer_mesh = true; // for (num_ele_up) mesh
+        bool   use_longer_mesh = false; // for (num_ele_up) mesh
         int    num_ele_up_multiplier = 2;
         int    move_mesh_right_for_N_periods = 0; // for display of multiple periods
         bool   one_strip_only_in_a_period = true;
@@ -154,7 +154,7 @@ public:
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
-        double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
+        double Ks_for_adhesion_feedback = 0.0; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.01;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
@@ -270,7 +270,7 @@ public:
            assert(restrict_vertex_movement == false);
 
 /* 9. Cell rearrangement */
-        double cell_rearrangement_threshold = 0.03/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
+        double cell_rearrangement_threshold = 0.05/sqrt((M_PI/reference_area)); // previously: 0.05. // the minimum threshold distance for element T1 rearrangement 
 
 /* 10. Output & display */
         bool   output_concise_swap_information_when_remesh = false;
