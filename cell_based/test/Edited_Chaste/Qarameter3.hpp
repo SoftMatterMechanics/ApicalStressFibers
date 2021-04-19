@@ -127,7 +127,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 5.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -154,7 +154,7 @@ public:
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
-        double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
+        double Ks_for_adhesion_feedback = 0.25; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.1;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
@@ -605,6 +605,8 @@ public:
         oss.str("");
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
+
+        output_directory += "Kc=0.25/";
 
         oss.str("");
         if (if_strip_substrate_adhesion_is_homogeneous)

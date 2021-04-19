@@ -606,6 +606,8 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
 
+        output_directory += "Kc=0/";
+
         oss.str("");
         if (if_strip_substrate_adhesion_is_homogeneous)
         {
