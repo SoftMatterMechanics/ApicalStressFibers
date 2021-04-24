@@ -75,7 +75,7 @@ public:
         // assert(false);
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 4.5;//p0
+        double target_shape_index = 4.25;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         bool   is_default_feedback_form = false;
@@ -194,7 +194,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 14/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 12/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -261,7 +261,7 @@ public:
         double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.05*(M_PI/reference_area); // Previously 0.025
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 200.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;
@@ -606,7 +606,7 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
 
-        output_directory += "Km=0/";
+        output_directory += "Km=0.0/";
 
         oss.str("");
         if (if_strip_substrate_adhesion_is_homogeneous)
