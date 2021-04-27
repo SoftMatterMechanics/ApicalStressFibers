@@ -73,9 +73,10 @@ public:
     void TestStripSubstrateAdhesion()
     {
         // assert(false);
+        // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 4.25;//p0
+        double target_shape_index = 4.5;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         bool   is_default_feedback_form = false;
@@ -84,9 +85,9 @@ public:
         bool   strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
       //  double strip_width_multiple_for_sliding = 15.0;
-        bool   if_use_larger_strip_distance = false; 
+        bool   if_use_larger_strip_distance = true; 
         double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
-        bool   use_longer_mesh = false; // for (num_ele_up) mesh
+        bool   use_longer_mesh = true; // for (num_ele_up) mesh
         int    num_ele_up_multiplier = 2;
         int    move_mesh_right_for_N_periods = 0; // for display of multiple periods
         bool   one_strip_only_in_a_period = true;
@@ -102,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -127,7 +128,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 1.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -154,7 +155,7 @@ public:
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
-        double Ks_for_adhesion_feedback = 4.0; // 1.0 for defaut
+        double Ks_for_adhesion_feedback = 1.0; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.1;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
@@ -171,7 +172,7 @@ public:
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
         double reservoir_substrate_adhesion_parameter = 2.0*basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 3.0*basic_SSA;
         
           // Strip substrate adhesion form:
         bool   consider_consistency_for_SSA = true;
@@ -184,7 +185,7 @@ public:
         bool   if_check_for_T4_swaps = false;
         
         double sampling_time = 1.0*(M_PI/reference_area);
-        double small_change_for_area_calculation = 0.1/sqrt((M_PI/reference_area));
+        double small_change_for_area_calculation = 0.2/sqrt((M_PI/reference_area));
         
 /* 5. Pulling Force */
         // Note that pulling force is realized by different ways for epithelial bridge and vortex formation
@@ -194,7 +195,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 12/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 0.0/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -234,9 +235,9 @@ public:
 
         // Cell polarity
         bool   has_polarity = true;
-        double polarity_magnitude = 0.05;
+        double polarity_magnitude = 0.2;
         bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 1u;
+        unsigned seed_for_initial_random_polarity = 9u;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area);
 
         if (polarity_magnitude==0.0)
@@ -261,7 +262,7 @@ public:
         double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.05*(M_PI/reference_area); // Previously 0.025
-        double end_time = 200.0*(M_PI/reference_area);
+        double end_time = 400.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;
@@ -563,7 +564,7 @@ public:
 
 
         /*------------------------------------START: Timestep---------------------------------------*/
-        double sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
+        unsigned sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
 
         simulator.SetApplyMyChangesToMakeTimestepAdaptive(apply_my_change_to_make_timestep_adaptive);
         simulator.SetDt(dt);
@@ -606,16 +607,25 @@ public:
         oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
         output_directory += oss.str();
 
-        output_directory += "Km=0.0/";
+        oss.str("");
+        oss << "W=" << std::fixed << setprecision(0) << round(strip_width/0.95) << '/';
+        output_directory += oss.str();
 
         oss.str("");
-        if (if_strip_substrate_adhesion_is_homogeneous)
+
+        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
+        if (polarity_magnitude!=0.0)
         {
-          if (add_pulling_force_on_node_individually)
-            oss << "Fy_lead_node=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
-          if (add_pulling_force_evenly_on_nodes_of_leading_cell)
-            oss << "Fy=" << std::fixed << setprecision(1) << pulling_force_on_leading_cell;
+          oss << "_Dr=" << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
+          if (seed_manually)
+            oss << "_PSeed=" << seed_for_initial_random_polarity;
+          else
+            oss << "_PSeed=N";
         }
+        if (add_random_force&&(has_brownian_random_force))
+          oss << "_Brown:D=" << std::scientific << setprecision(2) << translational_diffusion_constant;
+        else
+          oss << "_Brown=0";
 
         oss << "_p0=" << std::fixed << setprecision(2) << target_shape_index;        
 
@@ -623,7 +633,7 @@ public:
         oss << "Km=" << std::fixed << setprecision(2) << Km_for_myosin_feedback;
         oss << "_beta=" << ((feedback_rate_for_myosin_activity>=0.01 || feedback_rate_for_myosin_activity==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_myosin_activity;
         oss << "_RefP=" << std::fixed << setprecision(2) << 6*sqrt( reference_area/(6*sqrt(3)/4) );
-        oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
+        // oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
           oss << "_Km_changed=" << changed_Km_for_myosin_feedback;
         if (EMA_dont_decrease_below_a_threshold)
@@ -633,14 +643,14 @@ public:
         oss << "Kc=" << std::fixed << setprecision(2) << Ks_for_adhesion_feedback;
         oss << "_beta=" << ((feedback_rate_for_adhesion>=0.01 || feedback_rate_for_adhesion==0.0)? std::fixed : std::scientific) << setprecision(2) << feedback_rate_for_adhesion;
         oss << "_RefS=" << std::fixed << setprecision(2) << reference_stress_for_cc_adhesion;
-        oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_adhesion;
+        // oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_adhesion;
 
         oss << "_Dt=" << std::scientific << setprecision(1) << dt;
         if (apply_my_change_to_make_timestep_adaptive)
           oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
         oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
 
-        oss << "_A0=" << std::fixed << setprecision(2) << reference_area;
+        // oss << "_A0=" << std::fixed << setprecision(2) << reference_area;
         oss << "_Ga=" << ((nagai_honda_membrane_surface_energy_parameter>=0.01 || nagai_honda_membrane_surface_energy_parameter==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << nagai_honda_membrane_surface_energy_parameter;
 
@@ -656,34 +666,18 @@ public:
           else if (use_my_detach_pattern_method)
             oss << "_Multiple_lead_tops=1";
         }
-        if(if_check_for_T4_swaps)
-          oss << "_T4swaps=1";
+        // if(if_check_for_T4_swaps)
+        //   oss << "_T4swaps=1";
         oss << "_RSA=" << std::fixed << setprecision(1) << reservoir_substrate_adhesion_parameter;
         
-        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
-        if (polarity_magnitude!=0.0)
-        {
-          oss << "_Dr=" << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
-          if (seed_manually)
-            oss << "_PSeed=" << seed_for_initial_random_polarity;
-          else
-            oss << "_PSeed=N";
-        }
-        if (add_random_force&&(has_brownian_random_force))
-          oss << "_Brown:D=" << std::scientific << setprecision(2) << translational_diffusion_constant;
-        else
-          oss << "_Brown=0";
-
         if (num_ele_up!=8)
           oss << "_NumUp=" << num_ele_up;
         if (num_ele_cross!=6)
           oss << "_NumCr=" << num_ele_cross;
         if ( fabs( strip_width - 0.5*sqrt(3)*sqrt(initial_area/(6*sqrt(3)/4)) )>1e-10 )
-          oss << "_SWid=" << std::fixed << setprecision(2) << strip_width;
+          oss << "_SWid=" << std::fixed << setprecision(0) << strip_width;
         if ( fabs(strip_distance - 6*sqrt(3)*sqrt(initial_area/(6*sqrt(3)/4)))>1e-10 )
-          oss << "_SDis=" << std::fixed << setprecision(3) << strip_distance; 
-        if (multiple_leading_cells)
-          oss << "_LeadCells=" << leading_cell_number;
+          oss << "_SDis=" << std::fixed << setprecision(0) << strip_distance; 
         if (move_mesh_right_for_N_periods!=0)
           oss << "_MvRight=" << std::fixed << setprecision(0) << move_mesh_right_for_N_periods;
         if (has_myo_depression)

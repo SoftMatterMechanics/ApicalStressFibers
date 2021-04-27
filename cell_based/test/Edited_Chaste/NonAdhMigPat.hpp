@@ -563,7 +563,7 @@ public:
 
 
         /*------------------------------------START: Timestep---------------------------------------*/
-        double sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
+        unsigned sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
 
         simulator.SetApplyMyChangesToMakeTimestepAdaptive(apply_my_change_to_make_timestep_adaptive);
         simulator.SetDt(dt);
