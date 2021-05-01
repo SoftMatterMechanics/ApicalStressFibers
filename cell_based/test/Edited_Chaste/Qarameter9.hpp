@@ -103,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 10*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -171,8 +171,8 @@ public:
 
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
-        double reservoir_substrate_adhesion_parameter = 2.0*basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 3.0*basic_SSA;
+        double reservoir_substrate_adhesion_parameter = 1.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
         
           // Strip substrate adhesion form:
         bool   consider_consistency_for_SSA = true;
@@ -237,7 +237,7 @@ public:
         bool   has_polarity = true;
         double polarity_magnitude = 0.2;
         bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 4u;
+        unsigned seed_for_initial_random_polarity = 9u;
         // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 0.01/(M_PI/reference_area);
 
@@ -250,8 +250,8 @@ public:
            assert(add_random_force == true);
 
 /* 7. Cell division */
-        bool   run_with_birth = false;
-        double time_for_one_division_of_cell_population = 25*(M_PI/reference_area);
+        bool   run_with_birth = true;
+        double time_for_one_division_of_cell_population = 2*(M_PI/reference_area);
         double growth_rate_for_target_area_after_division = 0.1/(M_PI/reference_area);
         bool   use_my_division_rule_along_with_modifier = true;
 

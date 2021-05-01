@@ -49,7 +49,8 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
       mIsLeadingCellTop(false),
       mIsLeadingCellBottom(false),
       mIsJustReAttached(false),
-      mLamellipodiumStrength(0.0)
+      mLamellipodiumStrength(0.0),
+      mElementMyosinActivity(1.0)
 {
     // This constructor should only be used in 3D
     assert(SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2));    // LCOV_EXCL_LINE - code will be removed at compile time
@@ -112,7 +113,8 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
       mIsLeadingCellTop(false),
       mIsLeadingCellBottom(false),
       mIsJustReAttached(false),
-      mLamellipodiumStrength(0.0)
+      mLamellipodiumStrength(0.0),
+      mElementMyosinActivity(1.0)
 {
 }
 

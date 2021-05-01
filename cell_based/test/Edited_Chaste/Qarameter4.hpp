@@ -171,8 +171,8 @@ public:
 
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
-        double reservoir_substrate_adhesion_parameter = 2.0*basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 3.0*basic_SSA;
+        double reservoir_substrate_adhesion_parameter = 1.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
         
           // Strip substrate adhesion form:
         bool   consider_consistency_for_SSA = true;
@@ -250,8 +250,8 @@ public:
            assert(add_random_force == true);
 
 /* 7. Cell division */
-        bool   run_with_birth = false;
-        double time_for_one_division_of_cell_population = 25*(M_PI/reference_area);
+        bool   run_with_birth = true;
+        double time_for_one_division_of_cell_population = 2*(M_PI/reference_area);
         double growth_rate_for_target_area_after_division = 0.1/(M_PI/reference_area);
         bool   use_my_division_rule_along_with_modifier = true;
 
