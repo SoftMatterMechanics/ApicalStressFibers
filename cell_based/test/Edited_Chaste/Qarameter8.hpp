@@ -76,7 +76,7 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 4.5;//p0
+        double target_shape_index = 4.75;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         bool   is_default_feedback_form = false;
@@ -128,7 +128,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 0.25; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -162,6 +162,10 @@ public:
         bool   CCA_dont_decrease = false; // not used now
         bool   CCA_increasing_has_a_threshold_of_edge_length = false; // not used now
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5; // not used now
+        if  (Ks_for_adhesion_feedback == 0.0 || feedback_rate_for_adhesion == 0.0)
+            if_consider_feedback_of_cell_cell_adhesion = false;
+        if  ( (Km_for_myosin_feedback == 0.0 || feedback_rate_for_myosin_activity == 0.0) && (if_consider_feedback_of_cell_cell_adhesion == false) )
+            if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
 
 /* 4. Substrate Ahesion */
         bool   if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
@@ -477,18 +481,13 @@ public:
         p_face_value_and_stress_state_modifier->SetSmallChangeForAreaCalculation(small_change_for_area_calculation); // change made by Chao
 
         // Consistency of feedback form:
-        if  (feedback_rate_for_myosin_activity == 0.0)
-            if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
-        if  (feedback_rate_for_adhesion == 0.0)
-            if_consider_feedback_of_cell_cell_adhesion = false;
-        
-        if  (if_consider_feedback_of_face_values)
-            assert(case_number_of_membrane_surface_energy_form != 0);
-        else
-             {
-             case_number_of_membrane_surface_energy_form = 0;
-             p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
-             }
+        // if  (if_consider_feedback_of_face_values)
+        //     assert(case_number_of_membrane_surface_energy_form != 0);
+        // else
+        //      {
+        //      case_number_of_membrane_surface_energy_form = 0;
+        //      p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
+        //      }
 //        if  (is_default_feedback_form)
 //            assert(!if_consider_feedback_of_cell_cell_adhesion && !EMA_dont_decrease);
 
