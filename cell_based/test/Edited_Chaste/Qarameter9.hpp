@@ -76,7 +76,7 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 4.75;//p0
+        double target_shape_index = 4.5;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         // bool   is_default_feedback_form = false;
@@ -128,7 +128,7 @@ public:
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_element_myosin_activity = true;
-        double Km_for_myosin_feedback = 0.3; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -245,7 +245,7 @@ public:
         bool   seed_manually = true;
         unsigned seed_for_initial_random_polarity = 9u;
         // seed_for_initial_random_polarity += 10;
-        double rotational_diffusion_constant = 0.01/(M_PI/reference_area);
+        double rotational_diffusion_constant = 40.0*0.01/(M_PI/reference_area);
 
         if (polarity_magnitude==0.0)
            has_polarity = false;
