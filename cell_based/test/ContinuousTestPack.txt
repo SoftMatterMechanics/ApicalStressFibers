@@ -1,7 +1,3 @@
-Edited_Chaste/NonAdhMigPat.hpp
-
-Edited_Chaste/Template.hpp
-
 Edited_Chaste/Qarameter1.hpp
 Edited_Chaste/Qarameter2.hpp
 Edited_Chaste/Qarameter3.hpp
