@@ -39,7 +39,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template<unsigned DIM>
 FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
-      mIfConsiderFeedbackOfFaceValues(false),
+      mIfConsiderFeedbackOfElementMyosinActivity(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(false),
       mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(false),
       mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(false),
@@ -272,7 +272,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateMyosinActivityAndCellCellAdhesi
 
     MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
 
-    if (mIfConsiderFeedbackOfFaceValues)
+    if (mIfConsiderFeedbackOfElementMyosinActivity)
     {
         // loop over the elements
         for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
@@ -719,7 +719,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
 
             VertexElement<DIM-1,  DIM>* pFace0 = nullptr;
             VertexElement<DIM-1,  DIM>* pFace = nullptr;
-            if (mIfConsiderFeedbackOfFaceValues)
+            if (mIfConsiderFeedbackOfCellCellAdhesion)
             {
                 pFace0 = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeC->GetIndex(), pNodeA->GetIndex()));                    
                 pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
@@ -781,7 +781,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
 
             // Tension from perimeter term
             double element_myosin_activity = 1.0;
-            if (mIfConsiderFeedbackOfFaceValues)
+            if (mIfConsiderFeedbackOfElementMyosinActivity)
                 element_myosin_activity = p_element->GetElementMyosinActivity();
 
             c_vector<double,DIM> perimeter_gradient_at_node = p_cell_population->rGetMesh().GetPerimeterGradientOfElementAtNode(p_element, local_index);
@@ -819,7 +819,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             else
                 lambda_ab = mNagaiHondaCellCellAdhesionEnergyParameter;
 
-            if (mIfConsiderFeedbackOfFaceValues)
+            if (mIfConsiderFeedbackOfCellCellAdhesion)
             {
                 lambda_ca *= pFace0->GetUnifiedCellCellAdhesionEnergyParameter();
                 lambda_ab *= pFace->GetUnifiedCellCellAdhesionEnergyParameter();
@@ -998,7 +998,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             }
 
             // output face values of edges
-            if (mIfConsiderFeedbackOfFaceValues && mIfConsiderFeedbackOfCellCellAdhesion)
+            if (mIfConsiderFeedbackOfCellCellAdhesion)
             {
                 oss.str("");
                 oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 

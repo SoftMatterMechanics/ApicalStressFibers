@@ -76,10 +76,10 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 5.0;//p0
+        double target_shape_index = 4.75;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
-        bool   is_default_feedback_form = false;
+        // bool   is_default_feedback_form = false;
 
 /* Strip Structure & Cell Mesh */
         bool   strip_width_doubled_for_multiple_leading_cells = false;
@@ -127,14 +127,17 @@ public:
         double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
-        bool   if_consider_feedback_of_face_values = true;
-        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
+        bool   if_consider_feedback_of_element_myosin_activity = true;
+        double Km_for_myosin_feedback = 0.3; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
         bool   if_apply_feedback_of_face_values_only_for_boundary_cells = false; // for testing fluid inside
         bool   if_apply_feedback_of_face_values_only_for_top_boundary_cells = false; // for testing fluid inside
         bool   apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir = false; // false for default
+
+        if  (Km_for_myosin_feedback == 0.0 || feedback_rate_for_myosin_activity == 0.0)
+            if_consider_feedback_of_element_myosin_activity = false; // note: typically, we must have myosin feedback first.
 
         // change feedback after a time.
         double time_for_changing_feedback = DOUBLE_UNSET; // 100.0; // DOUBLE_UNSET;
@@ -162,10 +165,9 @@ public:
         bool   CCA_dont_decrease = false; // not used now
         bool   CCA_increasing_has_a_threshold_of_edge_length = false; // not used now
         double CCA_increasing_threshold_of_edge_length_percentage = 0.5; // not used now
+
         if  (Ks_for_adhesion_feedback == 0.0 || feedback_rate_for_adhesion == 0.0)
             if_consider_feedback_of_cell_cell_adhesion = false;
-        if  ( (Km_for_myosin_feedback == 0.0 || feedback_rate_for_myosin_activity == 0.0) && (if_consider_feedback_of_cell_cell_adhesion == false) )
-            if_consider_feedback_of_face_values = false; // note: typically, we must have myosin feedback first.
 
 /* 4. Substrate Ahesion */
         bool   if_ignore_reservoir_substrate_adhesion_at_top = false;// false for default
@@ -291,7 +293,7 @@ public:
 
         /*------------------------------START: Mesh Structure------------------------------*/
         // Strips structure of substrate adhesion
-        bool   if_update_face_elements_in_mesh = if_consider_feedback_of_face_values;
+        bool   if_update_face_elements_in_mesh = if_consider_feedback_of_cell_cell_adhesion;
         
         MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001/sqrt((M_PI/reference_area)));
         MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
@@ -362,7 +364,7 @@ public:
         MAKE_PTR(MyNagaiHondaForceWithStripesAdhesion<2>, p_force);
         
         int  case_number_of_membrane_surface_energy_form = 1; // 1 for default
-/*?*/   bool if_use_face_element_to_get_adhesion_parameter = if_consider_feedback_of_face_values;
+/*?*/   bool if_use_face_element_to_get_adhesion_parameter = if_consider_feedback_of_cell_cell_adhesion;
 
         p_force->SetCaseNumberOfMembraneSurfaceEnergyForm(case_number_of_membrane_surface_energy_form);
 /*?*/   p_force->SetUseFaceElementToGetAdhesionParameterBoolean(if_use_face_element_to_get_adhesion_parameter);
@@ -463,7 +465,7 @@ public:
         /*------------------------START: !!!!!Feedback: FaceValueAndStressStateModifier: need modification---------------*/
         MAKE_PTR_ARGS(FaceValueAndStressStateModifier<2>, p_face_value_and_stress_state_modifier, ());
         
-        p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValues(if_consider_feedback_of_face_values);
+        p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfElementMyosinActivity(if_consider_feedback_of_element_myosin_activity);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(if_apply_feedback_of_face_values_only_for_boundary_cells);
         p_face_value_and_stress_state_modifier->SetConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells(if_apply_feedback_of_face_values_only_for_top_boundary_cells);
         p_face_value_and_stress_state_modifier->SetApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior(apply_feedback_of_face_values_only_for_top_boundary_cells_and_cells_above_reservoir);
@@ -723,10 +725,10 @@ public:
           output_directory += "_ConsistMv=0";
 
         output_directory += "_|Divi=" + std::to_string(run_with_birth);
-        if (if_consider_feedback_of_face_values && is_default_feedback_form)
-          output_directory += "_HasDefaultFeedb";
-        else
-          output_directory += "_HasFeedb=" + std::to_string(if_consider_feedback_of_face_values);
+        // if (if_consider_feedback_of_face_values && is_default_feedback_form)
+        //   output_directory += "_HasDefaultFeedb";
+        // else
+        //   output_directory += "_HasFeedb=" + std::to_string(if_consider_feedback_of_face_values);
         output_directory += "_HasRandF=" + std::to_string(add_random_force);
         output_directory += "_MSE=" + std::to_string(case_number_of_membrane_surface_energy_form);
         
@@ -776,33 +778,33 @@ public:
         oss << "StripDis=" << std::fixed << setprecision(3) << strip_distance;
         oss << "_StripWid=" << std::fixed << setprecision(3) << strip_width;
 
-        if (if_consider_feedback_of_face_values)
+        if (if_consider_feedback_of_element_myosin_activity||if_consider_feedback_of_cell_cell_adhesion)
         {
-          // feedback form
-          output_directory += "_|FeedbackForm:";
-          if (is_default_feedback_form)
-            output_directory += "Default";
-          else
-          {
-            output_directory += "HasAdhFeedb=" + std::to_string(if_consider_feedback_of_cell_cell_adhesion);
-            output_directory += "_EMACanDe=" + std::to_string(!EMA_dont_decrease);
-            if (if_consider_feedback_of_cell_cell_adhesion)
-            {
-              output_directory += "_CCACanDe=" + std::to_string(!CCA_dont_decrease);
-              if (CCA_increasing_has_a_threshold_of_edge_length)  
-              {
-                oss.str("");
-                oss << std::fixed << setprecision(2) << CCA_increasing_threshold_of_edge_length_percentage;          
-                output_directory += "_CCAInrThresh=" + oss.str();
-              }
-            }
-          }
-          if (EMA_dont_decrease_below_a_threshold)
-          {
-            oss.str("");
-            oss << "_EMADecrThresh=" << EMA_dont_decrease_below_this_threshold;
-            output_directory += oss.str();
-          }
+          // // feedback form
+          // output_directory += "_|FeedbackForm:";
+          // if (is_default_feedback_form)
+          //   output_directory += "Default";
+          // else
+          // {
+          //   output_directory += "HasAdhFeedb=" + std::to_string(if_consider_feedback_of_cell_cell_adhesion);
+          //   output_directory += "_EMACanDe=" + std::to_string(!EMA_dont_decrease);
+          //   if (if_consider_feedback_of_cell_cell_adhesion)
+          //   {
+          //     output_directory += "_CCACanDe=" + std::to_string(!CCA_dont_decrease);
+          //     if (CCA_increasing_has_a_threshold_of_edge_length)  
+          //     {
+          //       oss.str("");
+          //       oss << std::fixed << setprecision(2) << CCA_increasing_threshold_of_edge_length_percentage;          
+          //       output_directory += "_CCAInrThresh=" + oss.str();
+          //     }
+          //   }
+          // }
+          // if (EMA_dont_decrease_below_a_threshold)
+          // {
+          //   oss.str("");
+          //   oss << "_EMADecrThresh=" << EMA_dont_decrease_below_this_threshold;
+          //   output_directory += oss.str();
+          // }
           // feedback parameters
           output_directory += "_|FeedbackPara:";
           oss.str("");

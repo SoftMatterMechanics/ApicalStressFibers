@@ -66,7 +66,7 @@ class FaceValueAndStressStateModifier : public AbstractCellBasedSimulationModifi
 
 protected:
 
-    bool   mIfConsiderFeedbackOfFaceValues;
+    bool   mIfConsiderFeedbackOfElementMyosinActivity;
     bool   mIfConsiderFeedbackOfFaceValuesOnlyForBoundaryCells;
     bool   mIfConsiderFeedbackOfFaceValuesOnlyForTopBoundaryCells;
     bool   mApplyFeedbackOfFaceValuesToTopBoundaryCellsAndCellsAboveReservior;
@@ -211,9 +211,9 @@ public:
     void UpdateLamellipodiumInfoOfCells(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
 
     // feedback form:
-    void SetConsiderFeedbackOfFaceValues(bool ifConsiderFeedbackOfFaceValues)
+    void SetConsiderFeedbackOfElementMyosinActivity(bool ifConsiderFeedbackOfElementMyosinActivity)
     {
-      mIfConsiderFeedbackOfFaceValues = ifConsiderFeedbackOfFaceValues;
+      mIfConsiderFeedbackOfElementMyosinActivity = ifConsiderFeedbackOfElementMyosinActivity;
     }
 
     void SetConsiderFeedbackOfFaceValuesOnlyForBoundaryCells(bool ifConsiderFeedbackOfFaceValuesOnlyForBoundaryCells)
