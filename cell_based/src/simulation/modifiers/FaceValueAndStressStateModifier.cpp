@@ -1300,16 +1300,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateMyosinActivtyOfElement(MutableV
     double dt = SimulationTime::Instance()->GetTimeStep();
 
     double Km = this->mKmForMyosinFeedback;
-    if ( time_now>mTimeForChangingFeedback && mChangedKmForMyosinFeedback!=mKmForMyosinFeedback)
-        Km = mChangedKmForMyosinFeedback;
-
     double feedback_rate = this->mFeedbackRateForMyosinActivity;
-    if ( time_now>mTimeForChangingFeedback && mChangedFeedbackRate!=mFeedbackRateForMyosinActivity)
-        feedback_rate = mChangedFeedbackRate;
-
     double alpha = (1.0+Km)*feedback_rate;
-    if ( time_now>mTimeForChangingFeedback && mChangedMyosinActivityBaseValue!=1.0)
-        alpha *= mChangedMyosinActivityBaseValue;
     double beta = 1.0*feedback_rate;
     double n = this->mHillPowerForMyosinActivity;
     double FixedTargetPerimeter = this->mFixedTargetPerimeter;
@@ -1319,8 +1311,19 @@ void FaceValueAndStressStateModifier<DIM>::UpdateMyosinActivtyOfElement(MutableV
     double lambda = element_perimeter/FixedTargetPerimeter;
 
     double element_myosin_activity = pElement->GetElementMyosinActivity();
+
+    if (time_now>mTimeForChangingFeedback)
+    {
+        Km = this->mChangedKmForMyosinFeedback;
+        beta = this->mChangedFeedbackRate;
+        alpha = (1+this->mChangedKmForMyosinFeedback)*this->mChangedFeedbackRate;
+        element_myosin_activity = pElement->GetElementMyosinActivity()*(1.0/mChangedMyosinActivityBaseValue);
+    }
+
     double changing_rate = alpha*pow(lambda,n)/(Km+pow(lambda,n))-beta*element_myosin_activity;
     element_myosin_activity += dt*changing_rate;
+
+    element_myosin_activity = element_myosin_activity*mChangedMyosinActivityBaseValue;
 
     pElement->SetElementMyosinActivity(element_myosin_activity);
 

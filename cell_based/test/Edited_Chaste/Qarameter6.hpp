@@ -124,7 +124,7 @@ public:
         bool   use_fixed_target_area_without_modifier = true; // A0:
 
 /* 2. Myosin activity */
-        double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
+        double nagai_honda_membrane_surface_energy_parameter = 0.5*0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_element_myosin_activity = true;
@@ -141,9 +141,9 @@ public:
 
         // change feedback after a time.
         double time_for_changing_feedback = DOUBLE_UNSET; // 100.0; // DOUBLE_UNSET;
-        double changed_Km_for_myosin_feedback = 0.0;
+        double changed_Km_for_myosin_feedback = Km_for_myosin_feedback;
         double changed_feedback_rate = feedback_rate_for_myosin_activity;
-        double changed_myosin_activity_base_value = 1; // myosin_activity_base_value = 1 by default
+        double changed_myosin_activity_base_value = 1.0; // myosin_activity_base_value = 1 by default
 
         bool   EMA_dont_decrease = false;
         bool   EMA_dont_decrease_below_a_threshold = false; // EMA: edge myosin activity
@@ -245,7 +245,7 @@ public:
         bool   seed_manually = true;
         unsigned seed_for_initial_random_polarity = 6u;
         // seed_for_initial_random_polarity += 10;
-        double rotational_diffusion_constant = 0.5*40.0*0.01/(M_PI/reference_area);
+        double rotational_diffusion_constant = 40.0*0.01/(M_PI/reference_area);
 
         if (polarity_magnitude==0.0)
            has_polarity = false;
@@ -637,7 +637,7 @@ public:
         oss << "_RefP=" << std::fixed << setprecision(2) << 6*sqrt( reference_area/(6*sqrt(3)/4) );
         // oss << "_n=" << std::fixed << setprecision(1) << hill_power_for_myosin_activity;
         if (time_for_changing_feedback<end_time)
-          oss << "_Km_changed=" << changed_Km_for_myosin_feedback;
+          oss << "_MyoBaseChanged=" << changed_myosin_activity_base_value;
         if (EMA_dont_decrease_below_a_threshold)
           oss << "_EMADeThresh=" << EMA_dont_decrease_below_this_threshold;
 
