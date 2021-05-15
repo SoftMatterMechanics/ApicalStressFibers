@@ -124,7 +124,7 @@ public:
         bool   use_fixed_target_area_without_modifier = true; // A0:
 
 /* 2. Myosin activity */
-        double nagai_honda_membrane_surface_energy_parameter = 0.5*0.2/(M_PI/reference_area);//Gamma
+        double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_element_myosin_activity = true;
@@ -241,7 +241,7 @@ public:
 
         // Cell polarity
         bool   has_polarity = true;
-        double polarity_magnitude = 0.2;
+        double polarity_magnitude = 0.1;
         bool   seed_manually = true;
         unsigned seed_for_initial_random_polarity = 8u;
         // seed_for_initial_random_polarity += 10;
