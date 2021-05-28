@@ -76,7 +76,7 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 0.75*4.5;//p0
+        double target_shape_index = 3.0;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         // bool   is_default_feedback_form = false;
