@@ -85,11 +85,11 @@ public:
         bool   strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
       //  double strip_width_multiple_for_sliding = 15.0;
-        bool   if_use_larger_strip_distance = true; 
-        double strip_dis_multiplier = 80.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
+        bool   if_use_larger_strip_distance = true;
+        double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
         bool   use_longer_mesh = true; // for (num_ele_up) mesh
-        int    num_ele_up_multiplier = 4;
-        int    move_mesh_right_for_N_periods = 0; // for display of multiple periods
+        int    num_ele_up_multiplier = 2;
+        int    move_mesh_right_for_N_periods = -1; // for display of multiple periods
         bool   one_strip_only_in_a_period = true;
 
         unsigned num_ele_cross = 6; // must be even number
@@ -103,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 40*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -243,7 +243,7 @@ public:
         bool   has_polarity = true;
         double polarity_magnitude = 0.2;
         bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 1u;
+        unsigned seed_for_initial_random_polarity = 4u;
         // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 40.0*0.01/(M_PI/reference_area);
 

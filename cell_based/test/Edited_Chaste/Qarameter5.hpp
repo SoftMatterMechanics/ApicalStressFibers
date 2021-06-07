@@ -76,7 +76,7 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 3.0;//p0
+        double target_shape_index = 4.5;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         // bool   is_default_feedback_form = false;
@@ -85,7 +85,7 @@ public:
         bool   strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
       //  double strip_width_multiple_for_sliding = 15.0;
-        bool   if_use_larger_strip_distance = true; 
+        bool   if_use_larger_strip_distance = true;
         double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
         bool   use_longer_mesh = true; // for (num_ele_up) mesh
         int    num_ele_up_multiplier = 2;
@@ -103,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 10*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -124,11 +124,11 @@ public:
         bool   use_fixed_target_area_without_modifier = true; // A0:
 
 /* 2. Myosin activity */
-        double nagai_honda_membrane_surface_energy_parameter = 0.75*0.2/(M_PI/reference_area);//Gamma
+        double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_element_myosin_activity = true;
-        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.3; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -158,7 +158,7 @@ public:
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
-        double Ks_for_adhesion_feedback = 0.0; // 1.0 for defaut
+        double Ks_for_adhesion_feedback = 0.3; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.1;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
@@ -269,7 +269,7 @@ public:
         double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.05*(M_PI/reference_area); // Previously 0.025
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 800.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;

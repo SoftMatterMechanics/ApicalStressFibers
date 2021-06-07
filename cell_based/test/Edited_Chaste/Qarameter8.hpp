@@ -76,7 +76,7 @@ public:
         // for sliding
 
         /*------------------------------START: Basic Settings----------------------------*/
-        double target_shape_index = 3.0;//p0
+        double target_shape_index = 4.5;//p0
         double reference_area = M_PI;
         double initial_area = reference_area;
         // bool   is_default_feedback_form = false;
@@ -85,7 +85,7 @@ public:
         bool   strip_width_doubled_for_multiple_leading_cells = false;
         double strip_width_mutiple = 8.0;
       //  double strip_width_multiple_for_sliding = 15.0;
-        bool   if_use_larger_strip_distance = true; 
+        bool   if_use_larger_strip_distance = true;
         double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
         bool   use_longer_mesh = true; // for (num_ele_up) mesh
         int    num_ele_up_multiplier = 2;
@@ -103,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 1*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -124,11 +124,11 @@ public:
         bool   use_fixed_target_area_without_modifier = true; // A0:
 
 /* 2. Myosin activity */
-        double nagai_honda_membrane_surface_energy_parameter = 0.75*0.2/(M_PI/reference_area);//Gamma
+        double nagai_honda_membrane_surface_energy_parameter = 0.2/(M_PI/reference_area);//Gamma
         double edge_length_at_rest = sqrt(initial_area/(6*sqrt(3)/4)); // = 1.0996
 
         bool   if_consider_feedback_of_element_myosin_activity = true;
-        double Km_for_myosin_feedback = 0.0; // 1.0 for defaut
+        double Km_for_myosin_feedback = 0.3; // 1.0 for defaut
         double feedback_rate_for_myosin_activity = 0.1/(M_PI/reference_area);//beta
         double hill_power_for_myosin_activity = 8.0; // 8.0 for default
 
@@ -158,7 +158,7 @@ public:
         
         bool   if_consider_feedback_of_cell_cell_adhesion = true;
         bool   cell_cell_adhesion_dont_decrease = true;
-        double Ks_for_adhesion_feedback = 0.0; // 1.0 for defaut
+        double Ks_for_adhesion_feedback = 0.3; // 1.0 for defaut
         double feedback_rate_for_adhesion = 0.1;
         double hill_power_for_adhesion = 8.0;
         double reference_stress_for_cc_adhesion = 2.0; // sigma0.
@@ -178,7 +178,7 @@ public:
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
         double reservoir_substrate_adhesion_parameter = 1.0*basic_SSA;
-        double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
+        double homogeneous_substrate_adhesion_parameter = 1.0*basic_SSA;
         
           // Strip substrate adhesion form:
         bool   consider_consistency_for_SSA = true;
@@ -201,7 +201,7 @@ public:
         unsigned leading_cell_number = 1;
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 0.0/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 10.0/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -243,7 +243,7 @@ public:
         bool   has_polarity = true;
         double polarity_magnitude = 0.2;
         bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 8u;
+        unsigned seed_for_initial_random_polarity = 3u;
         // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 40.0*0.01/(M_PI/reference_area);
 
@@ -269,7 +269,7 @@ public:
         double polarity_magnitude_equilibrium = 0.5;
         
         double dt = 0.05*(M_PI/reference_area); // Previously 0.025
-        double end_time = 400.0*(M_PI/reference_area);
+        double end_time = 800.0*(M_PI/reference_area);
         double max_movement_per_timestep = 0.05/sqrt((M_PI/reference_area)); // Previously 0.05
 
         bool   apply_my_change_to_make_timestep_adaptive = true;
