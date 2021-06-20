@@ -114,7 +114,9 @@ void FaceValueAndStressStateModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPop
     if (mMarkLeadingCells)
         UpdateLamellipodiumInfoOfCells(rCellPopulation);
     if (mIfEquilibrateForAWhile)
-        SetupLeaderCellAtTheEndOfEquilibrium(rCellPopulation);    
+        SetupLeaderCellAtTheEndOfEquilibrium(rCellPopulation);
+    // if (true)
+    //     UpdateLamellipodiumInfoOfCells
 }
 
 template<unsigned DIM>
@@ -1732,6 +1734,7 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
             pCell->GetCellData()->SetItem("lamellipodium_strength", 0.0);
         }
     }
+
 }
 
 template<unsigned DIM>
@@ -1744,6 +1747,158 @@ void FaceValueAndStressStateModifier<DIM>::UpdateLamellipodiumInfoOfCells(Abstra
     MutableVertexMesh<DIM, DIM>* p_mesh = static_cast<MutableVertexMesh<DIM, DIM>*>(& rCellPopulation.rGetMesh());
 
     double dt = SimulationTime::Instance()->GetTimeStep();
+
+    // Get the upper-boundary LeaderElementVector. And set value.
+    if (mMultipleLeadingCells)
+    {
+        std::vector< VertexElement<DIM, DIM>* > ElementVector;
+        std::vector< VertexElement<DIM, DIM>* > LeaderElementVector;
+
+        // Get the upper-boundary ElementVector.
+        for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+            cell_iter != rCellPopulation.rGetCells().end();
+            ++cell_iter)
+        {
+
+            CellPtr pCell = *cell_iter;
+            VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+            unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
+
+            if ( (p_mesh->GetCentroidOfElement(ele_index)[1] > 5.0/6.0*mStripStartYLocation) && (fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)<= mStripWidth/2.0) )
+            {
+                bool is_leading_cell = false;
+                for (unsigned index=0; index< pElement->GetNumNodes(); index++)
+                {
+                    if (pElement->GetNode(index)->IsBoundaryNode())
+                    {
+                        pElement->SetIsLeadingCell(true);
+                        pElement->SetIsLeadingCellTop(true);
+                        is_leading_cell = true;
+                        break;
+                    }
+                }
+                if (is_leading_cell)
+                    ElementVector.push_back(pElement);
+            }
+        }
+
+        LeaderElementVector = ElementVector;
+
+        double LeftHigh = 0.0;
+        double RightHigh = 0.0;
+        for (typename std::vector<VertexElement<DIM, DIM>*>::iterator itt=ElementVector.begin(); itt!= ElementVector.end();itt++)
+        {
+            VertexElement<DIM, DIM>* current_elementtt = *itt;
+            unsigned current_ele_indextt = current_elementtt->GetIndex();
+            double x_location = p_mesh->GetCentroidOfElement(current_ele_indextt)[0];
+            double y_location = p_mesh->GetCentroidOfElement(current_ele_indextt)[1];
+            if ( (x_location- mStripStartXLocation) < (-mStripWidth/2.0+0.95*2) )
+            {
+                if (y_location>LeftHigh)
+                    LeftHigh = y_location;
+            }
+            if ( (x_location- mStripStartXLocation) > (mStripWidth/2.0-0.95*2) )
+            {
+                if (y_location>RightHigh)
+                    RightHigh = y_location;
+            }
+        }
+        
+        for (typename std::vector<VertexElement<DIM, DIM>*>::iterator itt=ElementVector.begin(); itt!= ElementVector.end();itt++)
+        {
+            bool is_leader =true;
+            VertexElement<DIM, DIM>* current_elementtt = *itt;
+            unsigned current_ele_indextt = current_elementtt->GetIndex();
+            double x_location = p_mesh->GetCentroidOfElement(current_ele_indextt)[0];
+            double y_location = p_mesh->GetCentroidOfElement(current_ele_indextt)[1];
+            if ( (x_location- mStripStartXLocation) < (-mStripWidth/2.0+0.95*2) )
+            {
+                if (y_location<(LeftHigh-0.1))
+                    is_leader = false;
+            }
+            if ( (x_location- mStripStartXLocation) > (mStripWidth/2.0-0.95*2) )
+            {
+                if (y_location<(RightHigh-0.1))
+                    is_leader = false;
+            }
+            if (!is_leader)
+            {
+                for (typename std::vector<VertexElement<DIM, DIM>*>::iterator it=LeaderElementVector.begin(); it!=LeaderElementVector.end(); it++)
+                {
+                    if ( current_elementtt == *it )
+                    {
+                        LeaderElementVector.erase(it);
+                        break;
+                    }
+                }
+            }
+        }// Get LeaderElementVec finished.
+
+
+
+        // // select N cells from them.
+        // for (unsigned i=0; i<mLeadingCellNumber; i++)
+        // {
+        //     for (typename std::vector<VertexElement<DIM, DIM>*>::iterator it=ElementVector.begin(); it!= ElementVector.end();it++)
+        //     {
+        //         bool is_current_nearest = true;
+        //         VertexElement<DIM, DIM>* current_element = *it;
+        //         unsigned current_ele_index = current_element->GetIndex();
+        //         double dis = fabs(p_mesh->GetCentroidOfElement(current_ele_index)[0]);
+        //         for (typename std::vector<VertexElement<DIM, DIM>*>::iterator itt=ElementVector.begin(); itt!= ElementVector.end();itt++)
+        //         {
+        //             VertexElement<DIM, DIM>* current_elementtt = *itt;
+        //             unsigned current_ele_indextt = current_elementtt->GetIndex();
+        //             double distt = fabs(p_mesh->GetCentroidOfElement(current_ele_indextt)[0]);
+        //             if (distt<dis)
+        //             {
+        //                 is_current_nearest = false;
+        //                 break;
+        //             }
+                    
+        //         }
+        //         if (is_current_nearest)
+        //         {
+        //             LeaderElementVector.push_back(current_element);
+        //             ElementVector.erase(it);
+        //             break;
+        //         }
+        //     }
+        // } // Get LeaderElementVec finished.
+
+        // write leader info to element.
+        for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
+            cell_iter != rCellPopulation.rGetCells().end();
+            ++cell_iter)
+        {
+            CellPtr pCell = *cell_iter;
+            VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
+
+            bool is_leading_cell =false;
+            for (typename std::vector<VertexElement<DIM, DIM>*>::iterator it=LeaderElementVector.begin(); it!=LeaderElementVector.end(); it++)
+            {
+                if ( pElement == *it )
+                {
+                    is_leading_cell = true;
+                    break;
+                }
+            }
+            if (is_leading_cell)
+            {
+                pElement->SetIsLeadingCell(true);
+                pElement->SetIsLeadingCellTop(true);
+            }
+            else
+            {
+                pElement->SetIsLeadingCell(false);
+                pElement->SetIsLeadingCellTop(false);
+            }
+
+        }
+
+    }
+
+    // write it to CellData.
     // Loop over the list of cells, rather than using the population iterator, so as to include(exclude??) dead cells
     for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
         cell_iter != rCellPopulation.rGetCells().end();

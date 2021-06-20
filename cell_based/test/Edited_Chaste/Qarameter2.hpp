@@ -88,7 +88,7 @@ public:
         bool   if_use_larger_strip_distance = true;
         double strip_dis_multiplier = 40.0/12.0; // strip center distance, ensure the (num_ele_cross) being even number
         bool   use_longer_mesh = true; // for (num_ele_up) mesh
-        int    num_ele_up_multiplier = 2;
+        int    num_ele_up_multiplier = 4;
         int    move_mesh_right_for_N_periods = 0; // for display of multiple periods
         bool   one_strip_only_in_a_period = true;
 
@@ -103,7 +103,7 @@ public:
         double center_of_width = 0.0;       // change made by Chao
         double width = num_ele_cross*sqrt(initial_area/(sqrt(3)/2));   //width of reservoir, change made by Chao
 
-        double strip_width = 10*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
+        double strip_width = 20*0.5*sqrt(initial_area/(sqrt(3)/2)); // default =0.9523 (1/2 cell width)
         if  (strip_width_doubled_for_multiple_leading_cells)
             strip_width = strip_width*strip_width_mutiple;
       //  strip_width *= strip_width_multiple_for_sliding;
@@ -177,7 +177,7 @@ public:
 
         double basic_SSA = -1.0/(M_PI/reference_area);
         double SSA_for_mature_lamellipodium = -10.0/(M_PI/reference_area);
-        double reservoir_substrate_adhesion_parameter = 1.0*basic_SSA;
+        double reservoir_substrate_adhesion_parameter = 2.0*basic_SSA;
         double homogeneous_substrate_adhesion_parameter = 2.0*basic_SSA;
         
           // Strip substrate adhesion form:
@@ -197,11 +197,12 @@ public:
         // Note that pulling force is realized by different ways for epithelial bridge and vortex formation
         // epithelial bridge: pulling force is directly applied on the nodes of leading cells
         // vortex formation: pulling force is treated equivalently by larger substrate adhesion on strip 
-        bool   multiple_leading_cells = false;
-        unsigned leading_cell_number = 1;
+        bool   multiple_leading_cells = true;
+        // unsigned leading_cell_number = 5;
+        unsigned leading_cell_number = (unsigned) round( strip_width/(sqrt(initial_area/(sqrt(3)/2))) );
         if (!multiple_leading_cells)
            leading_cell_number = 1;
-        double pulling_force_on_leading_cell = 0.0/pow((M_PI/reference_area),1.5);// Fy
+        double pulling_force_on_leading_cell = 1.0*leading_cell_number/pow((M_PI/reference_area),1.5);// Fy
           // homogeneous SSA case:
         bool   add_pulling_force_on_node_individually = false;
         bool   add_pulling_force_evenly_on_nodes_of_leading_cell = true;
@@ -241,9 +242,9 @@ public:
 
         // Cell polarity
         bool   has_polarity = true;
-        double polarity_magnitude = 0.2;
+        double polarity_magnitude = 0.6;
         bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 2u;
+        unsigned seed_for_initial_random_polarity = 4u;
         // seed_for_initial_random_polarity += 10;
         double rotational_diffusion_constant = 40.0*0.01/(M_PI/reference_area);
 
@@ -614,6 +615,9 @@ public:
         output_directory += oss.str();
 
         oss.str("");
+
+        if (multiple_leading_cells)
+        oss << "_Fy=" << std::fixed  << setprecision(0) << pulling_force_on_leading_cell;
 
         oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
         if (polarity_magnitude!=0.0)
