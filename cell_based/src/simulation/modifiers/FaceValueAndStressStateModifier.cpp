@@ -1684,8 +1684,8 @@ void FaceValueAndStressStateModifier<DIM>::SetupSolveForLamellipodiumInfoOfCells
         VertexElement<DIM, DIM>* pElement = p_mesh->GetElement( rCellPopulation.GetLocationIndexUsingCell(pCell) );
 
         unsigned ele_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
-        if (    ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation/2.0)&&(!mMultipleLeadingCells)&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< 1e-1) ) 
-             || ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation/2.0)&&mMultipleLeadingCells&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< mStripWidth/2.0) ) )
+        if (    ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation*5.0/6.0)&&(!mMultipleLeadingCells)&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< 1e-1) ) 
+             || ( (p_mesh->GetCentroidOfElement(ele_index)[1] > mStripStartYLocation*5.0/6.0)&&mMultipleLeadingCells&&(fabs(p_mesh->GetCentroidOfElement(ele_index)[0] - mStripStartXLocation)< mStripWidth/2.0) ) )
         {
             bool is_leading_cell = false;
             for (unsigned index=0; index< pElement->GetNumNodes(); index++)

@@ -938,10 +938,36 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                             iter != containing_elem_indices.end();
                             ++iter)
                         {
-                            if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
+                            // if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
+                            // {
+                            //     unsigned num_nodes_of_this_leading_cell = p_cell_population->GetElement(*iter)->GetNumNodes();
+                            //     force_on_node[1] += (mPullingForceOnLeadingCell/mLeadingCellNumber)/num_nodes_of_this_leading_cell;
+                            // }
+
+                            VertexElement<DIM, DIM>* p_element = p_cell_population->GetElement(*iter);
+                            if (p_element->GetIsLeadingCell())
                             {
-                                unsigned num_nodes_of_this_leading_cell = p_cell_population->GetElement(*iter)->GetNumNodes();
-                                force_on_node[1] += (mPullingForceOnLeadingCell/mLeadingCellNumber)/num_nodes_of_this_leading_cell;
+                                c_vector<double, DIM> normal = zero_vector<double>(DIM);
+                                normal[0] = 0.0;
+                                normal[1] = 1.0;
+
+                                unsigned num_nodes_of_this_leading_cell = p_element->GetNumNodes();
+                                for (unsigned local_index=0; local_index<num_nodes_of_this_leading_cell; local_index++)
+                                {
+                                    Node<DIM>* p_node = p_element->GetNode(local_index);
+                                    unsigned next_node_local_index = (local_index+1)%num_nodes_of_this_leading_cell;
+                                    Node<DIM>* p_next_node = p_element->GetNode(next_node_local_index);
+                                    
+                                    if ((p_node->IsBoundaryNode())&&(p_next_node->IsBoundaryNode()))
+                                    {
+                                        normal[0] = p_element->GetNodeLocation(next_node_local_index)[1] - p_element->GetNodeLocation(local_index)[1];
+                                        normal[1] = -(p_element->GetNodeLocation(next_node_local_index)[0] - p_element->GetNodeLocation(local_index)[0]);
+                                        break;
+                                    }     
+                                }
+
+                                force_on_node[0] += mPullingForceOnLeadingCell/containing_elem_indices.size()/num_nodes_of_this_leading_cell*normal[0]/norm_2(normal);
+                                force_on_node[1] += mPullingForceOnLeadingCell/containing_elem_indices.size()/num_nodes_of_this_leading_cell*normal[1]/norm_2(normal);
                             }
                         }
 
