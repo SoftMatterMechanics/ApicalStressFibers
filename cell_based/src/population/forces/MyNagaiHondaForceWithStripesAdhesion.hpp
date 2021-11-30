@@ -95,7 +95,7 @@ protected:
     double mNagaiHondaMembraneSurfaceEnergyParameter;
 
     /**
-     * Cell-cell adhesion energy parameter. Has units of kg (cell size at equilibrium rest length)^2 s^-2.
+     * Cell-cell adhesion energy parameter. Has has units of kg (cell size at equilibrium rest length)^2 s^-2.
      * This parameter corresponds to 1/2 of the sigma parameter introduced in the original paper.
      * This slight difference comes from the fact that when we apply the forces to a particular node, each
      * edge is visited twice - and hence the force originating from that edge is applied twice.
@@ -108,9 +108,9 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
-    bool   mIfConsiderStripSubstrateAdhesion;
+    bool mIfConsiderSubstrateAdhesion;
 
-    bool   mIfStripSubstrateAdhesionIsHomogeneous;
+    bool mIfSubstrateAdhesionIsHomogeneous;
 
     double mSubstrateAdhesionParameterChangePerUnitLength;
 
@@ -121,14 +121,6 @@ protected:
     double mBasicSSA;
 
     double mSSAForMatureLamellipodium;
-
-    bool   mIfConsiderReservoirSubstrateAdhesion;
-
-    double mReservoirSubstrateAdhesionParameter;
-
-    bool   mIfIgnoreReservoirSubstrateAdhesionAtTop;
-
-    bool   mIfIgnoreReservoirSubstrateAdhesionAtBottom;
     
     double mStripWidth;
 
@@ -148,49 +140,43 @@ protected:
 
     double mCenterOfWidth;
 
-    bool   mIfConsiderIntervalSubstrateRepulsion;
+    bool mIfConsiderIntervalSubstrateRepulsion;
 
-    bool   mUseFixedTargetArea;
+    bool mUseFixedTargetArea;
 
     unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
 
-    bool   mIfUseFaceElementToGetAdhesionParameter;
-
-    bool   mOutputInformationForNagaiHondaForce;
-
-    bool   mConsiderConsistencyForSSA;
+    bool mIfUseFaceElementToGetAdhesionParameter;
 
     double mSmallChangeForAreaCalculation;
 
-    bool   mUseMyDetachPatternMethod;
+    bool mUseMyDetachPatternMethod;
 
-    bool   mIfUseNewSSADistributionRule;
+    bool mIfUseNewSSADistributionRule;
 
-    bool   mSSAStrengthenedOnlyInYDirection;
+    bool mSSAStrengthenedOnlyInYDirection;
 
-    bool   mAddPullingForceOnNodeIndividually;
+    bool mAddPullingForceOnNodeIndividually;
 
-    bool   mAddPullingForceEvenlyOnNodesOfLeadingCell;
-
-    unsigned mLeadingCellNumber;
+    bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
 
     double mPullingForceOnLeadingCell;
 
-    bool   mKeepMovingForward;
+    bool mKeepMovingForward;
 
     double mSSABottomDecrease;
 
     double mSlowlyMovingForwardAfterThisHeight;
 
-    bool   mSmallSSAAtFirst;
+    bool mSmallSSAAtFirst;
 
     double mInitialTimeForSmallSSA;
 
     double mSmallSSAForInitialTime;
 
-    bool   mIfEquilibrateForAWhile;
+    bool mIfEquilibrateForAWhile;
 
-    double mEndTimeForEquilibrium;
+    double mTimeForEquilibrium;
 
 public:
 
@@ -299,7 +285,7 @@ public:
       mStripStartYLocation = stripStartYLocation;
     }
     
-    void SetUseFixedTargetArea(bool useFixedTargetArea)
+    void SetUseFixedTargetArea(double useFixedTargetArea)
     {
       mUseFixedTargetArea = useFixedTargetArea;
     }
@@ -324,21 +310,20 @@ public:
     {
       mCenterOfWidth = centerOfWidth;
     }
-
     // tmp
     void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
     {
       mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
     }
-    void SetIfConsiderStripSubstrateAdhesion (bool ifConsiderStripSubstrateAdhesion)
-    {
-      mIfConsiderStripSubstrateAdhesion = ifConsiderStripSubstrateAdhesion;
-    }
 
-    // SSA
-    void SetIfStripSubstrateAdhesionIsHomogeneous(bool IfStripSubstrateAdhesionIsHomogeneous)
+    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
     {
-      mIfStripSubstrateAdhesionIsHomogeneous = IfStripSubstrateAdhesionIsHomogeneous;
+      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
+    }
+    // SSA
+    void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
+    {
+      mIfSubstrateAdhesionIsHomogeneous = ifSubstrateAdhesionIsHomogeneous;
     }
     void SetHomogeneousSubstrateAdhesionParameter(double homogeneousSubstrateAdhesionParameter)
     {
@@ -361,24 +346,6 @@ public:
       mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
     }
 
-    // RSA
-    void SetIfConsiderReservoirSubstrateAdhesion (bool ifConsiderReservoirSubstrateAdhesion)
-    {
-      mIfConsiderReservoirSubstrateAdhesion = ifConsiderReservoirSubstrateAdhesion;
-    }
-    void SetReservoirSubstrateAdhesionParameter (double reservoirSubstrateAdhesionParameter)
-    {
-      mReservoirSubstrateAdhesionParameter = reservoirSubstrateAdhesionParameter;
-    }
-    void SetIfIgnoreReservoirSubstrateAdhesionAtTop (bool ifIgnoreReservoirSubstrateAdhesionAtTop)
-    {
-      mIfIgnoreReservoirSubstrateAdhesionAtTop = ifIgnoreReservoirSubstrateAdhesionAtTop;
-    }
-    void SetIfIgnoreReservoirSubstrateAdhesionAtBottom (bool ifIgnoreReservoirSubstrateAdhesionAtBottom)
-    {
-      mIfIgnoreReservoirSubstrateAdhesionAtBottom = ifIgnoreReservoirSubstrateAdhesionAtBottom;
-    }
-
     void SetCaseNumberOfMembraneSurfaceEnergyForm ( unsigned caseNumberOfMembraneSurfaceEnergyForm)
     {
       this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
@@ -392,16 +359,6 @@ public:
     void SetUseFaceElementToGetAdhesionParameterBoolean(bool ifUseFaceElementToGetAdhesionParameter)
     {
       mIfUseFaceElementToGetAdhesionParameter = ifUseFaceElementToGetAdhesionParameter;
-    }
-
-    void SetOutputInformationForNagaiHondaForce(bool outputInformationForNagaiHondaForce)
-    {
-      mOutputInformationForNagaiHondaForce = outputInformationForNagaiHondaForce;
-    }
-
-    void SetConsiderConsistencyForSSA(bool considerConsistencyForSSA)
-    {
-      mConsiderConsistencyForSSA = considerConsistencyForSSA;
     }
 
     void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)
@@ -432,11 +389,6 @@ public:
     void SetAddPullingForceEvenlyOnNodesOfLeadingCell(bool addPullingForceEvenlyOnNodesOfLeadingCell)
     {
       mAddPullingForceEvenlyOnNodesOfLeadingCell = addPullingForceEvenlyOnNodesOfLeadingCell;
-    }
-
-    void SetLeadingCellNumber(unsigned leadingCellNumber)
-    {
-      mLeadingCellNumber = leadingCellNumber;
     }
 
     void SetPullingForceOnLeadingCell(double pullingForceOnLeadingCell)
@@ -479,9 +431,9 @@ public:
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
     }
 
-    void SetEndTimeForEquilibrium(double endTimeForEquilibrium)
+    void SetTimeForEquilibrium(double timeForEquilibrium)
     {
-      mEndTimeForEquilibrium = endTimeForEquilibrium;
+      mTimeForEquilibrium = timeForEquilibrium;
     }
 
 };
