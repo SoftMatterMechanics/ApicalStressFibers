@@ -83,7 +83,7 @@ public:
     void TestApicalStressFibers()
     {
       /*-------------------------START: Basic Settings-----------------------*/
-      /* Energy equation form: 1/2*KA*(A-A0)^2 + 1/2*KL*(L-L0)^2 + 2*Gamma*L */
+      /* Energy equation form: 1/2*KA*(A-A0)^2 + 1/2*KL*(P-P0)^2 + Gamma*L */
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 8; // cell number along anterior-posterior, must be an even number
@@ -96,7 +96,8 @@ public:
         double area_elastic_modulus = 1.0; // KA
         bool   use_fixed_target_area_without_modifier = false;
         double target_area = M_PI; // A0, target areas are not uniform
-        unsigned random_seed_for_target_area = 1;
+        bool   seed_manually = true;
+        unsigned random_seed_for_target_area = 2;
         double min_target_area = initial_area/5;
         double max_target_area = initial_area*9/5;
 
@@ -182,11 +183,9 @@ public:
 
         // output cell velocity:
         bool my_output_cell_velocity = true;
-        bool seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 1;
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
         if (my_output_cell_velocity && seed_manually)
-          simulator.SetMySeed(seed_for_initial_random_polarity);
+          simulator.SetMySeed(random_seed_for_target_area);
         
         bool output_cell_velocity = true;
         bool run_with_birth = false;
@@ -312,7 +311,9 @@ public:
           oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
         }
 
-        oss << "_simtime=" << std::fixed << setprecision(1) << end_time;     
+        oss << "_simtime=" << std::fixed << setprecision(1) << end_time; 
+
+        oss << "_seed=" << random_seed_for_target_area;    
 
         output_directory += oss.str();
         std::string concise_output_directory = output_directory;

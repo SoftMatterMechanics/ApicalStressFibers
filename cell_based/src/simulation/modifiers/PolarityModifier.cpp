@@ -74,7 +74,7 @@ void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM
 {
     srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
     if (mSeedManually)
-        srand(mSeedForInitialRandomPolarity);
+        RandomNumberGenerator::Instance()->Reseed(mSeedForInitialRandomPolarity);
     
     for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
          cell_iter != rCellPopulation.rGetCells().end();

@@ -197,6 +197,8 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
 
     rCells.reserve(numCells);
 
+    RandomNumberGenerator::Instance()->Reseed(mRandomSeed);
+
     // Create cells
     for (unsigned i=0; i<numCells; i++)
     {
@@ -235,9 +237,10 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
         }
 
         // my changes (to generate cells with random target areas in the range [min_target_area, max_target_area])
-        srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
-        srand(mRandomSeed);
-        double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*RandomNumberGenerator::Instance()->ranf();                                                                        
+        // srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
+        double random_number = RandomNumberGenerator::Instance()->ranf();
+        double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*random_number;
+        // std::cout << "seed=" << mRandomSeed << ", random=" << random_number << std::endl;                                                                      
         p_cell->GetCellData()->SetItem("target area", cell_target_area);
 
         rCells.push_back(p_cell);
