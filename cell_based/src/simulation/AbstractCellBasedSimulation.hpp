@@ -156,9 +156,9 @@ protected:
      */
     bool mOutputCellVelocities;
 
-    bool mMyOutputCellVelocities;
+    bool mMyOutputCellVelocities; // my changes
 
-    unsigned mMySeed;
+    unsigned mMySeed; // my changes
 
     /** Results file for cell velocities. */
     out_stream mpCellVelocitiesFile;
@@ -176,7 +176,7 @@ protected:
     unsigned mSamplingTimestepMultiple;
 
     // my changes
-    bool mApplyMyChangesToMakeTimestepAdaptive;
+    bool mApplyAdaptiveTimestep;
 
     double mAdaptiveDt;
 
@@ -332,9 +332,9 @@ public:
     void SetDt(double dt);
 
     // my changes
-    void SetApplyMyChangesToMakeTimestepAdaptive(bool applyMyChangesToMakeTimestepAdaptive)
+    void SetApplyAdaptiveTimestep(bool applyAdaptiveTimestep)
     {
-      mApplyMyChangesToMakeTimestepAdaptive = applyMyChangesToMakeTimestepAdaptive;
+      mApplyAdaptiveTimestep = applyAdaptiveTimestep;
     }
 
     void SetAdaptiveDt(double adaptiveDt)
@@ -526,6 +526,7 @@ public:
      */
     void SetOutputCellVelocities(bool outputCellVelocities);
 
+    // my changes
     void SetMyOutputCellVelocities(bool myOutputCellVelocities)
     {
       mMyOutputCellVelocities = myOutputCellVelocities;

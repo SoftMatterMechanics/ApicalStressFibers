@@ -57,8 +57,11 @@ private:
     bool mUseARandomDivisionRule;
     unsigned mDivideTimestepMultiple;
     bool mUseBernoulliTrialCellCycleModel;
-    double mDivideProbability;
+    double mDivisionProbability;
     double mMinimumDivisionAge;
+    unsigned mRandomSeed;
+    double mMinTargetArea;
+    double mMaxTargetArea;
 
 public:
 
@@ -111,9 +114,9 @@ public:
         mUseBernoulliTrialCellCycleModel = useBernoulliTrialCellCycleModel;
     }
 
-    void SetDivideProbability(double divideProbability)
+    void SetDivisionProbability(double divisionProbability)
     {
-        mDivideProbability = divideProbability;
+        mDivisionProbability = divisionProbability;
     }
 
     void SetMinimumDivisionAge(double minimumDivisionAge)
@@ -121,7 +124,17 @@ public:
         mMinimumDivisionAge = minimumDivisionAge;
     }
 
+    void SetRandomSeedForTargetAreas(unsigned randomSeed)
+    {
+        mRandomSeed = randomSeed;
+    }
 
+    void SetLimitsOfTargetAreas(double minTargetArea, double maxTargetArea)
+    {
+        mMinTargetArea = minTargetArea;
+        mMaxTargetArea = maxTargetArea;
+    }                                                           
+                                                                        
 };
 
 template<class CELL_CYCLE_MODEL, unsigned DIM>
@@ -217,9 +230,15 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
             if (dynamic_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())==nullptr)
                 std::cout << std::endl << "ERROR: Please use BernoulliTrialCellCycleModel!" << std::endl;
             assert(dynamic_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())!=nullptr);
-            static_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())->SetDivisionProbability(mDivideProbability);
+            static_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())->SetDivisionProbability(mDivisionProbability);
             static_cast<BernoulliTrialCellCycleModel*>(p_cell->GetCellCycleModel())->SetMinimumDivisionAge(mMinimumDivisionAge);
         }
+
+        // my changes (to generate cells with random target areas in the range [min_target_area, max_target_area])
+        srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
+        srand(mRandomSeed);
+        double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*RandomNumberGenerator::Instance()->ranf();                                                                        
+        p_cell->GetCellData()->SetItem("target area", cell_target_area);
 
         rCells.push_back(p_cell);
     }

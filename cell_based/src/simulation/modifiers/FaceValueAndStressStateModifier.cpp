@@ -34,7 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "FaceValueAndStressStateModifier.hpp"
-#include "MyXToroidal2dVertexMesh.hpp"
+#include "MyToroidal2dVertexMesh.hpp"
 
 template<unsigned DIM>
 FaceValueAndStressStateModifier<DIM>::FaceValueAndStressStateModifier()
@@ -421,8 +421,8 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
 
             if (mIfConsiderFeedbackOfCellCellAdhesion)
             {
-                lambda_ca *= pFace0->GetUnifiedCellCellAdhesionEnergyParameter();
-                lambda_ab *= pFace->GetUnifiedCellCellAdhesionEnergyParameter();
+                lambda_ca *= pFace0->GetCellCellAdhesionEnergyParameter();
+                lambda_ab *= pFace->GetCellCellAdhesionEnergyParameter();
             }
             c_vector<double,DIM> F_Adhe = -(lambda_ca*vec_ca/l_ca -lambda_ab*vec_ab/l_ab);
 
@@ -486,9 +486,9 @@ void FaceValueAndStressStateModifier<DIM>::UpdateStressStateOfCell(AbstractCellP
             {
                 oss.str("");
                 oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
-                        << "_unified_cc";
+                        << "_cc";
                 name_item = oss.str();
-                pCell->GetCellData()->SetItem(name_item, pFace->GetUnifiedCellCellAdhesionEnergyParameter());
+                pCell->GetCellData()->SetItem(name_item, pFace->GetCellCellAdhesionEnergyParameter());
             }
 
         } // end of iteration of vertices of the element, for calculation of force contributions and stress summation.
@@ -801,7 +801,7 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
     if (shared_elements.size() == 1)
     {
         double unified_cell_cell_adhesion_energy_parameter = 0.0;
-        pFace->SetUnifiedCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
+        pFace->SetCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
     }
     else if (shared_elements.size() == 2)
     {
@@ -838,14 +838,14 @@ void FaceValueAndStressStateModifier<DIM>::UpdateUnifiedCellCellAdhesionEnergyPa
         double stress_normal_to_face_in_second_element = (stress1+stress2)/2 + (stress1-stress2)/2*cos(2*angle);
 
         double sigma = 1.0/2*(fabs(stress_normal_to_face_in_first_element)+fabs(stress_normal_to_face_in_second_element))/reference_stress;
-        double unified_cell_cell_adhesion_energy_parameter = pFace->GetUnifiedCellCellAdhesionEnergyParameter();
+        double unified_cell_cell_adhesion_energy_parameter = pFace->GetCellCellAdhesionEnergyParameter();
         double changing_rate = pho*pow(sigma,q)/(Ks+pow(sigma,q))-ksi*unified_cell_cell_adhesion_energy_parameter;
 
         if (mCellCellAdhesionDontDecrease && changing_rate<0.0 && unified_cell_cell_adhesion_energy_parameter<=1.0)
             unified_cell_cell_adhesion_energy_parameter += 0.0;
         else
             unified_cell_cell_adhesion_energy_parameter += changing_rate*dt;
-        pFace->SetUnifiedCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
+        pFace->SetCellCellAdhesionEnergyParameter(unified_cell_cell_adhesion_energy_parameter);
 
     }
     else
@@ -1513,7 +1513,7 @@ c_vector<double, DIM> FaceValueAndStressStateModifier<DIM>::GetReservoirSubstrat
     c_vector<double, DIM> next_node_location = p_next_node->rGetLocation();
     
     // consider periodicity: modify the node location!
-    if (dynamic_cast<MyXToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
+    if (dynamic_cast<MyToroidal2dVertexMesh*>(&p_cell_population->rGetMesh()) != nullptr)
     {
         bool triangle_straddles_left_right_boundary = false;
 

@@ -156,10 +156,11 @@ bool SimulationTime::IsFinished() const
     return(mpTimeStepper->IsTimeAtEnd());
 }
 
-void SimulationTime::SetApplyMyChangesToMakeTimestepAdaptiveInTimeStepper(bool applyMyChangesToMakeTimestepAdaptive)
+// my changes
+void SimulationTime::SetApplyAdaptiveTimeStepInTimeStepper(bool applyAdaptiveTimestep)
 {
     assert(mpTimeStepper);
-    mpTimeStepper->SetApplyMyChangesToMakeTimestepAdaptive(applyMyChangesToMakeTimestepAdaptive);
+    mpTimeStepper->SetApplyAdaptiveTimestep(applyAdaptiveTimestep);
 }
 
 void SimulationTime::SetAdaptiveDtInTimeStepper(double adaptiveDt)

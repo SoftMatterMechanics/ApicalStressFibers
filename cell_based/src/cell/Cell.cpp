@@ -524,6 +524,7 @@ CellPtr Cell::Divide()
     // Set the daughter cell to inherit the apoptosis time of the parent cell
     p_new_cell->SetApoptosisTime(mApoptosisTime);
 
+
     // my changes
     p_new_cell->SetMyosinActivity(mMyosinActivity);
     p_new_cell->SetUseMyDivisionRuleAlongWithModifier(mUseMyDivisionRuleAlongWithModifier);

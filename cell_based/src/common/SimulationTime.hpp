@@ -147,7 +147,8 @@ public:
      */
     void SetStartTime(double startTime);
 
-    void SetApplyMyChangesToMakeTimestepAdaptiveInTimeStepper(bool applyMyChangesToMakeTimestepAdaptive);
+    // my changes
+    void SetApplyAdaptiveTimeStepInTimeStepper(bool applyAdaptiveTimestep);
 
     void SetAdaptiveDtInTimeStepper(double adaptiveDt);
 

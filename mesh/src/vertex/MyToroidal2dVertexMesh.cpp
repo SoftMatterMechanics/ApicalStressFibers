@@ -33,9 +33,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "MyXToroidal2dVertexMesh.hpp"
+#include "MyToroidal2dVertexMesh.hpp"
 
-MyXToroidal2dVertexMesh::MyXToroidal2dVertexMesh(double centerOfWidth,
+MyToroidal2dVertexMesh::MyToroidal2dVertexMesh(double centerOfWidth,
                                            double width,
                                            std::vector<Node<2>*> nodes,
                                            std::vector<VertexElement<2, 2>*> vertexElements,
@@ -50,11 +50,11 @@ MyXToroidal2dVertexMesh::MyXToroidal2dVertexMesh(double centerOfWidth,
     ReMesh();
 }
 
-MyXToroidal2dVertexMesh::MyXToroidal2dVertexMesh()
+MyToroidal2dVertexMesh::MyToroidal2dVertexMesh()
 {
 }
 
-MyXToroidal2dVertexMesh::~MyXToroidal2dVertexMesh()
+MyToroidal2dVertexMesh::~MyToroidal2dVertexMesh()
 {
     if (mpMeshForVtk != NULL)
     {
@@ -62,7 +62,7 @@ MyXToroidal2dVertexMesh::~MyXToroidal2dVertexMesh()
     }
 }
 
-c_vector<double, 2> MyXToroidal2dVertexMesh::GetVectorFromAtoB(const c_vector<double, 2>& rLocation1, const c_vector<double, 2>& rLocation2)
+c_vector<double, 2> MyToroidal2dVertexMesh::GetVectorFromAtoB(const c_vector<double, 2>& rLocation1, const c_vector<double, 2>& rLocation2)
 {
     assert(mWidth > 0.0);
 
@@ -82,7 +82,7 @@ c_vector<double, 2> MyXToroidal2dVertexMesh::GetVectorFromAtoB(const c_vector<do
     return vector;
 }
 
-void MyXToroidal2dVertexMesh::SetNode(unsigned nodeIndex, ChastePoint<2> point)
+void MyToroidal2dVertexMesh::SetNode(unsigned nodeIndex, ChastePoint<2> point)
 {
     double x_coord = point.rGetLocation()[0];
 
@@ -102,7 +102,7 @@ void MyXToroidal2dVertexMesh::SetNode(unsigned nodeIndex, ChastePoint<2> point)
     MutableVertexMesh<2,2>::SetNode(nodeIndex, point);
 }
 
-double MyXToroidal2dVertexMesh::GetWidth(const unsigned& rDimension) const
+double MyToroidal2dVertexMesh::GetWidth(const unsigned& rDimension) const
 {
     assert(rDimension==0 || rDimension==1);
 
@@ -111,13 +111,13 @@ double MyXToroidal2dVertexMesh::GetWidth(const unsigned& rDimension) const
     return width;
 }
 
-void MyXToroidal2dVertexMesh::SetWidth(double width)
+void MyToroidal2dVertexMesh::SetWidth(double width)
 {
     assert(width > 0);
     mWidth = width;
 }
 
-unsigned MyXToroidal2dVertexMesh::AddNode(Node<2>* pNewNode)
+unsigned MyToroidal2dVertexMesh::AddNode(Node<2>* pNewNode)
 {
     unsigned node_index = MutableVertexMesh<2,2>::AddNode(pNewNode);
 
@@ -128,7 +128,7 @@ unsigned MyXToroidal2dVertexMesh::AddNode(Node<2>* pNewNode)
     return node_index;
 }
 
-VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
+VertexMesh<2, 2>* MyToroidal2dVertexMesh::GetMeshForVtk()
 {
     unsigned num_nodes = GetNumNodes();
 
@@ -142,11 +142,11 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
         location = GetNode(index)->rGetLocation();
 
         // Node copy at original location
-        Node<2>* p_node = new Node<2>(index, false, (location[0] + this->mMoveMeshRightForNPeriods*mWidth)*(this->mMultiplyResultsBy), location[1]*(this->mMultiplyResultsBy));
+        Node<2>* p_node = new Node<2>(index, false, location[0], location[1]);
         temp_nodes[index] = p_node;
 
         // Node copy shifted right
-        p_node = new Node<2>(num_nodes + index, false, (location[0] + mWidth + this->mMoveMeshRightForNPeriods*mWidth)*(this->mMultiplyResultsBy), location[1]*(this->mMultiplyResultsBy));
+        p_node = new Node<2>(num_nodes + index, false, (location[0] + mWidth), location[1]);
         temp_nodes[num_nodes + index] = p_node;
 
     }
@@ -176,18 +176,6 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
                 element_straddles_left_right_boundary = true;
             }
         }
-        // // My changes
-        // bool element_at_left_of_width_center = true;
-        // for (unsigned local_index=0; local_index<num_nodes_in_elem; local_index++)
-        // {
-        //     const c_vector<double, 2>& r_node_location = elem_iter->GetNode(local_index)->rGetLocation();
-        //     if (r_node_location[0] > this->mCenterOfWidth)
-        //     {
-        //         element_at_left_of_width_center = false;
-        //         break;
-        //     }
-        // }
-
 
         // Use the above information when duplicating the element
         for (unsigned local_index=0; local_index<num_nodes_in_elem; local_index++)
@@ -205,11 +193,6 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
                     this_node_index += num_nodes;
                 }
             }
-            // // my changes
-            // if (element_at_left_of_width_center)
-            // {
-            //     this_node_index += num_nodes;
-            // }
             
             elem_nodes.push_back(temp_nodes[this_node_index]);
         }
@@ -217,7 +200,6 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
         VertexElement<2,2>* p_element = new VertexElement<2,2>(elem_index, elem_nodes);
         elements.push_back(p_element);
     }
-
 
     // Now delete any nodes from the mesh for VTK that are not contained in any elements
     std::vector<Node<2>*> nodes;
@@ -239,33 +221,6 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
         }
     }
 
-    // //My changes:
-    // for (unsigned node_index = 0; node_index != num_nodes; node_index++)
-    // {
-    //     c_vector<double, 2> location_right;
-    //     location_right = nodes[node_index]->rGetLocation();
-    //     location_right[0] += mWidth;
-    //     Node<2>* p_node = new Node<2>(num_nodes + nodes[node_index]->GetIndex(), false, location_right[0], location_right[1]);
-    //     nodes.push_back(p_node);//****************
-    // }
-
-    // unsigned num_elements = elements.size();
-    // for (unsigned index = 0; index < num_elements; index++)
-    // {
-    //     VertexElement<2,2>* p_element = elements[index];
-    //     unsigned elem_index = p_element->GetIndex();
-    //     unsigned num_nodes_in_elem = p_element->GetNumNodes();
-    //     std::vector<Node<2>*> elem_nodes;
-    //     for (unsigned local_index=0; local_index<num_nodes_in_elem; local_index++)
-    //     {
-    //         unsigned this_node_index = p_element->GetNodeGlobalIndex(local_index);
-    //         elem_nodes.push_back(nodes[this_node_index+num_nodes]);
-    //     }
-    //     VertexElement<2,2>* p_new_element = new VertexElement<2,2>(num_elements+elem_index, elem_nodes);
-    //     elements.push_back(p_new_element);//***************************
-    // }
-
-
     if (mpMeshForVtk != nullptr)
     {
         delete mpMeshForVtk;
@@ -275,7 +230,7 @@ VertexMesh<2, 2>* MyXToroidal2dVertexMesh::GetMeshForVtk()
     return mpMeshForVtk;
 }
 
-void MyXToroidal2dVertexMesh::ConstructFromMeshReader(AbstractMeshReader<2,2>& rMeshReader, double width)
+void MyToroidal2dVertexMesh::ConstructFromMeshReader(AbstractMeshReader<2,2>& rMeshReader, double width)
 {
     assert(rMeshReader.HasNodePermutation() == false);
 
@@ -350,4 +305,4 @@ void MyXToroidal2dVertexMesh::ConstructFromMeshReader(AbstractMeshReader<2,2>& r
 
 // Serialization for Boost >= 1.36
 #include "SerializationExportWrapperForCpp.hpp"
-CHASTE_CLASS_EXPORT(MyXToroidal2dVertexMesh)
+CHASTE_CLASS_EXPORT(MyToroidal2dVertexMesh)

@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef MYXTOROIDAL2DVERTEXMESH_HPP_
-#define MYXTOROIDAL2DVERTEXMESH_HPP_
+#ifndef MYTOROIDAL2DVERTEXMESH_HPP_
+#define MYTOROIDAL2DVERTEXMESH_HPP_
 
 #include "ChasteSerialization.hpp"
 #include <boost/serialization/base_object.hpp>
@@ -43,14 +43,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * A subclass of MutableVertexMesh<2,2> for a rectangular mesh with
- * periodic left and right boundaries and top and bottom boundaries,
- * representing a toroidal geometry.
+ * periodic left and right boundaries, representing a toroidal geometry.
  *
  * The class works by overriding calls such as ReMesh() and
  * GetVectorFromAtoB() so that simulation classes can treat this
  * class in exactly the same way as a MutableMesh<2,2>.
  */
-class MyXToroidal2dVertexMesh : public MutableVertexMesh<2,2>
+class MyToroidal2dVertexMesh : public MutableVertexMesh<2,2>
 {
     friend class TestToroidal2dVertexMesh;
 
@@ -98,7 +97,7 @@ public:
      * @param cellRearrangementThreshold the minimum threshold distance for element rearrangement (defaults to 0.01)
      * @param t2Threshold the maximum threshold distance for Type 2 swaps (defaults to 0.001)
      */
-    MyXToroidal2dVertexMesh(double centerOfWidth,
+    MyToroidal2dVertexMesh(double centerOfWidth,
                          double width,
                          std::vector<Node<2>*> nodes,
                          std::vector<VertexElement<2,2>*> vertexElements,
@@ -108,12 +107,12 @@ public:
     /**
      * Constructor.
      */
-    MyXToroidal2dVertexMesh();
+    MyToroidal2dVertexMesh();
 
     /**
      * Destructor.
      */
-    ~MyXToroidal2dVertexMesh();
+    ~MyToroidal2dVertexMesh();
 
     /**
      * Overridden GetVectorFromAtoB() method.
@@ -187,6 +186,6 @@ public:
 };
 
 #include "SerializationExportWrapper.hpp"
-CHASTE_CLASS_EXPORT(MyXToroidal2dVertexMesh)
+CHASTE_CLASS_EXPORT(MyToroidal2dVertexMesh)
 
-#endif /*MYXTOROIDAL2DVERTEXMESH_HPP_*/
+#endif /*MYTOROIDAL2DVERTEXMESH_HPP_*/

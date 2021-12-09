@@ -75,15 +75,16 @@ void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM
     srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
     if (mSeedManually)
         srand(mSeedForInitialRandomPolarity);
+    
     for (std::list<CellPtr>::iterator cell_iter = rCellPopulation.rGetCells().begin();
          cell_iter != rCellPopulation.rGetCells().end();
          ++cell_iter)
     {
-        double angle = mAngleForInitialization; //angle: 0-PI
-        double polarity_angle = (rand()%int(round((M_PI+angle)*1e5)))/1e5-0.5*angle;// Err: 0-PI-->>(0-x)-(PI+x)
-        polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
-        if (mSeedManually)
-            polarity_angle = 2*M_PI* (rand()%int(1e5))/double(1e5);
+        // double angle = mAngleForInitialization; //angle: 0-PI
+        // double polarity_angle = (rand()%int(round((M_PI+angle)*1e5)))/1e5-0.5*angle;// Err: 0-PI-->>(0-x)-(PI+x)
+        double polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
+        // if (mSeedManually)
+        //     polarity_angle = 2*M_PI*(rand()%int(1e5))/double(1e5);
         SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude, mPolarityMagnitudeEquilibrium);
     }
 }

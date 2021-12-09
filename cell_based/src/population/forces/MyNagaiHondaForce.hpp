@@ -33,8 +33,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef MYNAGAIHONDAFORCEWITHSTRIPESADHESION_HPP_
-#define MYNAGAIHONDAFORCEWITHSTRIPESADHESION_HPP_
+#ifndef MYNAGAIHONDAFORCE_HPP_
+#define MYNAGAIHONDAFORCE_HPP_
 
 #include "ChasteSerialization.hpp"
 #include <boost/serialization/base_object.hpp>
@@ -58,7 +58,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * nu) take the value 0.01.
  */
 template<unsigned DIM>
-class MyNagaiHondaForceWithStripesAdhesion  : public AbstractForce<DIM>
+class MyNagaiHondaForce  : public AbstractForce<DIM>
 {
 friend class TestForces;
 
@@ -108,87 +108,35 @@ protected:
     double mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 
     // my changes:
-    bool mIfConsiderSubstrateAdhesion;
-
-    bool mIfSubstrateAdhesionIsHomogeneous;
-
-    double mSubstrateAdhesionParameterChangePerUnitLength;
-
-    double mHomogeneousSubstrateAdhesionParameter;
-    
-    double mSubstrateAdhesionLeadingTopLength;
-
-    double mBasicSSA;
-
-    double mSSAForMatureLamellipodium;
-    
-    double mStripWidth;
-
-    double mStripDistance;
-
-    double mStripStartXLocation;
-
-    double mStripStartYLocation;
-
     double mFixedTargetArea;
 
     double mFixedTargetPerimeter;
 
     double mTargetShapeIndex;
 
-    double mWidth;
-
-    double mCenterOfWidth;
-
-    bool mIfConsiderIntervalSubstrateRepulsion;
-
     bool mUseFixedTargetArea;
 
-    unsigned mCaseNumberOfMembraneSurfaceEnergyForm;
-
     bool mIfUseFaceElementToGetAdhesionParameter;
-
-    double mSmallChangeForAreaCalculation;
-
-    bool mUseMyDetachPatternMethod;
-
-    bool mIfUseNewSSADistributionRule;
-
-    bool mSSAStrengthenedOnlyInYDirection;
-
-    bool mAddPullingForceOnNodeIndividually;
 
     bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
 
     double mPullingForceOnLeadingCell;
 
-    bool mKeepMovingForward;
+    // bool mIfEquilibrateForAWhile;
 
-    double mSSABottomDecrease;
-
-    double mSlowlyMovingForwardAfterThisHeight;
-
-    bool mSmallSSAAtFirst;
-
-    double mInitialTimeForSmallSSA;
-
-    double mSmallSSAForInitialTime;
-
-    bool mIfEquilibrateForAWhile;
-
-    double mTimeForEquilibrium;
+    // double mTimeForEquilibrium;
 
 public:
 
     /**
      * Constructor.
      */
-    MyNagaiHondaForceWithStripesAdhesion();
+    MyNagaiHondaForce();
 
     /**
      * Destructor.
      */
-    virtual ~MyNagaiHondaForceWithStripesAdhesion();
+    virtual ~MyNagaiHondaForce();
 
     /**
      * Overridden AddForceContribution() method.
@@ -268,122 +216,30 @@ public:
     void OutputForceParameters(out_stream& rParamsFile);
 
     // my methods
-    void SetStripWidth(double stripWidth)
+    void SetFixedTargetArea(double fixedTargetArea)
     {
-      mStripWidth = stripWidth;
+      mFixedTargetArea = fixedTargetArea;
     }
-    void SetStripDistance(double stripDistance)
+
+    void SetFixedTargetPerimeter(double fixedTargetPerimeter)
     {
-      mStripDistance = stripDistance;
+      mFixedTargetPerimeter = fixedTargetPerimeter;
     }
-    void SetStripStartXLocation(double stripStartXLocation)
+
+    void SetTargetShapeIndex(double targetShapeIndex)
     {
-      mStripStartXLocation = stripStartXLocation;
+      mTargetShapeIndex = targetShapeIndex;
     }
-    void SetStripStartYLocation(double stripStartYLocation)
-    {
-      mStripStartYLocation = stripStartYLocation;
-    }
-    
+
     void SetUseFixedTargetArea(double useFixedTargetArea)
     {
       mUseFixedTargetArea = useFixedTargetArea;
     }
 
-    void SetFixedTargetArea(double fixedTargetArea)
-    {
-      mFixedTargetArea = fixedTargetArea;
-    }
-    void SetFixedTargetPerimeter(double fixedTargetPerimeter)
-    {
-      mFixedTargetPerimeter = fixedTargetPerimeter;
-    }
-    void SetTargetShapeIndex(double targetShapeIndex)
-    {
-      mTargetShapeIndex = targetShapeIndex;
-    }
-    void SetWidth(double width)
-    {
-      mWidth = width;
-    }
-    void SetCenterOfWidth(double centerOfWidth)
-    {
-      mCenterOfWidth = centerOfWidth;
-    }
     // tmp
-    void SetIfConsiderIntervalSubstrateRepulsion (bool ifConsiderIntervalSubstrateRepulsion)
-    {
-      mIfConsiderIntervalSubstrateRepulsion = ifConsiderIntervalSubstrateRepulsion;
-    }
-
-    void SetIfConsiderSubstrateAdhesion (bool ifConsiderSubstrateAdhesion)
-    {
-      mIfConsiderSubstrateAdhesion = ifConsiderSubstrateAdhesion;
-    }
-    // SSA
-    void SetIfSubstrateAdhesionIsHomogeneous(bool ifSubstrateAdhesionIsHomogeneous)
-    {
-      mIfSubstrateAdhesionIsHomogeneous = ifSubstrateAdhesionIsHomogeneous;
-    }
-    void SetHomogeneousSubstrateAdhesionParameter(double homogeneousSubstrateAdhesionParameter)
-    {
-      mHomogeneousSubstrateAdhesionParameter = homogeneousSubstrateAdhesionParameter;
-    }
-    void SetSubstrateAdhesionParameterChangePerUnitLength(double substrateAdhesionParameterChangePerUnitLength)
-    {
-      mSubstrateAdhesionParameterChangePerUnitLength = substrateAdhesionParameterChangePerUnitLength;
-    }
-    void SetSubstrateAdhesionLeadingTopLength( double substrateAdhesionLeadingTopLength)
-    {
-      mSubstrateAdhesionLeadingTopLength = substrateAdhesionLeadingTopLength;
-    }
-    void SetBasicSSA(double basicSSA)
-    {
-      mBasicSSA = basicSSA;
-    }
-    void SetSSAForMatureLamellipodium(double SSAForMatureLamellipodium)
-    {
-      mSSAForMatureLamellipodium = SSAForMatureLamellipodium;
-    }
-
-    void SetCaseNumberOfMembraneSurfaceEnergyForm ( unsigned caseNumberOfMembraneSurfaceEnergyForm)
-    {
-      this->mCaseNumberOfMembraneSurfaceEnergyForm = caseNumberOfMembraneSurfaceEnergyForm;
-    }
-
-    unsigned GetCaseNumberOfMembraneSurfaceEnergyForm()
-    {
-      return this->mCaseNumberOfMembraneSurfaceEnergyForm;
-    }
-
     void SetUseFaceElementToGetAdhesionParameterBoolean(bool ifUseFaceElementToGetAdhesionParameter)
     {
       mIfUseFaceElementToGetAdhesionParameter = ifUseFaceElementToGetAdhesionParameter;
-    }
-
-    void SetSmallChangeForAreaCalculation(double smallChangeForAreaCalculation)
-    {
-      mSmallChangeForAreaCalculation = smallChangeForAreaCalculation;
-    }
-
-    void SetUseMyDetachPatternMethod(bool useMyDetachPatternMethod)
-    {
-      mUseMyDetachPatternMethod = useMyDetachPatternMethod;
-    }
-
-    void SetIfUseNewSSADistributionRule(bool ifUseNewSSADistributionRule)
-    {
-      mIfUseNewSSADistributionRule = ifUseNewSSADistributionRule;
-    }
-
-    void SetSSAStrengthenedOnlyInYDirection(bool SSAStrengthenedOnlyInYDirection)
-    {
-      mSSAStrengthenedOnlyInYDirection = SSAStrengthenedOnlyInYDirection;
-    }
-
-    void SetAddPullingForceOnNodeIndividually(bool addPullingForceOnNodeIndividually)
-    {
-      mAddPullingForceOnNodeIndividually = addPullingForceOnNodeIndividually;
     }
 
     void SetAddPullingForceEvenlyOnNodesOfLeadingCell(bool addPullingForceEvenlyOnNodesOfLeadingCell)
@@ -395,50 +251,20 @@ public:
     {
       mPullingForceOnLeadingCell = pullingForceOnLeadingCell;
     }
-    
-    void SetKeepMovingForward(bool keepMovingForward)
-    {
-      mKeepMovingForward = keepMovingForward;
-    }
 
-    void SetSSABottomDecrease(double SSABottomDecrease)
-    {
-      mSSABottomDecrease = SSABottomDecrease;
-    }
+    // void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
+    // {
+    //   mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
+    // }
 
-    void SetSlowlyMovingForwardAfterThisHeight(double slowlyMovingForwardAfterThisHeight)
-    {
-      mSlowlyMovingForwardAfterThisHeight = slowlyMovingForwardAfterThisHeight;
-    }
-
-    void SetSmallSSAAtFirst(bool smallSSAAtFirst)
-    {
-      mSmallSSAAtFirst = smallSSAAtFirst;
-    }
-
-    void SetInitialTimeForSmallSSA(double initialTimeForSmallSSA)
-    {
-      mInitialTimeForSmallSSA = initialTimeForSmallSSA;
-    }
-
-    void SetSmallSSAForInitialTime(double smallSSAForInitialTime)
-    {
-      mSmallSSAForInitialTime = smallSSAForInitialTime;
-    }
-
-    void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
-    {
-      mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
-    }
-
-    void SetTimeForEquilibrium(double timeForEquilibrium)
-    {
-      mTimeForEquilibrium = timeForEquilibrium;
-    }
+    // void SetTimeForEquilibrium(double timeForEquilibrium)
+    // {
+    //   mTimeForEquilibrium = timeForEquilibrium;
+    // }
 
 };
 
 #include "SerializationExportWrapper.hpp"
-EXPORT_TEMPLATE_CLASS_SAME_DIMS(MyNagaiHondaForceWithStripesAdhesion)
+EXPORT_TEMPLATE_CLASS_SAME_DIMS(MyNagaiHondaForce)
 
-#endif /*MYNAGAIHONDAFORCEWITHSTRIPESADHESION_HPP_*/
+#endif /*MYNAGAIHONDAFORCE_HPP_*/

@@ -157,9 +157,9 @@ public:
     void ResetTimeStep(double dt);
 
     // my changes
-    void SetApplyMyChangesToMakeTimestepAdaptive(bool applyMyChangesToMakeTimestepAdaptive)
+    void SetApplyAdaptiveTimestep(bool applyAdaptiveTimestep)
     {
-      mApplyMyChangesToMakeTimestepAdaptive = applyMyChangesToMakeTimestepAdaptive;
+      mApplyAdaptiveTimestep = applyAdaptiveTimestep;
     }
 
 private:
@@ -174,7 +174,7 @@ private:
     double mDt;
 
     // my changes
-    bool mApplyMyChangesToMakeTimestepAdaptive;
+    bool mApplyAdaptiveTimestep;
 
     double mAdaptiveDt;
 

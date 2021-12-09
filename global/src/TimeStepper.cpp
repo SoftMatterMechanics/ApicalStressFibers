@@ -44,7 +44,7 @@ TimeStepper::TimeStepper(double startTime, double endTime, double dt, bool enfor
     : mStart(startTime),
       mEnd(endTime),
       mDt(dt),
-      mApplyMyChangesToMakeTimestepAdaptive(false),
+      mApplyAdaptiveTimestep(false),
       mAdaptiveDt(dt),
       mTotalTimeStepsTaken(0),
       mAdditionalTimesReachedDeprecated(0),
@@ -110,7 +110,7 @@ double TimeStepper::CalculateNextTime()
     double next_time = mStart + (mTotalTimeStepsTaken + 1)*mDt;
 
     // my changes
-    if (mApplyMyChangesToMakeTimestepAdaptive)
+    if (mApplyAdaptiveTimestep)
         next_time = mTime + mAdaptiveDt;
 
     // Does the next time bring us very close to the end time?
@@ -129,7 +129,7 @@ double TimeStepper::CalculateNextTime()
 void TimeStepper::AdvanceOneTimeStep()
 {
     mTotalTimeStepsTaken++;
-    if (mApplyMyChangesToMakeTimestepAdaptive)
+    if (mApplyAdaptiveTimestep)
         mTime = mTime + mAdaptiveDt;
     else
     {
@@ -168,9 +168,10 @@ double TimeStepper::GetNextTimeStep()
     assert(mAdditionalTimesDeprecated.empty());
     return dt;
 }
+
 double TimeStepper::GetIdealTimeStep()
 {
-    if (mApplyMyChangesToMakeTimestepAdaptive)
+    if (mApplyAdaptiveTimestep)
         return mAdaptiveDt;
     else
         return mDt;

@@ -79,12 +79,10 @@ private :
     double mTheSameNodeRadius;
 
     bool mHasPolarity;
-    bool mOnePeriodOnly;
 
     bool mIfEquilibrateForAWhile;
+
     double mEndTimeForEquilibrium;
-
-
 
 
     /**
@@ -119,9 +117,9 @@ public :
     ~DiffusionForce();
 
     // my changes
-    void SetHasBrownianRandomForce(bool HasBrownianRandomForce)
+    void SetHasBrownianRandomForce(bool hasBrownianRandomForce)
     {
-      mHasBrownianRandomForce = HasBrownianRandomForce;
+      mHasBrownianRandomForce = hasBrownianRandomForce;
     }
 
     void SetUseTheSameNodeRadius(bool useTheSameNodeRadius)
@@ -139,11 +137,6 @@ public :
       mHasPolarity = hasPolarity;
     }
 
-    void SetOnePeriodOnly(bool onePeriodOnly)
-    {
-      mOnePeriodOnly = onePeriodOnly;
-    }
-
     void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
     {
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
@@ -153,8 +146,6 @@ public :
     {
       mEndTimeForEquilibrium = endTimeForEquilibrium;
     }
-
-
 
 
     /**

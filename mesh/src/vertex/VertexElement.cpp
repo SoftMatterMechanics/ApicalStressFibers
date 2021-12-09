@@ -187,8 +187,8 @@ VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Nod
 {
     if (SPACE_DIM==2)
     {
-        mUnifiedCellCellAdhesionEnergyParameter = 1.0;
-        mUnifiedEdgeMyosinActivty = 1.0;
+        mCellCellAdhesionEnergyParameter = 1.0;
+        mEdgeMyosinActivty = 1.0;
         mIsDeleted = false;
     }
 }// this is the typical constructor for a face object!

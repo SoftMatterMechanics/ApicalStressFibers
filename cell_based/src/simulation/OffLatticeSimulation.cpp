@@ -100,15 +100,15 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::UpdateCellLocationsAndTopology
 {
     CellBasedEventHandler::BeginEvent(CellBasedEventHandler::POSITION);
 
-    double time_advanced_so_far = 0;
-    double target_time_step  = 0.0;
-    if (this->mApplyMyChangesToMakeTimestepAdaptive)
+    double time_advanced_so_far = 0.0;
+    double target_time_step = 0.0;
+    if (this->mApplyAdaptiveTimestep)
         target_time_step = this->mAdaptiveDt;// or use simulationTime?
     else
         target_time_step = this->mDt;
 
-    double present_time_step  = 0.0;
-    if (this->mApplyMyChangesToMakeTimestepAdaptive)
+    double present_time_step = 0.0;
+    if (this->mApplyAdaptiveTimestep)
         present_time_step = this->mAdaptiveDt;// or use simulationTime?
     else
         present_time_step = this->mDt;
@@ -130,7 +130,7 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::UpdateCellLocationsAndTopology
         try
         {
             // my changes
-            if (this->mApplyMyChangesToMakeTimestepAdaptive)
+            if (this->mApplyAdaptiveTimestep)
             {
                 // assert( bool( dynamic_cast<VertexBasedCellPopulation<SPACE_DIM>*>(&(this->mrCellPopulation)) ) );
                 // assert(static_cast<VertexBasedCellPopulation<SPACE_DIM>*>(&(this->mrCellPopulation))->GetRestrictVertexMovementBoolean() == false);
@@ -213,6 +213,7 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::ApplyBoundaries(std::map<Node<
     {
         if (!((*bcs_iter)->VerifyBoundaryCondition()))
         {
+            std::cout<<"Boundary is not compatible!"<<std::endl; // my changes for check!
             EXCEPTION("The cell population boundary conditions are incompatible.");
         }
     }

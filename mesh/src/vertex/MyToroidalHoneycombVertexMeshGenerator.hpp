@@ -33,23 +33,22 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef MYXTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_
-#define MYXTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_
+#ifndef MYTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_
+#define MYTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_
 
 #include <cmath>
 #include <vector>
 
 #include "HoneycombVertexMeshGenerator.hpp"
-#include "MyXToroidal2dVertexMesh.hpp"
+#include "MyToroidal2dVertexMesh.hpp"
 
 /**
- * Honeycomb mesh generator that creates a 2D "toroidal" mesh (one in which
- * periodicity is imposed on the left and right and top and bottom boundaries)
- * for use with vertex-based simulations.
+ * Honeycomb mesh generator that creates a 2D "toroidal" mesh (one in which periodicity 
+ * is imposed on the left and right boundaries) for use with vertex-based simulations.
  *
  * NOTE: the user should delete the mesh after use to manage memory.
  */
-class MyXToroidalHoneycombVertexMeshGenerator : HoneycombVertexMeshGenerator
+class MyToroidalHoneycombVertexMeshGenerator : HoneycombVertexMeshGenerator
 {
 public:
 
@@ -61,9 +60,9 @@ public:
      * @param cellRearrangementThreshold the minimum threshold distance for element rearrangement (defaults to 0.01)
      * @param t2Threshold the maximum threshold distance for Type 2 swaps (defaults to 0.001)
      */
-    MyXToroidalHoneycombVertexMeshGenerator(unsigned numElementsAcross,
+    MyToroidalHoneycombVertexMeshGenerator(unsigned numElementsAcross,
                                          unsigned numElementsUp,
-                                         double initialArea=sqrt(M_PI),
+                                         double initialArea=1.0,
                                          double cellRearrangementThreshold=0.01,
                                          double t2Threshold=0.001);
     /**
@@ -72,9 +71,9 @@ public:
     MutableVertexMesh<2,2>* GetMesh();
 
     /**
-     * @return a 2D honeycomb mesh with periodic left/right and top/bottom boundaries
+     * @return a 2D honeycomb mesh with periodic left/right boundaries
      */
-    MyXToroidal2dVertexMesh* GetToroidalMesh();
+    MyToroidal2dVertexMesh* GetToroidalMesh();
 };
 
-#endif /*MYXTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_*/
+#endif /*MYTOROIDALHONEYCOMBVERTEXMESHGENERATOR_HPP_*/

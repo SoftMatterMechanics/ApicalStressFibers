@@ -105,7 +105,7 @@ public:
       mPolarityMagnitudeEquilibrium = polarityMagnitudeEquilibrium;
     }
 
-    void SetAngleForInitialization (double angleForInitialization)
+    void SetAngleForInitialization(double angleForInitialization)
     {
       mAngleForInitialization = angleForInitialization;
     }

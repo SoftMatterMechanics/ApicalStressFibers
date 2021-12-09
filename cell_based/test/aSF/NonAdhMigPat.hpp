@@ -60,7 +60,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ToroidalHoneycombVertexMeshGenerator.hpp"
 #include "MyXToroidalHoneycombVertexMeshGenerator.hpp"
 #include "NagaiHondaForce.hpp"
-#include "MyNagaiHondaForceWithStripesAdhesion.hpp"
+#include "MyNagaiHondaForce.hpp"
 #include "DiffusionForce.hpp"
 #include "PlaneBasedCellKiller.hpp"
 
@@ -287,8 +287,8 @@ public:
         // Strips structure of substrate adhesion
         bool   if_update_face_elements_in_mesh = if_consider_feedback_of_face_values;
         
-        MyXToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001/sqrt((M_PI/reference_area)));
-        MyXToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
+        MyToroidalHoneycombVertexMeshGenerator generator(num_ele_cross, num_ele_up, initial_area, cell_rearrangement_threshold, 0.001/sqrt((M_PI/reference_area)));
+        MyToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
         p_mesh->SetMultiplyResultsBy(multiply_results_by);
         p_mesh->SetDistanceForT3SwapChecking(5.0/sqrt((M_PI/reference_area)));
         p_mesh->SetMoveMeshRightForNPeriods(move_mesh_right_for_N_periods);        
@@ -326,9 +326,9 @@ public:
           simulator.SetMySeed(seed_for_initial_random_polarity);
         bool output_cell_velocity = true;
         simulator.SetOutputCellVelocities(output_cell_velocity);
-
-
         simulator.SetNoBirth(!run_with_birth);
+
+        
         /*--------------------------------START: TargetAreaModifier------------------------------*/
         MAKE_PTR_ARGS(TargetAreaLinearGrowthModifier<2>, p_growth_modifier, ());
         p_growth_modifier->SetUseUseMyOwnRuleForUpdateTargetAreaOfCell(true);

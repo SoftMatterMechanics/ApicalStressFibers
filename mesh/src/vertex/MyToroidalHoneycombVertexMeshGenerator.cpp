@@ -33,9 +33,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "MyXToroidalHoneycombVertexMeshGenerator.hpp"
+#include "MyToroidalHoneycombVertexMeshGenerator.hpp"
 
-MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator(unsigned numElementsAcross,
+MyToroidalHoneycombVertexMeshGenerator::MyToroidalHoneycombVertexMeshGenerator(unsigned numElementsAcross,
    unsigned numElementsUp,
    double initialArea,
    double cellRearrangementThreshold,
@@ -51,10 +51,11 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
     assert(t2Threshold > 0.0);
 
     std::vector<Node<2>*> nodes;
+    std::vector<VertexElement<1,2>*>  faces;  // changes made by Chao
     std::vector<VertexElement<2,2>*>  elements;
-    std::vector<VertexElement<1,2>*> faces;
-
+    
     unsigned node_index = 0;
+    unsigned face_index = 0; // changes made by Chao
     unsigned node_indices[6];
     unsigned element_index;
 
@@ -69,14 +70,13 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
             y_coord = y_coord*sqrt(initialArea/(sqrt(3)/2));
             bool is_boundary_node = (j==0) || (j==1) || (j == 2*numElementsUp) || (j == (2*numElementsUp+1));
 
-            Node<2>* p_node = new Node<2>(node_index, is_boundary_node , x_coord, y_coord);
+            Node<2>* p_node = new Node<2>(node_index, is_boundary_node, x_coord, y_coord);
             nodes.push_back(p_node);
             node_index++;
         }
     }
 
-    // my changes: create the faces
-    unsigned face_index =0;
+    // Create the faces
     for (unsigned j=0; j<2*numElementsUp+1; j++)
     {
         if (j%4==0)
@@ -94,7 +94,7 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                     if (i == 2*numElementsAcross-1)
                     {
                         face_nodes.push_back(nodes[j*numElementsAcross+i/2]);
-                        face_nodes.push_back(nodes[j*numElementsAcross+i/2+numElementsAcross+1-numElementsAcross]);
+                        face_nodes.push_back(nodes[j*numElementsAcross+i/2+numElementsAcross+1-numElementsAcross]); // left-right periodicity
                     }
                     else
                     {
@@ -104,10 +104,10 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                 }
                 VertexElement<1,2>* p_face = new VertexElement<1,2>(face_index, face_nodes);
                 faces.push_back(p_face);
-                face_index +=1;
+                face_index ++;
             }
         }
-        if (j%4==1)
+        if ((j%4==1)||(j%4==3))
         {
             for (unsigned i=0; i<numElementsAcross; i++)
             {
@@ -116,7 +116,7 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                 face_nodes.push_back(nodes[j*numElementsAcross+i+numElementsAcross]);                
                 VertexElement<1,2>* p_face = new VertexElement<1,2>(face_index, face_nodes);
                 faces.push_back(p_face);
-                face_index +=1;
+                face_index ++;
             }
         }
         if (j%4==2)
@@ -134,7 +134,7 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                     if (i == 2*numElementsAcross-1)
                     {
                         face_nodes.push_back(nodes[(j+1)*numElementsAcross+i/2]);
-                        face_nodes.push_back(nodes[(j+1)*numElementsAcross+i/2-numElementsAcross+1-numElementsAcross]);
+                        face_nodes.push_back(nodes[(j+1)*numElementsAcross+i/2-numElementsAcross+1-numElementsAcross]); // left-right periodicity
                     }
                     else
                     {
@@ -144,10 +144,10 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                 }
                 VertexElement<1,2>* p_face = new VertexElement<1,2>(face_index, face_nodes);
                 faces.push_back(p_face);
-                face_index +=1;
+                face_index ++;
             }
         }
-        if (j%4==3)
+        /* if (j%4==3)
         {
             for (unsigned i=0; i<numElementsAcross; i++)
             {
@@ -158,22 +158,16 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                 faces.push_back(p_face);
                 face_index +=1;
             }
-        }
+        } */
 
     }
 
     if (face_index != (3*numElementsUp+2)*numElementsAcross)
-        std::cout<< std::endl << "Face building got error in MyXToroidalHoneycombVertexMeshGenerator!" << std::endl;
+        std::cout<< std::endl << "Face building got error in MyToroidalHoneycombVertexMeshGenerator!" << std::endl;
     else
-        std::cout<< std::endl << "Successfully built " << numElementsAcross*numElementsUp << " elements and " << face_index << " faces in MyXToroidalHoneycombVertexMeshGenerator." << std::endl;
+        std::cout<< std::endl << "Successfully built " << face_index << " faces in MyToroidalHoneycombVertexMeshGenerator." << std::endl;
 
     assert(face_index == (3*numElementsUp+2)*numElementsAcross);
-
-    // std::cout << std::endl << "Faces information:"
-    // for (unsigned index = 0; index < faces.size(); index++)
-    // {
-    //     std::cout << std::endl << index << ' ' << faces[index]->GetNodeGlobalIndex(0) << ' ' << faces[index]->GetNodeGlobalIndex(1);
-    // }
 
     /*
      * Create the elements. The array node_indices contains the
@@ -228,7 +222,7 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
             element_faces.push_back(faces[6*(j/2)*numElementsAcross+2*i+(3*numElementsAcross+1)*(j%2==1)]);
 
             // on far right
-            if (i== numElementsAcross-1)
+            if (i == numElementsAcross-1)
             {
                 if (j%2==0)
                 {
@@ -239,7 +233,6 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
                     element_faces[0] = faces[6*(j/2)*numElementsAcross+3*numElementsAcross];
                     element_faces[1] = faces[6*(j/2)*numElementsAcross+5*numElementsAcross];
                     element_faces[2] = faces[6*(j/2)*numElementsAcross+6*numElementsAcross];
-
                 }
             }
 
@@ -250,7 +243,7 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
             element_orientations.push_back(false);
             element_orientations.push_back(true);
 
-            VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_faces, element_orientations,element_nodes);
+            VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_faces, element_orientations, element_nodes);
             // VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_nodes);
             elements.push_back(p_element);
         }
@@ -258,16 +251,16 @@ MyXToroidalHoneycombVertexMeshGenerator::MyXToroidalHoneycombVertexMeshGenerator
 
     double center_of_width = 0.0;
     double mesh_width = numElementsAcross*sqrt(initialArea/(sqrt(3)/2));
-    mpMesh = new MyXToroidal2dVertexMesh(center_of_width,mesh_width, nodes, elements, cellRearrangementThreshold, t2Threshold);
+    mpMesh = new MyToroidal2dVertexMesh(center_of_width, mesh_width, nodes, elements, cellRearrangementThreshold, t2Threshold);
 }
 
-MutableVertexMesh<2,2>* MyXToroidalHoneycombVertexMeshGenerator::GetMesh()
+MutableVertexMesh<2,2>* MyToroidalHoneycombVertexMeshGenerator::GetMesh()
 {
     EXCEPTION("A toroidal mesh was created but a normal mesh is being requested.");
     return mpMesh; // Not really
 }
 
-MyXToroidal2dVertexMesh* MyXToroidalHoneycombVertexMeshGenerator::GetToroidalMesh()
+MyToroidal2dVertexMesh* MyToroidalHoneycombVertexMeshGenerator::GetToroidalMesh()
 {
-    return (MyXToroidal2dVertexMesh*) mpMesh;
+    return (MyToroidal2dVertexMesh*) mpMesh;
 }

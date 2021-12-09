@@ -47,7 +47,7 @@ DiffusionForce<DIM>::DiffusionForce()
       mViscosity(3.204e-6), // default to viscosity of water at room temperature in (using 10 microns and hours)
       mHasBrownianRandomForce(false),
       mUseTheSameNodeRadius(false),
-      mTheSameNodeRadius(10.0),
+      mTheSameNodeRadius(1.0),
       mHasPolarity(false),
       mIfEquilibrateForAWhile(false)
 {
@@ -159,10 +159,15 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
                     double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
                     double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
                     double polarity_magnitude_for_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitudeEquilibrium");
+                    // if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
+                    //     force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    // else
+                    //     force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
+
                     if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
-                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                        force_contribution[i] += polarity_magnitude*cos(polarity_angle-i*M_PI/2);
                     else
-                        force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
+                        force_contribution[i] += polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
 
                 }
             }

@@ -126,10 +126,6 @@ protected:
     std::vector< c_vector<double, SPACE_DIM> > mLocationsOfT3Swaps;
 
     // my changes
-    double mMultiplyResultsBy;
-
-    int mMoveMeshRightForNPeriods;
-
     bool mIfUpdateFaceElementsInMesh;
 
     bool mOutputConciseSwapInformationWhenRemesh;
@@ -141,14 +137,6 @@ protected:
     unsigned mNumberOfGroups;
 
     bool mMarkLeadingCells;
-
-    bool mIfCheckForT4Swaps;
-
-    double mTypicalLengthForT4Swaps;
-
-    double mSeparationRatioWithRearrThresh;
-
-    bool mPerformT4SwapsOnlyWhenCellIsTriangle;
 
     /**
      * Divide an element along the axis passing through two of its nodes.
@@ -166,11 +154,6 @@ protected:
                            unsigned nodeAIndex,
                            unsigned nodeBIndex,
                            bool placeOriginalElementBelow=false);
-
-    // my changes:
-    void CheckForT4Swaps();
-
-    void PerformT4Swap(Node<SPACE_DIM>* pNode, unsigned elementIndex);
 
     /**
      * Helper method for ReMesh().
@@ -698,16 +681,6 @@ public:
      */
     void ReMesh();
 
-    void SetMultiplyResultsBy(double multiplyResultsBy)
-    {
-      mMultiplyResultsBy = multiplyResultsBy;
-    }
-    
-    void SetMoveMeshRightForNPeriods(int moveMeshRightForNPeriods)
-    {
-      mMoveMeshRightForNPeriods = moveMeshRightForNPeriods;
-    }
-
     void SetUpdateFaceElementsInMeshBoolean(bool ifUpdateFaceElementsInMesh)
     {
       mIfUpdateFaceElementsInMesh = ifUpdateFaceElementsInMesh;
@@ -722,6 +695,7 @@ public:
     {
       this->mOutputDetailedSwapInformationWhenRemesh = outputDetailedSwapInformationWhenRemesh;
     }
+
 
     bool IsFaceContainedByABoundaryElement(unsigned faceIndex)
     {
@@ -759,6 +733,7 @@ public:
       return false;
     }
 
+
     c_vector<double, SPACE_DIM> GetCentroidOfTheWholeMesh()
     {
       c_vector<double, SPACE_DIM> centroid_of_mesh;
@@ -774,6 +749,7 @@ public:
       centroid_of_mesh[1] /= this->GetNumElements();
       return centroid_of_mesh;
     }
+
 
     bool IsFaceContainedByATopBoundaryElement(unsigned faceIndex)
     {
@@ -815,20 +791,24 @@ public:
       return false;
     }
 
+
     void SetIfClassifyElementsWithGroupNumbers(bool ifClassifyElementsWithGroupNumbers)
     {
       mIfClassifyElementsWithGroupNumbers = ifClassifyElementsWithGroupNumbers;
     }
     
+
     void SetNumberOfGroups(unsigned numberOfGroups)
     {
       mNumberOfGroups = numberOfGroups;
     }
 
+
     unsigned GetNumberOfGroups()
     {
       return mNumberOfGroups;
     }
+
 
     void ReassignElementsWithGroupNumber2ByGroupNumber1(unsigned groupNumber2, unsigned groupNumber1)
     {
@@ -846,6 +826,7 @@ public:
       }
       mNumberOfGroups -= 1;
     }
+
 
     void PartialTheGroupByHeight(unsigned groupNumber, double height, bool groupNumberUnchangedBelow)
     {
@@ -875,6 +856,7 @@ public:
       SetNumberOfGroups(mNumberOfGroups+1);
     }
 
+
     double GetLeadingTopOfTheGroup(unsigned groupNumber)
     {
       double leading_top = -10.0;
@@ -896,6 +878,7 @@ public:
         std::cout << std::endl << "In method GetLeadingTopOfTheGroup, there is no element that belongs to group: " << groupNumber << std::endl;
       return leading_top;
     }
+
 
     unsigned GetNodeIndexForLeadingTopOfTheGroup(unsigned groupNumber)
     {
@@ -923,6 +906,7 @@ public:
       return node_index;
     }
 
+
     unsigned GetNumNodesOfLeadingCellTopOfGroup(unsigned groupNumber=0)
     {
       unsigned num_nodes = 0;
@@ -941,29 +925,10 @@ public:
       return num_nodes;
     }
 
+
     void SetMarkLeadingCells(bool markLeadingCells)
     {
       mMarkLeadingCells = markLeadingCells;
-    }
-
-    void SetIfCheckForT4Swaps(bool ifCheckForT4Swaps)
-    {
-      mIfCheckForT4Swaps = ifCheckForT4Swaps;
-    }
-
-    void SetTypicalLengthForT4Swaps(double typicalLengthForT4Swaps)
-    {
-      mTypicalLengthForT4Swaps = typicalLengthForT4Swaps;
-    }
-
-    void SetSeparationRatioWithRearrThresh(double separationRatioWithRearrThresh)
-    {
-      mSeparationRatioWithRearrThresh = separationRatioWithRearrThresh;
-    }
-
-    void SetPerformT4SwapsOnlyWhenCellIsTriangle(bool performT4SwapsOnlyWhenCellIsTriangle)
-    {
-      mPerformT4SwapsOnlyWhenCellIsTriangle = performT4SwapsOnlyWhenCellIsTriangle;
     }
 
 };

@@ -56,15 +56,12 @@ MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::MutableVertexMesh(std::vector<Node<SP
           mRosetteResolutionProbabilityPerTimestep(rosetteResolutionProbabilityPerTimestep),
           mCheckForInternalIntersections(false),
           mDistanceForT3SwapChecking(5.0),
-          mMultiplyResultsBy(1.0),
-          mMoveMeshRightForNPeriods(0),
           mIfUpdateFaceElementsInMesh(false),
           mOutputConciseSwapInformationWhenRemesh(false),
           mOutputDetailedSwapInformationWhenRemesh(false),
           mIfClassifyElementsWithGroupNumbers(false),
           mNumberOfGroups(1),
-          mMarkLeadingCells(false),
-          mIfCheckForT4Swaps(false)
+          mMarkLeadingCells(false)
 {
     // Threshold parameters must be strictly positive
     assert(cellRearrangementThreshold > 0.0);
@@ -198,8 +195,6 @@ double MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::GetDistanceForT3SwapChecking()
 {
     return mDistanceForT3SwapChecking;
 }
-
-
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 bool MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::GetCheckForInternalIntersections() const
@@ -598,7 +593,7 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElementAlongGivenAxis(
                     p_element->AddFace(p_faceCB, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_X->GetIndex(), p_node_B->GetIndex()));
                     p_element->AddFace(p_faceAC, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(p_node_B->GetIndex(), p_node_C->GetIndex()));
                 }
-                
+
             }
 
         }
@@ -893,7 +888,7 @@ unsigned MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::DivideElement(VertexElement<
 
         // unsigned previous_face_first_node_global_index;
         // unsigned previous_face_second_node_global_index;
-        //for old element:
+        // for old element:
         // if in the range 1:
         if (placeOriginalElementBelow) //old in the below
         {
@@ -1187,10 +1182,6 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::ReMesh(VertexElementMap& rElemen
             recheck_mesh = CheckForIntersections();
         }
 
-        // my changes for T4 swap:
-        if (mIfCheckForT4Swaps)
-            CheckForT4Swaps();
-
         RemoveDeletedNodes();
 
         /*
@@ -1215,96 +1206,6 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::ReMesh()
     VertexElementMap map(GetNumElements());
     ReMesh(map);
 }
-
-// my changes for T4 swaps:
-template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
-void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::CheckForT4Swaps()
-{
-    // Loop over elements to check for T4 swaps
-    for (typename VertexMesh<ELEMENT_DIM, SPACE_DIM>::VertexElementIterator elem_iter = this->GetElementIteratorBegin();
-         elem_iter != this->GetElementIteratorEnd();
-         ++elem_iter)
-    {
-        if (elem_iter->GetIsLeadingCell())
-        {
-            for (unsigned i=0; i<elem_iter->GetNumNodes(); i++)
-            {
-                Node<SPACE_DIM>* p_this_node = elem_iter->GetNode(i);
-                if (p_this_node->rGetContainingElementIndices().size()==1)// this is important!
-                {
-                    Node<SPACE_DIM>* p_previous_node = elem_iter->GetNode((i-1+elem_iter->GetNumNodes())%elem_iter->GetNumNodes());
-                    Node<SPACE_DIM>* p_next_node = elem_iter->GetNode((i+1+elem_iter->GetNumNodes())%elem_iter->GetNumNodes());
-                    double edge_length_previous = norm_2( this->GetVectorFromAtoB(p_previous_node->rGetLocation(), p_this_node->rGetLocation()) );
-                    double edge_length_next = norm_2( this->GetVectorFromAtoB(p_next_node->rGetLocation(), p_this_node->rGetLocation()) );
-                    double a_typical_length = mTypicalLengthForT4Swaps;
-                    if (edge_length_previous>a_typical_length && edge_length_next>a_typical_length)
-                    {
-                        if (elem_iter->GetNumNodes()==3 || !mPerformT4SwapsOnlyWhenCellIsTriangle)
-                            PerformT4Swap(p_this_node, elem_iter->GetIndex());
-                    }
-                }
-            }
-        }
-    }
-}
-
-template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
-void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT4Swap(Node<SPACE_DIM>* pNode, unsigned elementIndex)
-{
-    assert(SPACE_DIM == 2);
-    assert(ELEMENT_DIM == SPACE_DIM);
-    //note: without previous assertion, we get error while compiling:
-    //  undefined reference to `VertexElement<0u, 1u>::VertexElement
-    //      (unsigned int, std::vector<Node<1u>*, std::allocator<Node<1u>*> > const&)'
-
-    VertexElement<ELEMENT_DIM,SPACE_DIM>* p_element = this->GetElement(elementIndex);
-    double x_location = pNode->rGetLocation()[0];
-    c_vector<double, SPACE_DIM> new_node_location = pNode->rGetLocation();
-
-    if (p_element->GetIsLeadingCellTop())
-    {
-        pNode->rGetModifiableLocation()[0] = x_location + mSeparationRatioWithRearrThresh*0.5*mCellRearrangementThreshold;
-        new_node_location[0] = x_location - mSeparationRatioWithRearrThresh*0.5*mCellRearrangementThreshold;
-    }
-    else
-    {
-        assert(p_element->GetIsLeadingCellBottom());
-        pNode->rGetModifiableLocation()[0] = x_location - mSeparationRatioWithRearrThresh*0.5*mCellRearrangementThreshold;
-        new_node_location[0] = x_location + mSeparationRatioWithRearrThresh*0.5*mCellRearrangementThreshold;
-    }
-    
-    // Add new node which will always be a boundary node
-    unsigned new_node_global_index = this->AddNode(new Node<SPACE_DIM>(0, true, new_node_location[0], new_node_location[1]));
-
-    // Add the new nodes to the element (this also updates the node)
-    unsigned node_local_index = p_element->GetNodeLocalIndex(pNode->GetIndex());
-    p_element->AddNode(this->mNodes[new_node_global_index], node_local_index);
-
-    // The nodes must have been updated correctly
-    assert(pNode->GetNumContainingElements() == 1);
-    assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 1);
-
-    // to do: face manipulation:
-    if (mIfUpdateFaceElementsInMesh)
-    {
-        Node<SPACE_DIM>* pNodeQ = this->mNodes[new_node_global_index];
-        Node<SPACE_DIM>* pNodeA = p_element->GetNode((p_element->GetNodeLocalIndex(pNode->GetIndex())-1+p_element->GetNumNodes())%(p_element->GetNumNodes()));
-        Node<SPACE_DIM>* pNodeB = p_element->GetNode((p_element->GetNodeLocalIndex(pNodeQ->GetIndex())+1)%(p_element->GetNumNodes()));
-        unsigned facePQ_index = this->GetNumFaces();
-        std::vector<Node<SPACE_DIM>*> nodes_facePQ;
-        nodes_facePQ.push_back(pNode);
-        nodes_facePQ.push_back(pNodeQ);
-        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePQ = nullptr;
-        p_facePQ = new VertexElement<ELEMENT_DIM-1, SPACE_DIM>(facePQ_index, nodes_facePQ);
-        (this->mFaces).push_back(p_facePQ);
-        p_element->AddFace( p_facePQ, p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(),pNode->GetIndex()) );
-
-        VertexElement<ELEMENT_DIM-1, SPACE_DIM>* p_facePB = p_element
-            ->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNode->GetIndex(), pNodeB->GetIndex()));
-        p_facePB->ReplaceOneNodeBy(pNode, pNodeQ);
-    }
-}
-
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 bool MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::CheckForSwapsFromShortEdges()
@@ -1950,6 +1851,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
                                                               Node<SPACE_DIM>* pNodeB,
                                                               std::set<unsigned>& rElementsContainingNodes)
 {
+    // my changes
     if (mOutputConciseSwapInformationWhenRemesh)
     {
         std::cout << std::endl << "We are now at PerformT1Swap!" << std::endl;
@@ -3500,7 +3402,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
             else
             {
                 // my changes: 
-                std:: cout << std::endl << "Error in the case: pNode->GetNumContainingElements() == 1 && (VertexA or VertexB is adjacent to pNode).";
+                std::cout << std::endl << "Error in the case: pNode->GetNumContainingElements() == 1 && (VertexA or VertexB is adjacent to pNode).";
                 std::cout << std::endl;
                 // This can't happen as nodes can't be on the internal edge of 2 elements.
                 NEVER_REACHED;
@@ -4700,6 +4602,7 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT3Swap(Node<SPACE_DIM>* p
                     assert(pNode->GetNumContainingElements() == 3);
                     assert(this->mNodes[new_node_global_index]->GetNumContainingElements() == 2);
                     
+                    // my changes
                     if (mIfUpdateFaceElementsInMesh)
                     {
                         Node<SPACE_DIM>* pNodeA = this->GetNode(vertexA_index);

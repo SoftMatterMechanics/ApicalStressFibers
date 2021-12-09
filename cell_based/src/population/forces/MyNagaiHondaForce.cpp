@@ -33,29 +33,28 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "MyNagaiHondaForceWithStripesAdhesion.hpp"
-#include "MyXToroidal2dVertexMesh.hpp"
+#include "MyNagaiHondaForce.hpp"
+#include "MyToroidal2dVertexMesh.hpp"
 
 template<unsigned DIM>
-MyNagaiHondaForceWithStripesAdhesion<DIM>::MyNagaiHondaForceWithStripesAdhesion()
+MyNagaiHondaForce<DIM>::MyNagaiHondaForce()
    : AbstractForce<DIM>(),
      mNagaiHondaDeformationEnergyParameter(1.0),
      mNagaiHondaMembraneSurfaceEnergyParameter(0.1),
      mNagaiHondaCellCellAdhesionEnergyParameter(0.0),
      mNagaiHondaCellBoundaryAdhesionEnergyParameter(0.0),
      mUseFixedTargetArea(true),
-     mCaseNumberOfMembraneSurfaceEnergyForm(0),
      mIfUseFaceElementToGetAdhesionParameter(false)
 {
 }
 
 template<unsigned DIM>
-MyNagaiHondaForceWithStripesAdhesion<DIM>::~MyNagaiHondaForceWithStripesAdhesion()
+MyNagaiHondaForce<DIM>::~MyNagaiHondaForce()
 {
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCellPopulation)
+void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCellPopulation)
 {    
     // Throw an exception message if not using a VertexBasedCellPopulation
     if (dynamic_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation) == nullptr)
@@ -67,10 +66,6 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
     VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation);
     unsigned num_nodes = p_cell_population->GetNumNodes();
     unsigned num_elements = p_cell_population->GetNumElements();
-
-    // my changes
-    if (num_elements<20)
-        return;
 
     // Begin by computing the area and perimeter of each element in the mesh, to avoid having to do this multiple times
     std::vector<double> element_areas(num_elements);
@@ -94,8 +89,10 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
                 target_areas[elem_index] = mFixedTargetArea;
             }
             else
+            {
                 target_areas[elem_index] = p_cell_population->GetCellUsingLocationIndex(elem_index)->GetCellData()->GetItem("target area");
-
+                // std::cout << "elem_index = " << elem_index << ", target_area=" << target_areas[elem_index] << std::endl;
+            }    
         }
         catch (Exception&)
         {
@@ -104,31 +101,31 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 
     }
 
-    // original non-homogeneous SSA method using leading length:
-    double y_coord_leading_edge = 0.0;
-    for (unsigned node_index=0; node_index<num_nodes; node_index++)
-    {
-        Node<DIM>* p_this_node = p_cell_population->GetNode(node_index);
-        if (p_this_node->rGetLocation()[1] > y_coord_leading_edge)
-            y_coord_leading_edge= p_this_node->rGetLocation()[1];
-    }
+    // // original non-homogeneous SSA method using leading length:
+    // double y_coord_leading_edge = 0.0;
+    // for (unsigned node_index=0; node_index<num_nodes; node_index++)
+    // {
+    //     Node<DIM>* p_this_node = p_cell_population->GetNode(node_index);
+    //     if (p_this_node->rGetLocation()[1] > y_coord_leading_edge)
+    //         y_coord_leading_edge= p_this_node->rGetLocation()[1];
+    // }
 
-    // For My Detach Pattern Method, using group number:
-    unsigned number_of_groups = p_cell_population->rGetMesh().GetNumberOfGroups();
-    std::vector<double> leading_tops_of_groups(number_of_groups);
-    if (mUseMyDetachPatternMethod)
-    {
-        for (unsigned i=0; i<number_of_groups; i++)
-            leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
-    }
+    // // For My Detach Pattern Method, using group number:
+    // unsigned number_of_groups = p_cell_population->rGetMesh().GetNumberOfGroups();
+    // std::vector<double> leading_tops_of_groups(number_of_groups);
+    // if (mUseMyDetachPatternMethod)
+    // {
+    //     for (unsigned i=0; i<number_of_groups; i++)
+    //         leading_tops_of_groups[i] = p_cell_population->rGetMesh().GetLeadingTopOfTheGroup(i);
+    // }
 
-    unsigned node_index_for_leading_top_of_the_group0 = 0;
-    if (mAddPullingForceOnNodeIndividually)
-        node_index_for_leading_top_of_the_group0 = p_cell_population->rGetMesh().GetNodeIndexForLeadingTopOfTheGroup(0);
+    // unsigned node_index_for_leading_top_of_the_group0 = 0;
+    // if (mAddPullingForceOnNodeIndividually)
+    //     node_index_for_leading_top_of_the_group0 = p_cell_population->rGetMesh().GetNodeIndexForLeadingTopOfTheGroup(0);
 
-    unsigned num_nodes_leading_cell_top = 0;
-    if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
-        num_nodes_leading_cell_top = p_cell_population->rGetMesh().GetNumNodesOfLeadingCellTopOfGroup(0);
+    // unsigned num_nodes_leading_cell_top = 0;
+    // if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
+    //     num_nodes_leading_cell_top = p_cell_population->rGetMesh().GetNumNodesOfLeadingCellTopOfGroup(0);
 
     // Iterate over vertices in the cell population
     for (unsigned node_index=0; node_index<num_nodes; node_index++)
@@ -150,8 +147,6 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
         c_vector<double, DIM> deformation_contribution = zero_vector<double>(DIM);
         c_vector<double, DIM> membrane_surface_tension_contribution = zero_vector<double>(DIM);
         c_vector<double, DIM> adhesion_contribution = zero_vector<double>(DIM);
-        c_vector<double, DIM> area_adhesion_contribution = zero_vector<double>(DIM);
-        c_vector<double, DIM> averaged_inner_strip_substrate_adhesion_contribution = zero_vector<double>(DIM);
 
         // Find the indices of the elements owned by this node
         std::set<unsigned> containing_elem_indices = p_cell_population->GetNode(node_index)->rGetContainingElementIndices();
@@ -172,7 +167,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             // Add the force contribution from this cell's deformation energy (note the minus sign)
             c_vector<double, DIM> element_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
             deformation_contribution -= GetNagaiHondaDeformationEnergyParameter()*(element_areas[elem_index] - target_areas[elem_index])*element_area_gradient;
-                 
+            
             // Get the previous and next nodes in this element
             unsigned previous_node_local_index = (num_nodes_elem+local_index-1)%num_nodes_elem;
             Node<DIM>* p_previous_node = p_element->GetNode(previous_node_local_index);
@@ -181,9 +176,9 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             Node<DIM>* p_next_node = p_element->GetNode(next_node_local_index);
 
             // Compute the adhesion parameter for each of these edges
-            // changes to be made:
-            double previous_edge_adhesion_parameter = GetAdhesionParameter(p_previous_node, p_this_node, *p_cell_population);
-            double next_edge_adhesion_parameter = GetAdhesionParameter(p_this_node, p_next_node, *p_cell_population);
+            // 0.5 means the edge is shared by two cells
+            double previous_edge_adhesion_parameter = 0.5*GetAdhesionParameter(p_previous_node, p_this_node, *p_cell_population);
+            double next_edge_adhesion_parameter = 0.5*GetAdhesionParameter(p_this_node, p_next_node, *p_cell_population);
 
             // Compute the gradient of each these edges, computed at the present node
             c_vector<double, DIM> previous_edge_gradient = -p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, previous_node_local_index);
@@ -193,81 +188,75 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
             adhesion_contribution -= previous_edge_adhesion_parameter*previous_edge_gradient + next_edge_adhesion_parameter*next_edge_gradient;
             
             // Add the force contribution from this cell's membrane surface tension (note the minus sign)
-            c_vector<double, DIM> element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
-
+            c_vector<double, DIM> element_perimeter_gradient;
+            element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
             double cell_target_perimeter = 0.0;            
-            unsigned case_number_of_membrane_surface_energy_form = this->GetCaseNumberOfMembraneSurfaceEnergyForm();
-            
-            // case 0:typical *membrane surface tension*
-            if (case_number_of_membrane_surface_energy_form ==0)
-            {
-                membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*1.0*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
-            }
-            
-            // case 1: MA feedback incorporated in *membrane surface tension*
-            if (case_number_of_membrane_surface_energy_form ==1)
-            {
-                // to do later.
-                double myosin_activity = p_cell->GetMyosinActivity();
-                membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*myosin_activity*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
-            }
+            membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+
+            // // my changes
+            // // double  rest_edge_length = sqrt(target_areas[elem_index]/(3*sqrt(3)/2));
+            // double  rest_edge_length = 1;
+            // double  previous_edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(p_element->GetNodeGlobalIndex(previous_node_local_index), node_index);
+            // double  next_edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(node_index, p_element->GetNodeGlobalIndex(next_node_local_index));
+
+            // // 0.5 means the edge is shared by two cells
+            // membrane_surface_tension_contribution -= 0.5*GetNagaiHondaMembraneSurfaceEnergyParameter()*((previous_edge_length - rest_edge_length)*previous_edge_gradient + (next_edge_length - rest_edge_length)*next_edge_gradient);
 
         }// end of 'Iterate over these elements'
 
-        c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution +area_adhesion_contribution;
+        c_vector<double, DIM> force_on_node = deformation_contribution + membrane_surface_tension_contribution + adhesion_contribution;
 
-        if (mAddPullingForceOnNodeIndividually && p_this_node->GetIndex()==node_index_for_leading_top_of_the_group0)
-            force_on_node[1] += mPullingForceOnLeadingCell;
-        else if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
-        {
-            bool node_belongs_to_leading_cell = false;
-            for (std::set<unsigned>::iterator iter = containing_elem_indices.begin();
-                iter != containing_elem_indices.end();
-                ++iter)
-            {
-                if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
-                {
-                    node_belongs_to_leading_cell = true;
-                    break;
-                }
-            }
+        // // if (mAddPullingForceOnNodeIndividually && p_this_node->GetIndex()==node_index_for_leading_top_of_the_group0)
+        // //     force_on_node[1] += mPullingForceOnLeadingCell;
+        // if (mAddPullingForceEvenlyOnNodesOfLeadingCell)
+        // {
+        //     bool node_belongs_to_leading_cell = false;
+        //     for (std::set<unsigned>::iterator iter = containing_elem_indices.begin();
+        //         iter != containing_elem_indices.end();
+        //         ++iter)
+        //     {
+        //         if (p_cell_population->GetElement(*iter)->GetIsLeadingCellTop())
+        //         {
+        //             node_belongs_to_leading_cell = true;
+        //             break;
+        //         }
+        //     }
 
-            if (node_belongs_to_leading_cell)
-            {
-                assert(num_nodes_leading_cell_top!=0);
-                double t_now = SimulationTime::Instance()->GetTime();
-                if ( !(mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium) )
-                    force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
-            }
-        }
+        //     if (node_belongs_to_leading_cell)
+        //     {
+        //         assert(num_nodes_leading_cell_top!=0);
+        //         double t_now = SimulationTime::Instance()->GetTime();
+        //         if ( !(mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium) )
+        //             force_on_node[1] += mPullingForceOnLeadingCell/num_nodes_leading_cell_top;
+        //     }
+        // }
 
-        // tmp: possilbe output for testing new SSA:
-        bool output_while_testing_new_SSA = false;
-        if (output_while_testing_new_SSA)
-        {
-            VertexElement<DIM, DIM>* pElement = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
-            if (pElement->GetIsLeadingCell() && pElement->GetGroupNumber()>0)
-            {
-                double t_now = SimulationTime::Instance()->GetTime();
-                if (p_this_node->rGetContainingElementIndices().size()==1)
-                {
-                    std::cout << "Time: " << t_now << std::endl;
-                    std::cout << "Node of LeadingCell, node index=" << p_this_node->GetIndex() 
-                            << ", SSA case number=0, node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1]
-                            << std::endl << "Lamellipodium strength=" << pElement->GetLamellipodiumStrength()
-                            << std::endl << "SSA: x=" << area_adhesion_contribution[0] << ", y=" << area_adhesion_contribution[1] << std::endl;
-                }
-                else if (p_this_node->rGetContainingElementIndices().size()==2)
-                {
-                    std::cout << "Time: " << t_now << std::endl;
-                    std::cout << "Node of LeadingCell, node index=" << p_this_node->GetIndex() 
-                            << ", SSA case number=1, node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1]
-                            << std::endl << "Lamellipodium strength1=" << pElement->GetLamellipodiumStrength() 
-                            << ", Lamellipodium strength2=" << p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin()++)->GetLamellipodiumStrength()
-                            << std::endl << "SSA: x=" << area_adhesion_contribution[0] << ", y=" << area_adhesion_contribution[1] << std::endl;
-                }
-            }
-        }
+        // // tmp: possilbe output for testing morphogenetic force:
+        // bool output_while_testing_morphogenetic_force = false;
+        // if (output_while_testing_morphogenetic_force)
+        // {
+        //     VertexElement<DIM, DIM>* p_element = p_cell_population->GetElement(* p_this_node->rGetContainingElementIndices().begin());
+        //     if (p_element->GetIsLeadingCell() && p_element->GetGroupNumber()>0)
+        //     {
+        //         double t_now = SimulationTime::Instance()->GetTime();
+        //         if (p_this_node->rGetContainingElementIndices().size()==1)
+        //         {
+        //             std::cout << "time: " << t_now << std::endl;
+        //             std::cout << "node of Leading Cell" << std::endl
+        //                     << " node index=" << p_this_node->GetIndex() << std::endl
+        //                     << " node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1] << std::endl 
+        //                     << " total morphogenetic force =" << mPullingForceOnLeadingCell << std::endl;
+        //         }
+        //         else if (p_this_node->rGetContainingElementIndices().size()==2)
+        //         {
+        //             std::cout << "time: " << t_now << std::endl;
+        //             std::cout << "node of Leading Cell" << std::endl
+        //                     << " node index=" << p_this_node->GetIndex() << std::endl
+        //                     << " node location: x=" << p_this_node->rGetLocation()[0] << ", y=" << p_this_node->rGetLocation()[1] << std::endl 
+        //                     << " total morphogenetic force =" << mPullingForceOnLeadingCell << std::endl;
+        //         }
+        //     }
+        // }
 
         p_cell_population->GetNode(node_index)->AddAppliedForceContribution(force_on_node);
 
@@ -276,7 +265,7 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::AddForceContribution(AbstractCel
 }
 
 template<unsigned DIM>
-double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetAdhesionParameter(Node<DIM>* pNodeA, Node<DIM>* pNodeB, VertexBasedCellPopulation<DIM>& rVertexCellPopulation)
+double MyNagaiHondaForce<DIM>::GetAdhesionParameter(Node<DIM>* pNodeA, Node<DIM>* pNodeB, VertexBasedCellPopulation<DIM>& rVertexCellPopulation)
 {
     double adhesion_parameter = 0.0;
 
@@ -299,88 +288,87 @@ double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetAdhesionParameter(Node<DIM>
     if (shared_elements.size() == 1)
     {
         adhesion_parameter = GetNagaiHondaCellBoundaryAdhesionEnergyParameter();
-        return adhesion_parameter;
+    //    return adhesion_parameter;
     }
-
-    // my changes
-    if (mIfUseFaceElementToGetAdhesionParameter)
-    {
-        unsigned element_global_index = *shared_elements.begin();
-        VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rVertexCellPopulation);
-        VertexElement<DIM, DIM>* p_element = p_cell_population->rGetMesh().GetElement(element_global_index);
-        if ((p_element->GetNodeLocalIndex(pNodeB->GetIndex()) - p_element->GetNodeLocalIndex(pNodeA->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()==1)
-        {
-            VertexElement<DIM-1, DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
-            adhesion_parameter =GetNagaiHondaCellCellAdhesionEnergyParameter() * pFace->GetUnifiedCellCellAdhesionEnergyParameter();
-        }
-        else
-        {
-            if ( (p_element->GetNodeLocalIndex(pNodeA->GetIndex()) - p_element->GetNodeLocalIndex(pNodeB->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()!=1)
-            {
-                std::cout << std::endl << "ERROR: Method MyNagaiHondaForceWithStripesAdhesion::GetAdhesionParameter";
-                std::cout << std::endl << "Not Reachable!" << std::endl;
-            }
-            assert((p_element->GetNodeLocalIndex(pNodeA->GetIndex()) - p_element->GetNodeLocalIndex(pNodeB->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()==1);
-            VertexElement<DIM-1, DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
-            adhesion_parameter =GetNagaiHondaCellCellAdhesionEnergyParameter() * pFace->GetUnifiedCellCellAdhesionEnergyParameter();    
-        }
-    }
+    // // my changes
+    // if (mIfUseFaceElementToGetAdhesionParameter)
+    // {
+    //     unsigned element_global_index = *shared_elements.begin();
+    //     VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rVertexCellPopulation);
+    //     VertexElement<DIM, DIM>* p_element = p_cell_population->rGetMesh().GetElement(element_global_index);
+    //     if ((p_element->GetNodeLocalIndex(pNodeB->GetIndex()) - p_element->GetNodeLocalIndex(pNodeA->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()==1)
+    //     {
+    //         VertexElement<DIM-1, DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeA->GetIndex(), pNodeB->GetIndex()));
+    //         adhesion_parameter =GetNagaiHondaCellCellAdhesionEnergyParameter() * pFace->GetUnifiedCellCellAdhesionEnergyParameter();
+    //     }
+    //     else
+    //     {
+    //         if ( (p_element->GetNodeLocalIndex(pNodeA->GetIndex()) - p_element->GetNodeLocalIndex(pNodeB->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()!=1)
+    //         {
+    //             std::cout << std::endl << "ERROR: Method MyNagaiHondaForce::GetAdhesionParameter";
+    //             std::cout << std::endl << "Not Reachable!" << std::endl;
+    //         }
+    //         assert((p_element->GetNodeLocalIndex(pNodeA->GetIndex()) - p_element->GetNodeLocalIndex(pNodeB->GetIndex())+p_element->GetNumNodes())%p_element->GetNumNodes()==1);
+    //         VertexElement<DIM-1, DIM>* pFace = p_element->GetFace(p_element->GetFaceLocalIndexUsingStartAndEndNodeGlobalIndex(pNodeB->GetIndex(), pNodeA->GetIndex()));
+    //         adhesion_parameter =GetNagaiHondaCellCellAdhesionEnergyParameter() * pFace->GetUnifiedCellCellAdhesionEnergyParameter();    
+    //     }
+    // }
     else
-        adhesion_parameter =GetNagaiHondaCellCellAdhesionEnergyParameter();
+        adhesion_parameter = GetNagaiHondaCellCellAdhesionEnergyParameter();
 
     return adhesion_parameter;
 }
 
 template<unsigned DIM>
-double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetNagaiHondaDeformationEnergyParameter()
+double MyNagaiHondaForce<DIM>::GetNagaiHondaDeformationEnergyParameter()
 {
     return mNagaiHondaDeformationEnergyParameter;
 }
 
 template<unsigned DIM>
-double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetNagaiHondaMembraneSurfaceEnergyParameter()
+double MyNagaiHondaForce<DIM>::GetNagaiHondaMembraneSurfaceEnergyParameter()
 {
     return mNagaiHondaMembraneSurfaceEnergyParameter;
 }
 
 template<unsigned DIM>
-double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetNagaiHondaCellCellAdhesionEnergyParameter()
+double MyNagaiHondaForce<DIM>::GetNagaiHondaCellCellAdhesionEnergyParameter()
 {
     return mNagaiHondaCellCellAdhesionEnergyParameter;
 }
 
 template<unsigned DIM>
-double MyNagaiHondaForceWithStripesAdhesion<DIM>::GetNagaiHondaCellBoundaryAdhesionEnergyParameter()
+double MyNagaiHondaForce<DIM>::GetNagaiHondaCellBoundaryAdhesionEnergyParameter()
 {
     return mNagaiHondaCellBoundaryAdhesionEnergyParameter;
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::SetNagaiHondaDeformationEnergyParameter(double deformationEnergyParameter)
+void MyNagaiHondaForce<DIM>::SetNagaiHondaDeformationEnergyParameter(double deformationEnergyParameter)
 {
     mNagaiHondaDeformationEnergyParameter = deformationEnergyParameter;
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::SetNagaiHondaMembraneSurfaceEnergyParameter(double membraneSurfaceEnergyParameter)
+void MyNagaiHondaForce<DIM>::SetNagaiHondaMembraneSurfaceEnergyParameter(double membraneSurfaceEnergyParameter)
 {
     mNagaiHondaMembraneSurfaceEnergyParameter = membraneSurfaceEnergyParameter;
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::SetNagaiHondaCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter)
+void MyNagaiHondaForce<DIM>::SetNagaiHondaCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter)
 {
     mNagaiHondaCellCellAdhesionEnergyParameter = cellCellAdhesionEnergyParameter;
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::SetNagaiHondaCellBoundaryAdhesionEnergyParameter(double cellBoundaryAdhesionEnergyParameter)
+void MyNagaiHondaForce<DIM>::SetNagaiHondaCellBoundaryAdhesionEnergyParameter(double cellBoundaryAdhesionEnergyParameter)
 {
     mNagaiHondaCellBoundaryAdhesionEnergyParameter = cellBoundaryAdhesionEnergyParameter;
 }
 
 template<unsigned DIM>
-void MyNagaiHondaForceWithStripesAdhesion<DIM>::OutputForceParameters(out_stream& rParamsFile)
+void MyNagaiHondaForce<DIM>::OutputForceParameters(out_stream& rParamsFile)
 {
     *rParamsFile << "\t\t\t<NagaiHondaDeformationEnergyParameter>" << mNagaiHondaDeformationEnergyParameter << "</NagaiHondaDeformationEnergyParameter>\n";
     *rParamsFile << "\t\t\t<NagaiHondaMembraneSurfaceEnergyParameter>" << mNagaiHondaMembraneSurfaceEnergyParameter << "</NagaiHondaMembraneSurfaceEnergyParameter>\n";
@@ -392,11 +380,11 @@ void MyNagaiHondaForceWithStripesAdhesion<DIM>::OutputForceParameters(out_stream
 }
 
 // Explicit instantiation
-template class MyNagaiHondaForceWithStripesAdhesion<1>;
-template class MyNagaiHondaForceWithStripesAdhesion<2>;
-template class MyNagaiHondaForceWithStripesAdhesion<3>;
+template class MyNagaiHondaForce<1>;
+template class MyNagaiHondaForce<2>;
+template class MyNagaiHondaForce<3>;
 
 
 // Serialization for Boost >= 1.36
 #include "SerializationExportWrapperForCpp.hpp"
-EXPORT_TEMPLATE_CLASS_SAME_DIMS(MyNagaiHondaForceWithStripesAdhesion)
+EXPORT_TEMPLATE_CLASS_SAME_DIMS(MyNagaiHondaForce)

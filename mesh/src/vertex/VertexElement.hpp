@@ -507,12 +507,12 @@ public:
     }
 
     // For solving instantialization problem here! this should only be used as a face method!
-    double GetUnifiedEdgeMyosinActivty()
+    double GetEdgeMyosinActivty()
     {
       return 0.0;
     }
 
-    double GetUnifiedCellCellAdhesionEnergyParameter()
+    double GetCellCellAdhesionEnergyParameter()
     {
       return 0.0;
     }
@@ -526,11 +526,11 @@ public:
     // {
     // }
 
-    void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
+    void SetEdgeMyosinActivty(double edgeMyosinActivty)
     {
     }
 
-    void SetUnifiedCellCellAdhesionEnergyParameter(double unifiedCellCellAdhesionEnergyParameter)
+    void SetCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter)
     {
     }
 
@@ -559,11 +559,11 @@ class VertexElement<1, SPACE_DIM> : public MutableElement<1,SPACE_DIM>
 {
 private:
     // My changes
-    double mUnifiedEdgeMyosinActivty;
+    double mEdgeMyosinActivty;
 
-    double mUnifiedCellCellAdhesionEnergyParameter;
+    double mCellCellAdhesionEnergyParameter;
 
-    double mUnifiedCellBoundaryAdhesionEnergyParameter;
+    double mCellBoundaryAdhesionEnergyParameter;
 
     // may be wrong
     bool mIsDeleted;
@@ -604,14 +604,24 @@ public:
     // //return a set of indices of elements containing this element as a face.
     // std::set<unsigned>& rGetContainingElementIndices();
 
-    double GetUnifiedEdgeMyosinActivty()
+    void SetEdgeMyosinActivty(double edgeMyosinActivty)
     {
-      return mUnifiedEdgeMyosinActivty;
+      this->mEdgeMyosinActivty = edgeMyosinActivty;
     }
 
-    double GetUnifiedCellCellAdhesionEnergyParameter()
+    double GetEdgeMyosinActivty()
     {
-      return mUnifiedCellCellAdhesionEnergyParameter;
+      return mEdgeMyosinActivty;
+    }
+
+    void SetCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter)
+    {
+      this->mCellCellAdhesionEnergyParameter = cellCellAdhesionEnergyParameter;
+    }
+
+    double GetCellCellAdhesionEnergyParameter()
+    {
+      return mCellCellAdhesionEnergyParameter;
     }
 
     bool IsDeleted()
@@ -625,11 +635,6 @@ public:
       this->mIsDeleted = true;
     }
 
-    void SetUnifiedEdgeMyosinActivty(double unifiedEdgeMyosinActivty)
-    {
-      this->mUnifiedEdgeMyosinActivty = unifiedEdgeMyosinActivty;
-    }
-
     void SetElementMyosinActivity( double elementMyosinActivity)   // change made by Chao
     {
       this->mElementMyosinActivity = elementMyosinActivity;
@@ -640,15 +645,10 @@ public:
       return 0.0;
     }
 
-    void SetUnifiedCellCellAdhesionEnergyParameter(double unifiedCellCellAdhesionEnergyParameter)
-    {
-      this->mUnifiedCellCellAdhesionEnergyParameter = unifiedCellCellAdhesionEnergyParameter;
-    }
-
     void ResetFaceValues()
     {
-      this->mUnifiedEdgeMyosinActivty = 1.0;
-      this->mUnifiedCellCellAdhesionEnergyParameter = 1.0;
+      this->mEdgeMyosinActivty = 1.0;
+      this->mCellCellAdhesionEnergyParameter = 1.0;
     }
 
     void ReplaceOneNodeBy(Node<SPACE_DIM>* pNodeA,Node<SPACE_DIM>* pNodeB)

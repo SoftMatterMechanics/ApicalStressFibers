@@ -346,7 +346,7 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
     }
 
     // my changes
-    p_simulation_time->SetApplyMyChangesToMakeTimestepAdaptiveInTimeStepper(mApplyMyChangesToMakeTimestepAdaptive);
+    p_simulation_time->SetApplyAdaptiveTimeStepInTimeStepper(mApplyAdaptiveTimestep);
 
     if (mOutputDirectory == "")
     {
@@ -509,7 +509,7 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 const c_vector<double,SPACE_DIM>& position = mrCellPopulation.GetLocationOfCellCentre(*cell_iter);
 
                 c_vector<double, SPACE_DIM> velocity; // Two lines for profile build
-                velocity = (position - old_cell_locations[*cell_iter])/(mApplyMyChangesToMakeTimestepAdaptive? mAdaptiveDt:mDt);
+                velocity = (position - old_cell_locations[*cell_iter])/(mApplyAdaptiveTimestep? mAdaptiveDt:mDt);
 
                 if (mMyOutputCellVelocities)
                     *mpCellVelocitiesFile << index  << "\t";
