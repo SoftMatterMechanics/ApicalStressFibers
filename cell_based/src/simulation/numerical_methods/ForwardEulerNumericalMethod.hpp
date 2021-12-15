@@ -59,6 +59,17 @@ private:
 
     bool mOutputNumericalMethodInformation;
 
+    double mCenterYCoordination;
+
+    bool mIfEquilibrateForAWhile;
+
+    double mTimeForEquilibrium;
+
+    std::string mOutputDirectory;
+
+    /** Results file for reaction forces. */
+    out_stream mpReactionForcesFile;    // added by Chao
+
     /** Needed for serialization. */
     friend class boost::serialization::access;
 
@@ -104,6 +115,26 @@ public:
     void SetOutputNumericalMethodInformation(bool outputNumericalMethodInformation)
     {
       mOutputNumericalMethodInformation = outputNumericalMethodInformation;
+    }
+
+    void SetCenterYCoordination(double centerYCoordination)
+    {
+      mCenterYCoordination = centerYCoordination;
+    }
+
+    void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile)
+    {
+      mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
+    }
+
+    void SetEndTimeForEquilibrium(double timeForEquilibrium)
+    {
+      mTimeForEquilibrium = timeForEquilibrium;
+    }
+
+    void SetOutputDirectory(std::string outputDirectory)
+    {
+      mOutputDirectory = outputDirectory;
     }
 
     /**

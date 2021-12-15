@@ -142,6 +142,7 @@ void OffLatticeSimulation<ELEMENT_DIM,SPACE_DIM>::UpdateCellLocationsAndTopology
             }
             else
                 mpNumericalMethod->UpdateAllNodePositions(present_time_step);
+            
             ApplyBoundaries(old_node_locations);
 
             // Successful time step! Update time_advanced_so_far

@@ -61,7 +61,7 @@ The University of Hong Kong.
 #include "SimpleTargetAreaModifier.hpp"
 #include "TargetAreaLinearGrowthModifier.hpp"
 // #include "FaceValueAndStressStateModifier.hpp"
-// #include "PolarityModifier.hpp"
+#include "PolarityModifier.hpp"
 
 #include "FakePetscSetup.hpp"
 
@@ -70,7 +70,8 @@ The University of Hong Kong.
 #include "MyToroidalHoneycombVertexMeshGenerator.hpp"
 // #include "NagaiHondaForce.hpp"
 #include "MyNagaiHondaForce.hpp"
-#include "MyMorphogeneticForce.hpp"
+// #include "MyMorphogeneticForce.hpp"
+#include "MyStressfiberTensionForce.hpp"
 #include "DiffusionForce.hpp"
 #include "PlaneBasedCellKiller.hpp"
 
@@ -97,7 +98,7 @@ public:
         bool   use_fixed_target_area_without_modifier = false;
         double target_area = M_PI; // A0, target areas are not uniform
         bool   seed_manually = true;
-        unsigned random_seed_for_target_area = 2;
+        unsigned random_seed_for_target_area = 1;
         double min_target_area = initial_area/5;
         double max_target_area = initial_area*9/5;
 
@@ -110,18 +111,26 @@ public:
         double cell_boundary_adhesion_energy_density = -2*target_shape_index*edge_elastic_modulus; // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
 
-      // 5. Morphogenetic Force
-        bool     add_pulling_force_evenly_on_nodes_of_leading_cell = true;
-        double   pulling_force_on_leading_cell = 4.0;// MF (morphogenetic force)
+      // 5. Random force
+        bool   add_random_force = true;
+        bool   has_brownian_random_force = false; // brownian random force is used in cell center model
+        double translational_diffusion_constant = 0.0;
+        double set_node_radius = 2.0; // effective cell diameter (in units of 10 microns)
+
+        bool   has_polarity = true;
+        unsigned seed_for_initial_random_polarity = 1;
+        double polarity_magnitude_equilibrium = 0.02;  // for before equilibrium
+        double polarity_magnitude = 0.0;  // for after equilibrium
+        double rotational_diffusion_constant = 0.2;
 
       // 6. Time
         bool   if_equilibrate_for_a_while = true;
-        double time_for_equilibrium = 100.0;
+        double time_for_equilibrium = 5.0;
         if (time_for_equilibrium <= 0.0)
            if_equilibrate_for_a_while = false;
         
         double dt = 0.01;
-        double end_time = 200.0;
+        double end_time = 10.0;
         double max_movement_per_timestep = 0.001; 
         bool   apply_adaptive_timestep = true;
         double sampling_time = 1.0;
@@ -216,17 +225,19 @@ public:
       /*---------------------------------END: Simulator settings-----------------------------*/
 
 
-      /*---------------------------------START: MyMorphogeneticForce-----------------------------*/
-        MAKE_PTR(MyMorphogeneticForce<2>, p_morphogenetic_force);
-        
-        p_morphogenetic_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
-        p_morphogenetic_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
-        p_morphogenetic_force->SetCenterYCoordination(center_y_coordination);
-        p_morphogenetic_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-        p_morphogenetic_force->SetEndTimeForEquilibrium(time_for_equilibrium);
-
-        simulator.AddForce(p_morphogenetic_force);
-      /*---------------------------------END: MyMorphogeneticForce------------------------------*/
+      /*--------------------------------START: Modifier Settings-----------------------------*/
+        // Polarity modifier
+        if (has_polarity)
+        {
+          MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
+          p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
+          p_polarity_modifier->SetPolarityMagnitudeEquilibrium(polarity_magnitude_equilibrium);
+          p_polarity_modifier->SetSeedManually(seed_manually);
+          p_polarity_modifier->SetSeedForInitialRandomPolarity(seed_for_initial_random_polarity);
+          p_polarity_modifier->SetD(rotational_diffusion_constant);
+          simulator.AddSimulationModifier(p_polarity_modifier);
+        }
+      /*----------------------------------END: Modifier Settings------------------------------*/
 
 
       /*---------------------------------START: MyNagaiHondaForce-----------------------------*/
@@ -245,6 +256,43 @@ public:
         // p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
         simulator.AddForce(p_nh_force);
       /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
+
+
+      /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
+        MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
+        
+        p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_sf_force->SetEndTimeForEquilibrium(time_for_equilibrium);
+        p_sf_force->SetFlagForStressfiberCreation(0);
+
+        simulator.AddForce(p_sf_force);
+      /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
+
+
+      /*-----------------------------------START: Brownian Random Force -------------------------*/
+        // Brownian diffusion
+        if (add_random_force)
+        {
+          MAKE_PTR(DiffusionForce<2>, p_random_force);
+          bool   use_the_same_node_radius = true;
+          double node_radius = 2.0; // effective cell diameter (in units 10 microns)
+          if  (translational_diffusion_constant >0.0)
+              node_radius = p_random_force->GetDiffusionScalingConstant()/translational_diffusion_constant;
+          else
+              node_radius = set_node_radius;
+          translational_diffusion_constant = p_random_force->GetDiffusionScalingConstant()/node_radius;
+
+          p_random_force->SetHasBrownianRandomForce(has_brownian_random_force);
+          p_random_force->SetUseTheSameNodeRadius(use_the_same_node_radius);
+          p_random_force->SetTheSameNodeRadius(node_radius);
+
+          p_random_force->SetHasPolarity(has_polarity);
+          p_random_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+          p_random_force->SetEndTimeForEquilibrium(time_for_equilibrium/2);
+
+          simulator.AddForce(p_random_force);
+        }
+      /*------------------------------------END: Brownian Random Force ---------------------------*/
 
 
       /*------------------------------------START: CellKiller---------------------------------------*/
@@ -303,7 +351,6 @@ public:
         // oss << "_Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
         //         << setprecision(2) << cell_cell_adhesion_energy_density;
         oss << "_p0=" << std::fixed  << setprecision(2) << target_shape_index;
-        oss << "_MF=" << std::fixed  << setprecision(0) << pulling_force_on_leading_cell;
 
         oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
         oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;

@@ -188,6 +188,12 @@ public:
      */
     MutableElement(unsigned index);
 
+    // my addition
+    /**
+     * Alternative constructor.
+     */
+    MutableElement();
+
     /**
      * Virtual destructor, since this class has virtual methods.
      */

@@ -118,6 +118,48 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
 {
 }
 
+// my addition
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM> // the choice of constructor in my simulation!
+VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
+                                                     const std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*>& rFaces,
+                                                     const std::vector<bool>& rOrientations,
+                                                     const std::vector<Node<SPACE_DIM>*>& rNodes,
+                                                     const std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*>& rStressfibers)
+    : MutableElement<ELEMENT_DIM, SPACE_DIM>(index, rNodes),
+      mFaces(rFaces),
+      mOrientations(rOrientations),
+      mStressfibers(rStressfibers),
+      mGroupNumber(0),
+      mIsLeadingCell(false),
+      mIsLeadingCellTop(false),
+      mIsLeadingCellBottom(false),
+      mIsJustReAttached(false),
+      mLamellipodiumStrength(0.0),
+      mElementMyosinActivity(1.0)
+{
+    // This constructor should only be used in 3D
+    assert(SPACE_DIM == 3 || (ELEMENT_DIM==2 && SPACE_DIM==2));    // LCOV_EXCL_LINE - code will be removed at compile time
+
+    // Each face must have an associated orientation
+    assert(mFaces.size() == mOrientations.size());
+
+    if (SPACE_DIM == ELEMENT_DIM)
+    {
+        // Register element with nodes
+        this->RegisterWithNodes();
+    }
+}
+
+// my addition for construction of a stress fiber
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, c_vector<double,2> rEndpointsratio)
+    : MutableElement<ELEMENT_DIM, SPACE_DIM>(index)
+{
+    mStressfiberNodes=rStressfiberNodes;
+    mEndpointsratio=rEndpointsratio;
+} 
+
+
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 VertexElement<ELEMENT_DIM, SPACE_DIM>::~VertexElement()
 {
@@ -171,12 +213,59 @@ bool VertexElement<ELEMENT_DIM, SPACE_DIM>::FaceIsOrientatedClockwise(unsigned i
     return mOrientations[index];
 }
 
+// my addition
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::AddStressfiber(VertexElement<ELEMENT_DIM-1, SPACE_DIM>* pStressfiber)
+{
+    // Add pStressfiber to the end of mStressfibers
+    this->mStressfibers.push_back(pStressfiber);
+}
+
+// my addition
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::DeleteStressfiber(unsigned index)
+{
+    // delete the stress fiber with specified local index in the element
+    this->mStressfibers.erase(this->mStressfibers.begin()+index);
+}
+
+// my addition
+template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+VertexElement<ELEMENT_DIM-1, SPACE_DIM>* VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiber(unsigned index) const
+{
+    // return a pointer to the stress fiber with specified local index
+    assert(index < mStressfibers.size());
+    return mStressfibers[index];
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+unsigned VertexElement<ELEMENT_DIM, SPACE_DIM>::GetNumStressfibers() const
+{
+    return mStressfibers.size();
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+Node<SPACE_DIM>* VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberNode(unsigned index)
+{
+    return nullptr;
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+c_vector<double,2> VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberEndpointsratio()
+{
+    return zero_vector<double>(2);
+}
+
 //////////////////////////////////////////////////////////////////////
 //                  Specialization for 1d elements                  //
 //                                                                  //
 //                 1d elements are just edges (lines)               //
 //////////////////////////////////////////////////////////////////////
 
+// my addition
 /**
  * Specialization for 1d elements so we don't get errors from Boost on some
  * compilers.
@@ -192,6 +281,21 @@ VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Nod
         mIsDeleted = false;
     }
 }// this is the typical constructor for a face object!
+
+// my addition
+template<unsigned SPACE_DIM>
+VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, 
+                                           const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
+                                           c_vector<double,2> rEndpointsratio)
+    : MutableElement<1, SPACE_DIM>(index)
+{
+    if (SPACE_DIM==2)
+    {
+        mStressfiberNodes=rStressfiberNodes;
+        mEndpointsratio=rEndpointsratio;
+    }
+} // this is the typical constructor for a stress fiber!
+
 
 template<unsigned SPACE_DIM>
 unsigned VertexElement<1, SPACE_DIM>::GetNumFaces() const
@@ -211,6 +315,46 @@ bool VertexElement<1, SPACE_DIM>::FaceIsOrientatedClockwise(unsigned index) cons
     return false;
 }
 
+// my addition
+template<unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::AddStressfiber(VertexElement<1-1, SPACE_DIM>* pStressfiber)
+{
+}
+
+// my addition
+template<unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::DeleteStressfiber(unsigned index)
+{
+}
+
+// my addition
+template<unsigned SPACE_DIM>
+VertexElement<0, SPACE_DIM>* VertexElement<1, SPACE_DIM>::GetStressfiber(unsigned index) const
+{
+    return nullptr;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+unsigned VertexElement<1, SPACE_DIM>::GetNumStressfibers() const
+{
+    return 0;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+Node<SPACE_DIM>* VertexElement<1, SPACE_DIM>::GetStressfiberNode(unsigned index)
+{
+    assert(index < mStressfiberNodes.size());
+    return mStressfiberNodes[index];
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+c_vector<double,2> VertexElement<1, SPACE_DIM>::GetStressfiberEndpointsratio()
+{
+    return mEndpointsratio;
+}
 
 // Explicit instantiation
 template class VertexElement<1,1>;

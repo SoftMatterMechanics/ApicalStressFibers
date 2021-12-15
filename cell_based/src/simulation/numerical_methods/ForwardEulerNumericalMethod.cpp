@@ -111,10 +111,35 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
         Node<SPACE_DIM>* p_Node = this->mpCellPopulation->rGetMesh().GetNode(node_global_index);
         if (mOutputNumericalMethodInformation)
         {
-            std::cout << "_____UpdateNodes: timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
+            std::cout << "UpdateNodes: timesteps elapsed: " << SimulationTime::Instance()->GetTimeStepsElapsed() << std::endl;
             std::cout << "node_global_index=" << node_global_index << " node_location=" << p_Node->rGetLocation()[0] << ", " << p_Node->rGetLocation()[1]
                     << " maximum_velocity=" << maximum_velocity << " new_adaptive_timestep=" << new_adaptive_timestep << std::endl;
             std::cout << std::endl;
+        }
+
+        // unsigned index = 0;
+        // for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+        //      node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+        //      ++node_iter, ++index)
+        // {
+        //     // Get the current node location and calculate the new location according to the forward Euler method
+        //     const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation();
+        //     c_vector<double, SPACE_DIM> displacement = new_adaptive_timestep * forces[index];
+
+        //     c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
+        //     this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
+        // }
+
+        // my changes
+        OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
+        std::string output_file_for_reaction_forces;
+        output_file_for_reaction_forces = "reactionforces.dat";
+        mpReactionForcesFile = output_file_handler.OpenOutputFile(output_file_for_reaction_forces, std::ios::app);
+
+        double t_now = SimulationTime::Instance()->GetTime();
+        if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
+        { 
+            *mpReactionForcesFile << t_now << "\n";
         }
 
         unsigned index = 0;
@@ -124,11 +149,42 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
         {
             // Get the current node location and calculate the new location according to the forward Euler method
             const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation();
-            c_vector<double, SPACE_DIM> displacement = new_adaptive_timestep * forces[index];
+            c_vector<double, SPACE_DIM> displacement = zero_vector<double>(SPACE_DIM);
+            
+            if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium && node_iter->IsBoundaryNode())
+            {   
+                double y_coord= node_iter->rGetLocation()[1];
+                double vertical_velocity_of_boundary_nodes = 0.01;
+                double reaction_force = 0.0;
+
+                if (y_coord > this->mCenterYCoordination)
+                {
+                    displacement[0] = new_adaptive_timestep * forces[index][0];
+                    displacement[1] = new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
+                    reaction_force = vertical_velocity_of_boundary_nodes-forces[index][1];
+                    *mpReactionForcesFile << "up" << " ";
+                }
+                else
+                {
+                    displacement[0] = new_adaptive_timestep * forces[index][0];
+                    displacement[1] = -new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
+                    reaction_force = -vertical_velocity_of_boundary_nodes-forces[index][1];
+                    *mpReactionForcesFile << "bottom" << " ";
+                }
+
+                *mpReactionForcesFile << index  << " ";
+                *mpReactionForcesFile << reaction_force << " ";
+                *mpReactionForcesFile << "\n";
+            }
+            else
+            {
+                displacement = new_adaptive_timestep * forces[index];
+            }
 
             c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
             this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
         }
+
         return new_adaptive_timestep;
     }
     else

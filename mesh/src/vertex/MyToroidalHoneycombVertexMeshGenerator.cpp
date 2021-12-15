@@ -243,7 +243,10 @@ MyToroidalHoneycombVertexMeshGenerator::MyToroidalHoneycombVertexMeshGenerator(u
             element_orientations.push_back(false);
             element_orientations.push_back(true);
 
-            VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_faces, element_orientations, element_nodes);
+            std::vector<VertexElement<1,2>*> element_stress_fibers;
+            VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_faces, element_orientations, element_nodes, element_stress_fibers);
+
+            // VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_faces, element_orientations, element_nodes);
             // VertexElement<2,2>* p_element = new VertexElement<2,2>(element_index, element_nodes);
             elements.push_back(p_element);
         }

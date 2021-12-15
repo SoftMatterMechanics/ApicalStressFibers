@@ -70,6 +70,12 @@ private:
     std::vector<bool> mOrientations;
 
     // my changes
+    std::vector<VertexElement<ELEMENT_DIM-1, SPACE_DIM>*> mStressfibers;
+
+    std::vector<Node<SPACE_DIM>*> mStressfiberNodes;
+
+    c_vector<double,2> mEndpointsratio;
+
     unsigned mGroupNumber;
 
     bool mIsLeadingCell;
@@ -103,6 +109,7 @@ private:
         // This needs to be first so that MeshBasedCellPopulation::Validate() doesn't go mental.
         archive & mFaces;
         archive & mOrientations;
+        archive & mStressfibers; // my changes
         archive & boost::serialization::base_object<MutableElement<ELEMENT_DIM, SPACE_DIM> >(*this);
     }
 
@@ -154,6 +161,30 @@ public:
                   const std::vector<bool>& rOrientations,
                   const std::vector<Node<SPACE_DIM>*>& rNodes);
 
+
+    /** My addition: information of stress fibers is incorporated in the element!!!!!!!
+     * @param index global index of the element
+     * @param rFaces vector of faces associated with the element
+     * @param rOrientations vector of orientations of the faces associated with the element
+     * @param rNodes vector of Nodes associated with the element
+     * @param rStressfibers vector of stress fibers with the element
+     */
+    VertexElement(unsigned index,
+                  const std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*>& rFaces,
+                  const std::vector<bool>& rOrientations,
+                  const std::vector<Node<SPACE_DIM>*>& rNodes,
+                  const std::vector<VertexElement<ELEMENT_DIM-1,SPACE_DIM>*>& rStressfibers);
+
+
+    /** My addition: Construct the stress fibers!!!!!!!
+     * @param rStressfiberNodes vector of end point Nodes associated with the stress fiber
+     * @param rEndpointsratio vector of length ratio associated with the stress fiber
+     */
+    VertexElement(unsigned index,
+                  const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes,
+                  c_vector<double,2> rEndpointsratio);
+
+
     /**
      * Destructor.
      */
@@ -185,7 +216,47 @@ public:
      */
     bool FaceIsOrientatedClockwise(unsigned index) const;
 
-    // my changes
+    // ---------------my additions!!!!------------------
+    /**
+     * Add a stress fiber to the element.
+     *
+     * @param pStressfiber a pointer to the new stress fiber
+     */
+    void AddStressfiber(VertexElement<ELEMENT_DIM-1, SPACE_DIM>* pStressfiber);
+
+    /**
+     * Delete a stress fiber from the element.
+     *
+     * @param index the local index of a specified stress fiber
+     */
+    void DeleteStressfiber(unsigned index);
+
+    /**
+     * @param index the local index of a specified stress fiber
+     *
+     * @return a pointer to the stress fiber
+     */
+    VertexElement<ELEMENT_DIM-1, SPACE_DIM>* GetStressfiber(unsigned index) const;
+
+    /**
+     * @return the number of stress fibers owned by this element.
+     */
+    unsigned GetNumStressfibers() const;
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
+     * @return the pointer to the associate node
+     */
+    Node<SPACE_DIM>* GetStressfiberNode(unsigned index);
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
+     * @return the pointer to the associate node
+     */
+    c_vector<double,2> GetStressfiberEndpointsratio();
+
+    // -------------------end of my additions!!!!--------------
+
     void SetGroupNumber(unsigned groupNumber)
     {
       mGroupNumber = groupNumber;
@@ -517,14 +588,14 @@ public:
       return 0.0;
     }
 
-    // bool IsDeleted()
-    // {
-    //   return false;
-    // }
+    bool IsDeleted()
+    {
+      return false;
+    }
 
-    // void MarkAsDeleted()
-    // {
-    // }
+    void MarkAsDeleted()
+    {
+    }
 
     void SetEdgeMyosinActivty(double edgeMyosinActivty)
     {
@@ -570,6 +641,10 @@ private:
 
     double mElementMyosinActivity; // change made by Chao
 
+    std::vector<Node<SPACE_DIM>*> mStressfiberNodes; // added by Chao
+
+    c_vector<double,2> mEndpointsratio; // added by Chao
+
 public:
 
     /**
@@ -579,6 +654,18 @@ public:
      * @param rNodes the nodes owned by the element
      */
     VertexElement(unsigned index, const std::vector<Node<SPACE_DIM>*>& rNodes);
+
+    // my addition
+    // For solving instantialization problem here in 1d element! this should only be used as an element method!
+    VertexElement(unsigned index,
+              const std::vector<VertexElement<1-1, SPACE_DIM>*>& rFaces,
+              const std::vector<bool>& rOrientations,
+              const std::vector<Node<SPACE_DIM>*>& rNodes); // this statement is indispensable!
+
+    // my addition
+    VertexElement(unsigned index,
+              const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
+              c_vector<double,2> rEndpointsratio); // declaration for 1d case
 
     /**
      * @return the number of faces owned by this element.
@@ -599,10 +686,45 @@ public:
      */
     bool FaceIsOrientatedClockwise(unsigned index) const;
 
-    // My changes
-    // void RegisterWithFaces();
-    // //return a set of indices of elements containing this element as a face.
-    // std::set<unsigned>& rGetContainingElementIndices();
+    // ------------------------my additions------------------------
+    /**
+     * Add a stress fiber to the element.
+     *
+     * @param pStressfiber a pointer to the new stress fiber
+     */
+    void AddStressfiber(VertexElement<1-1, SPACE_DIM>* pStressfiber);
+
+    /**
+     * Delete a stress fiber from the element.
+     *
+     * @param index the local index of a specified stress fiber
+     */
+    void DeleteStressfiber(unsigned index);
+
+   /**
+     * @param index the local index of a specified stress fiber
+     *
+     * @return a pointer to the stress fiber
+     */
+    VertexElement<0, SPACE_DIM>* GetStressfiber(unsigned index) const;
+
+    /**
+     * @return the number of stress fibers owned by this element.
+     */
+    unsigned GetNumStressfibers() const;
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
+     * @return the pointer to the associate node
+     */
+    Node<SPACE_DIM>* GetStressfiberNode(unsigned index);
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
+     * @return the pointer to the associate node
+     */
+    c_vector<double,2> GetStressfiberEndpointsratio();
+    // ------------------------end of my additions------------------------
 
     void SetEdgeMyosinActivty(double edgeMyosinActivty)
     {
@@ -666,15 +788,6 @@ public:
           std::cout << std::endl << "ERR: Method VertexElement::ReplaceOneNodeBy";
           std::cout << std::endl << "Not Reachable!";
       }
-    }
-
-    // For solving instantialization problem here in 1d element! this should only be used as an element method!
-    VertexElement(unsigned index,
-              const std::vector<VertexElement<1-1, SPACE_DIM>*>& rFaces,
-              const std::vector<bool>& rOrientations,
-              const std::vector<Node<SPACE_DIM>*>& rNodes)
-      : MutableElement<1, SPACE_DIM>(index, rNodes)// this statement is indispensable!
-    {      
     }
 
     bool GetOrientation(unsigned faceLocalIndex)

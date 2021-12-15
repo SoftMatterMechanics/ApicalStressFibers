@@ -195,6 +195,17 @@ MutableElement<1, SPACE_DIM>::MutableElement(unsigned index, const std::vector<N
     assert(SPACE_DIM > 0);
 }
 
+
+// my addition
+template<unsigned SPACE_DIM>
+MutableElement<1, SPACE_DIM>::MutableElement(unsigned index)
+    : AbstractElement<1, SPACE_DIM>(index)
+{
+    // Sanity checking
+    assert(SPACE_DIM > 0);
+}
+
+
 template<unsigned SPACE_DIM>
 MutableElement<1, SPACE_DIM>::~MutableElement()
 {
