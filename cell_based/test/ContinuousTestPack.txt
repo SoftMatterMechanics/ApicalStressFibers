@@ -1,4 +1,8 @@
 aSF/ApicalStressFibers1.hpp
 aSF/ApicalStressFibers2.hpp
 aSF/ApicalStressFibers3.hpp
-aSF/ApicalStressFibers4.hpp
+aSF/ApicalStressFibers4A.hpp
+aSF/ApicalStressFibers4B.hpp
+aSF/ApicalStressFibers4C.hpp
+aSF/ApicalStressFibers4D.hpp
+aSF/ApicalStressFibers4E.hpp

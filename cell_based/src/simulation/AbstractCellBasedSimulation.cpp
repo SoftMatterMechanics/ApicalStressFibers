@@ -64,6 +64,7 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mOutputCellVelocities(false),
       mMyOutputCellVelocities(false),
       mMySeed(0u),
+      mOutputCellAspectRatio(false),
       mSamplingTimestepMultiple(1),
       mOmitFileNameResultsFromTimeX(false),
       mOutputSimulationInformationToFile(false)
@@ -382,11 +383,21 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         else
         {
             std::ostringstream file_string;
-            file_string << std::to_string(mMySeed) << ".dat";
+            file_string << "velocity " << std::to_string(mMySeed) << ".dat";
             output_file_for_cell_velocities = file_string.str();
         }
 
         mpCellVelocitiesFile = output_file_handler2.OpenOutputFile(output_file_for_cell_velocities);
+    }
+    if (mOutputCellAspectRatio)
+    {
+        OutputFileHandler output_file_handler3(this->mSimulationOutputDirectory+"/", false);
+        std::string output_file_for_cell_aspect_ratio;
+        std::ostringstream file_string;
+        file_string << "aspectratio " << std::to_string(mMySeed) << ".dat";
+        output_file_for_cell_aspect_ratio = file_string.str();
+
+        mpCellAspectRatioFile = output_file_handler3.OpenOutputFile(output_file_for_cell_aspect_ratio);
     }
 
     if (PetscTools::AmMaster())
@@ -531,6 +542,90 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
             *mpCellVelocitiesFile << "\n";
         }
 
+        // Now write cell aspect ratio to file if required
+        if (mOutputCellAspectRatio && at_sampling_timestep)
+        {
+            // Offset as doing this before we increase time by mDt
+            if (mApplySamplingTimeInsteadOfSamplingTimestep)
+            {
+                double t_now = p_time->GetTime() + mAdaptiveDt;
+                *mpCellAspectRatioFile << t_now << "\n";
+            }
+            else
+            {
+                double t_now = p_time->GetTime() + mDt;
+                *mpCellAspectRatioFile << t_now << "\n";
+            }
+
+            MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>* pMesh = static_cast<MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>*>(& mrCellPopulation.rGetMesh());
+
+            for (typename AbstractCellPopulation<ELEMENT_DIM, SPACE_DIM>::Iterator cell_iter = mrCellPopulation.Begin();
+                 cell_iter != mrCellPopulation.End();
+                 ++cell_iter)
+            {
+                unsigned index = mrCellPopulation.GetLocationIndexUsingCell(*cell_iter);
+                double cell_area = pMesh->GetVolumeOfElement(index);
+                double cell_perimeter = pMesh->GetSurfaceAreaOfElement(index);
+                c_vector<double,SPACE_DIM> cell_center = zero_vector<double>(SPACE_DIM);
+
+                VertexElement<ELEMENT_DIM, SPACE_DIM>* pElement = pMesh->GetElement(index);
+                unsigned num_nodes_elem = pElement->GetNumNodes();
+                double x_left = pElement->GetNodeLocation(0)[0];
+                double x_right = pElement->GetNodeLocation(0)[0];
+                double y_lowest = pElement->GetNodeLocation(0)[1];
+                double y_highest = pElement->GetNodeLocation(0)[1];
+                for (unsigned local_index=0; local_index<num_nodes_elem; local_index++)
+                {
+                    double x_coord = pElement->GetNodeLocation(local_index)[0];
+                    double y_coord = pElement->GetNodeLocation(local_index)[1];
+                    if (x_coord<x_left)
+                    {
+                        x_left = x_coord;
+                    }
+                    if (x_coord>x_right)
+                    {
+                        x_right = x_coord;
+                    }
+                    if (y_coord<y_lowest)
+                    {
+                        y_lowest = y_coord;
+                    }
+                    if (y_coord>y_highest)
+                    {
+                        y_highest = y_coord;
+                    }
+
+                    cell_center[0] += x_coord/num_nodes_elem;
+                    cell_center[1] += y_coord/num_nodes_elem;
+                }
+
+                double ylength = y_highest-y_lowest;
+                double aspectratio = (x_right-x_left)/(y_highest-y_lowest);
+
+                double horizontal_distance_square = 0.0;
+                double vertical_distance_square = 0.0;
+                for (unsigned local_index=0; local_index<num_nodes_elem; local_index++)
+                {
+                    double x_coord = pElement->GetNodeLocation(local_index)[0];
+                    double y_coord = pElement->GetNodeLocation(local_index)[1];
+                    horizontal_distance_square += (x_coord-cell_center[0])*(x_coord-cell_center[0]);
+                    vertical_distance_square += (y_coord-cell_center[1])*(y_coord-cell_center[1]);
+                }
+                double elongation = vertical_distance_square/horizontal_distance_square;
+
+                double shape_index = cell_perimeter/sqrt(cell_area);
+
+                *mpCellAspectRatioFile << index  << " ";
+                *mpCellAspectRatioFile << cell_area  << " ";
+                *mpCellAspectRatioFile << ylength  << " ";
+                *mpCellAspectRatioFile << aspectratio << " ";
+                *mpCellAspectRatioFile << elongation << " ";
+                *mpCellAspectRatioFile << shape_index << " ";
+                *mpCellAspectRatioFile << "\t";
+            }
+            *mpCellAspectRatioFile << "\n";
+        }
+
         // Update the assignment of cells to processes.
         mrCellPopulation.UpdateCellProcessLocation();
 
@@ -616,6 +711,10 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
     if (mOutputCellVelocities)
     {
         mpCellVelocitiesFile->close();
+    }
+    if (mOutputCellAspectRatio)
+    {
+        mpCellAspectRatioFile->close();
     }
 
     if (PetscTools::AmMaster())

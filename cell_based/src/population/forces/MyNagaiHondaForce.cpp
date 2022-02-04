@@ -62,6 +62,8 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
         EXCEPTION("NagaiHondaForce is to be used with a VertexBasedCellPopulation only");
     }
 
+    double t_now = SimulationTime::Instance()->GetTime();
+
     // Define some helper variables
     VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation);
     unsigned num_nodes = p_cell_population->GetNumNodes();
@@ -71,6 +73,7 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
     std::vector<double> element_areas(num_elements);
     std::vector<double> element_perimeters(num_elements);
     std::vector<double> target_areas(num_elements);
+    // std::vector<double> element_perimeter_elasticity(num_elements);
     for (typename VertexMesh<DIM,DIM>::VertexElementIterator elem_iter = p_cell_population->rGetMesh().GetElementIteratorBegin();
          elem_iter != p_cell_population->rGetMesh().GetElementIteratorEnd();
          ++elem_iter)
@@ -99,6 +102,8 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             EXCEPTION("You need to add an AbstractTargetAreaModifier to the simulation in order to use NagaiHondaForce");
         }
 
+        // CellPtr p_cell = rCellPopulation.GetCellUsingLocationIndex(elem_index);
+        // element_perimeter_elasticity[elem_index] = p_cell->GetCellData()->GetItem("perimeter_elasticity");
     }
 
     // // original non-homogeneous SSA method using leading length:
@@ -166,8 +171,13 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
 
             // Add the force contribution from this cell's deformation energy (note the minus sign)
             c_vector<double, DIM> element_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
-            deformation_contribution -= GetNagaiHondaDeformationEnergyParameter()*(element_areas[elem_index] - target_areas[elem_index])*element_area_gradient;
+            // double area_stiffness = GetNagaiHondaDeformationEnergyParameter()*pow(abs(element_areas[elem_index]-target_areas[elem_index])/target_areas[elem_index],2.0/2.0);            
+            // double area_stiffness = GetNagaiHondaDeformationEnergyParameter()*pow(target_areas[elem_index],2.0/2.0); 
+            double area_stiffness = GetNagaiHondaDeformationEnergyParameter();
+            deformation_contribution -= area_stiffness*(element_areas[elem_index] - target_areas[elem_index])*element_area_gradient;
             
+            // std::cout<<"Ka["<<elem_index<<"]="<<area_stiffness<<std::endl;
+
             // Get the previous and next nodes in this element
             unsigned previous_node_local_index = (num_nodes_elem+local_index-1)%num_nodes_elem;
             Node<DIM>* p_previous_node = p_element->GetNode(previous_node_local_index);
@@ -177,8 +187,8 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
 
             // Compute the adhesion parameter for each of these edges
             // 0.5 means the edge is shared by two cells
-            double previous_edge_adhesion_parameter = 0.5*GetAdhesionParameter(p_previous_node, p_this_node, *p_cell_population);
-            double next_edge_adhesion_parameter = 0.5*GetAdhesionParameter(p_this_node, p_next_node, *p_cell_population);
+            double previous_edge_adhesion_parameter = GetAdhesionParameter(p_previous_node, p_this_node, *p_cell_population);
+            double next_edge_adhesion_parameter = GetAdhesionParameter(p_this_node, p_next_node, *p_cell_population);
 
             // Compute the gradient of each these edges, computed at the present node
             c_vector<double, DIM> previous_edge_gradient = -p_cell_population->rGetMesh().GetNextEdgeGradientOfElementAtNode(p_element, previous_node_local_index);
@@ -190,17 +200,39 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             // Add the force contribution from this cell's membrane surface tension (note the minus sign)
             c_vector<double, DIM> element_perimeter_gradient;
             element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
-            double cell_target_perimeter = 0.0;            
-            membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+            double cell_target_perimeter = 0.0;
+            // membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
 
-            // // my changes
-            // // double  rest_edge_length = sqrt(target_areas[elem_index]/(3*sqrt(3)/2));
-            // double  rest_edge_length = 1;
+            // double perimeter_stiffness = GetNagaiHondaMembraneSurfaceEnergyParameter()*pow(mFixedTargetArea/target_areas[elem_index],1.0/2.0);
+            // double perimeter_stiffness = GetNagaiHondaMembraneSurfaceEnergyParameter();
+            // double target_element_perimeter_elasticity = GetNagaiHondaMembraneSurfaceEnergyParameter()*pow(mFixedTargetPerimeter/element_perimeters[elem_index],0.5);
+            // double perimeter_stiffness = element_perimeter_elasticity[elem_index] + (target_element_perimeter_elasticity-element_perimeter_elasticity[elem_index])*0.01;
+            // double perimeter_stiffness = target_element_perimeter_elasticity;
+
+            double perimeter_stiffness = 0.0;
+            CellPtr p_cell = rCellPopulation.GetCellUsingLocationIndex(elem_index);
+            if (t_now < this->mTimeForEquilibrium)
+            {
+                perimeter_stiffness = GetNagaiHondaMembraneSurfaceEnergyParameter()*pow(mFixedTargetPerimeter/element_perimeters[elem_index],1.0);
+                p_cell->GetCellData()->SetItem("perimeter_elasticity", perimeter_stiffness);
+            }
+            else
+            {
+                perimeter_stiffness = p_cell->GetCellData()->GetItem("perimeter_elasticity");
+            }
+            membrane_surface_tension_contribution -= perimeter_stiffness*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
+
+            // CellPtr p_cell = rCellPopulation.GetCellUsingLocationIndex(elem_index);
+            // p_cell->GetCellData()->SetItem("perimeter_elasticity", perimeter_stiffness);
+            p_cell->GetCellData()->SetItem("target_shape_index", -previous_edge_adhesion_parameter/(perimeter_stiffness*sqrt(target_areas[elem_index])));
+
+            // my changes
+            // double  rest_edge_length = sqrt(target_areas[elem_index]/(3*sqrt(3)/2));
+            // double  rest_edge_length = 0;
             // double  previous_edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(p_element->GetNodeGlobalIndex(previous_node_local_index), node_index);
             // double  next_edge_length = p_cell_population->rGetMesh().GetDistanceBetweenNodes(node_index, p_element->GetNodeGlobalIndex(next_node_local_index));
-
-            // // 0.5 means the edge is shared by two cells
-            // membrane_surface_tension_contribution -= 0.5*GetNagaiHondaMembraneSurfaceEnergyParameter()*((previous_edge_length - rest_edge_length)*previous_edge_gradient + (next_edge_length - rest_edge_length)*next_edge_gradient);
+            // membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*((previous_edge_length - rest_edge_length)*previous_edge_gradient + (next_edge_length - rest_edge_length)*next_edge_gradient);
+            // membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*(previous_edge_gradient + next_edge_gradient);
 
         }// end of 'Iterate over these elements'
 
@@ -263,6 +295,7 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
     }// end of 'Iterate over nodes(vertices) in the cell population'
 
 }
+
 
 template<unsigned DIM>
 double MyNagaiHondaForce<DIM>::GetAdhesionParameter(Node<DIM>* pNodeA, Node<DIM>* pNodeB, VertexBasedCellPopulation<DIM>& rVertexCellPopulation)

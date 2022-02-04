@@ -116,6 +116,8 @@ protected:
 
     bool mUseFixedTargetArea;
 
+    double mTimeForEquilibrium;
+
     bool mIfUseFaceElementToGetAdhesionParameter;
 
     bool mAddPullingForceEvenlyOnNodesOfLeadingCell;
@@ -234,6 +236,11 @@ public:
     void SetUseFixedTargetArea(double useFixedTargetArea)
     {
       mUseFixedTargetArea = useFixedTargetArea;
+    }
+
+    void SetEndTimeForEquilibrium(double timeForEquilibrium)
+    {
+      mTimeForEquilibrium = timeForEquilibrium;
     }
 
     // tmp

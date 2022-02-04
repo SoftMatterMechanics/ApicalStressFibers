@@ -62,6 +62,7 @@ private:
     unsigned mRandomSeed;
     double mMinTargetArea;
     double mMaxTargetArea;
+    double mPerimeterElasticity;
 
 public:
 
@@ -133,7 +134,12 @@ public:
     {
         mMinTargetArea = minTargetArea;
         mMaxTargetArea = maxTargetArea;
-    }                                                           
+    }
+
+    void SetPerimeterElasticityParameter(double perimeterElasticity)  
+    {
+        mPerimeterElasticity = perimeterElasticity;
+    }                                            
                                                                         
 };
 
@@ -242,6 +248,8 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
         double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*random_number;
         // std::cout << "seed=" << mRandomSeed << ", random=" << random_number << std::endl;                                                                      
         p_cell->GetCellData()->SetItem("target area", cell_target_area);
+
+        p_cell->GetCellData()->SetItem("perimeter_elasticity", mPerimeterElasticity);
 
         rCells.push_back(p_cell);
     }

@@ -160,8 +160,12 @@ protected:
 
     unsigned mMySeed; // my changes
 
+    bool mOutputCellAspectRatio; // my changes
+
     /** Results file for cell velocities. */
     out_stream mpCellVelocitiesFile;
+
+    out_stream mpCellAspectRatioFile;
 
     /** List of cell killers. */
     std::vector<boost::shared_ptr<AbstractCellKiller<SPACE_DIM> > > mCellKillers;
@@ -535,6 +539,11 @@ public:
     void SetMySeed(unsigned mySeed)
     {
       mMySeed = mySeed;
+    }
+
+    void SetOutputCellAspectRatio(bool outputCellAspectRatio)
+    {
+      mOutputCellAspectRatio = outputCellAspectRatio;
     }
 
     /**

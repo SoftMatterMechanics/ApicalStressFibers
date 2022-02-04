@@ -154,26 +154,30 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
             if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium && node_iter->IsBoundaryNode())
             {   
                 double y_coord= node_iter->rGetLocation()[1];
-                double vertical_velocity_of_boundary_nodes = 0.01;
-                double reaction_force = 0.0;
+                double vertical_velocity_of_boundary_nodes = 0.02;
+                c_vector<double, SPACE_DIM> reaction_force = zero_vector<double>(SPACE_DIM);
 
                 if (y_coord > this->mCenterYCoordination)
                 {
-                    displacement[0] = new_adaptive_timestep * forces[index][0];
+                    // displacement[0] = new_adaptive_timestep * forces[index][0];
+                    displacement[0] = 0.0;
                     displacement[1] = new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
-                    reaction_force = vertical_velocity_of_boundary_nodes-forces[index][1];
+                    reaction_force[0] = -forces[index][0];
+                    reaction_force[1] = vertical_velocity_of_boundary_nodes-forces[index][1];
                     *mpReactionForcesFile << "up" << " ";
                 }
                 else
                 {
-                    displacement[0] = new_adaptive_timestep * forces[index][0];
+                    // displacement[0] = new_adaptive_timestep * forces[index][0];
+                    displacement[0] = 0.0;
                     displacement[1] = -new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
-                    reaction_force = -vertical_velocity_of_boundary_nodes-forces[index][1];
+                    reaction_force[0] = -forces[index][0];
+                    reaction_force[1] = -vertical_velocity_of_boundary_nodes-forces[index][1];
                     *mpReactionForcesFile << "bottom" << " ";
                 }
 
                 *mpReactionForcesFile << index  << " ";
-                *mpReactionForcesFile << reaction_force << " ";
+                *mpReactionForcesFile << reaction_force[0] << " " << reaction_force[1] << " ";
                 *mpReactionForcesFile << "\n";
             }
             else
