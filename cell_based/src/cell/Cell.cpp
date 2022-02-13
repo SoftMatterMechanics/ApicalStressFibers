@@ -531,8 +531,8 @@ CellPtr Cell::Divide()
 
     if (mUseMyDivisionRuleAlongWithModifier)
     {
-        this->GetCellData()->SetItem("target area", 0.5*this->GetCellData()->GetItem("target area"));
-        p_new_cell->GetCellData()->SetItem("target area", 0.5*p_new_cell->GetCellData()->GetItem("target area"));
+        this->GetCellData()->SetItem("target_area", 0.5*this->GetCellData()->GetItem("target_area"));
+        p_new_cell->GetCellData()->SetItem("target_area", 0.5*p_new_cell->GetCellData()->GetItem("target_area"));
     }
     //tmp
     // std::cout << std::endl << "TargetAreaOfNewCell:" << p_new_cell->GetCellData()->GetItem("target area") << std::endl;

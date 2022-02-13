@@ -57,6 +57,12 @@ friend class TestForces;
 private:
 
     friend class boost::serialization::access;
+    
+    std::string mOutputDirectory;      
+
+    /** Results file for reaction forces. */
+    out_stream mpBisectorOrientationFile; 
+
     /**
      * Boost Serialization method for archiving/checkpointing.
      * Archives the object and its member variables.
@@ -77,6 +83,8 @@ protected:
     double mTimeForEquilibrium;
 
     unsigned mFlag;
+
+    double mSfTension;
 
 public:
 
@@ -112,6 +120,10 @@ public:
     void SetEndTimeForEquilibrium(double timeForEquilibrium);
 
     void SetFlagForStressfiberCreation(unsigned flag);
+
+    void SetStressfiberTension(double sfTension);
+
+    void SetOutputDirectory(std::string outputDirectory);
 };
 
 #include "SerializationExportWrapper.hpp"

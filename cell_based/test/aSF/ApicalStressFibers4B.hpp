@@ -107,9 +107,14 @@ public:
         double edge_elastic_modulus = 0.05; // Kp
 
       // 4. Cell-Cell adhesion & constant cortical contraction
+      // this parameter value here is one half of its real value because the edge is shared by two cells
         double cell_cell_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area); // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
         double cell_boundary_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area); // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
+
+      // 5. stress fiber tension
+        double vertical_velocity_of_boundary_nodes = 0.02;
+        double sf_tension = 0.0;
 
       // 5. Random force
         bool   add_random_force = true;
@@ -121,7 +126,7 @@ public:
         unsigned seed_for_initial_random_polarity = 1;
         double polarity_magnitude_equilibrium = 0.05;  // for before equilibrium
         double polarity_magnitude = 0.0;  // for after equilibrium
-        double rotational_diffusion_constant = 0.7;
+        double rotational_diffusion_constant = 0.5;
 
       // 6. Time
         bool   if_equilibrate_for_a_while = true;
@@ -130,7 +135,7 @@ public:
            if_equilibrate_for_a_while = false;
         
         double dt = 0.01;
-        double end_time = (double) round(center_y_coordination*1.0/0.02) + time_for_equilibrium;   // tissue elongation 30%, boundary velocity 0.01
+        double end_time = (double) round(center_y_coordination*0.5/vertical_velocity_of_boundary_nodes) + time_for_equilibrium;   // tissue elongation 30%, boundary velocity 0.01
         double max_movement_per_timestep = 0.01; 
         bool   apply_adaptive_timestep = true;
         double sampling_time = 1.0;
@@ -225,6 +230,7 @@ public:
         p_numerical_method->SetCenterYCoordination(center_y_coordination);
         p_numerical_method->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
         p_numerical_method->SetEndTimeForEquilibrium(time_for_equilibrium);
+        p_numerical_method->SetBoundaryVelocity(vertical_velocity_of_boundary_nodes);
         // simulator.SetNumericalMethod(p_numerical_method);
       /*---------------------------------END: Simulator settings-----------------------------*/
 
@@ -264,15 +270,16 @@ public:
       /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
 
 
-      // /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
-      //   MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
+      /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
+        MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
         
-      //   p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-      //   p_sf_force->SetEndTimeForEquilibrium(time_for_equilibrium);
-      //   p_sf_force->SetFlagForStressfiberCreation(0);
+        p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_sf_force->SetEndTimeForEquilibrium(time_for_equilibrium+200);
+        p_sf_force->SetFlagForStressfiberCreation(0);
+        p_sf_force->SetStressfiberTension(sf_tension);
 
-      //   simulator.AddForce(p_sf_force);
-      // /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
+        // simulator.AddForce(p_sf_force);
+      /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
 
 
       /*-----------------------------------START: Brownian Random Force -------------------------*/
@@ -294,7 +301,7 @@ public:
 
           p_random_force->SetHasPolarity(has_polarity);
           p_random_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-          p_random_force->SetEndTimeForEquilibrium(time_for_equilibrium/2);
+          p_random_force->SetEndTimeForEquilibrium(time_for_equilibrium*1/2);
 
           simulator.AddForce(p_random_force);
         }
@@ -397,6 +404,10 @@ public:
 
         p_numerical_method->SetOutputDirectory(concise_output_directory);
         simulator.SetNumericalMethod(p_numerical_method);
+
+        p_sf_force->SetOutputDirectory(concise_output_directory);
+        simulator.AddForce(p_sf_force);
+
         simulator.Solve();
     }
 

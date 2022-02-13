@@ -566,61 +566,31 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 unsigned index = mrCellPopulation.GetLocationIndexUsingCell(*cell_iter);
                 double cell_area = pMesh->GetVolumeOfElement(index);
                 double cell_perimeter = pMesh->GetSurfaceAreaOfElement(index);
-                c_vector<double,SPACE_DIM> cell_center = zero_vector<double>(SPACE_DIM);
+                double shape_index = cell_perimeter/sqrt(cell_area);
 
                 VertexElement<ELEMENT_DIM, SPACE_DIM>* pElement = pMesh->GetElement(index);
                 unsigned num_nodes_elem = pElement->GetNumNodes();
-                double x_left = pElement->GetNodeLocation(0)[0];
-                double x_right = pElement->GetNodeLocation(0)[0];
-                double y_lowest = pElement->GetNodeLocation(0)[1];
-                double y_highest = pElement->GetNodeLocation(0)[1];
+
+                c_vector<double,SPACE_DIM> cell_center = zero_vector<double>(SPACE_DIM);
                 for (unsigned local_index=0; local_index<num_nodes_elem; local_index++)
                 {
-                    double x_coord = pElement->GetNodeLocation(local_index)[0];
-                    double y_coord = pElement->GetNodeLocation(local_index)[1];
-                    if (x_coord<x_left)
-                    {
-                        x_left = x_coord;
-                    }
-                    if (x_coord>x_right)
-                    {
-                        x_right = x_coord;
-                    }
-                    if (y_coord<y_lowest)
-                    {
-                        y_lowest = y_coord;
-                    }
-                    if (y_coord>y_highest)
-                    {
-                        y_highest = y_coord;
-                    }
-
-                    cell_center[0] += x_coord/num_nodes_elem;
-                    cell_center[1] += y_coord/num_nodes_elem;
+                    c_vector<double,SPACE_DIM> coord = pElement->GetNodeLocation(local_index);
+                    cell_center += coord/num_nodes_elem;
                 }
-
-                double ylength = y_highest-y_lowest;
-                double aspectratio = (x_right-x_left)/(y_highest-y_lowest);
-
                 double horizontal_distance_square = 0.0;
                 double vertical_distance_square = 0.0;
                 for (unsigned local_index=0; local_index<num_nodes_elem; local_index++)
                 {
-                    double x_coord = pElement->GetNodeLocation(local_index)[0];
-                    double y_coord = pElement->GetNodeLocation(local_index)[1];
-                    horizontal_distance_square += (x_coord-cell_center[0])*(x_coord-cell_center[0]);
-                    vertical_distance_square += (y_coord-cell_center[1])*(y_coord-cell_center[1]);
+                    c_vector<double,SPACE_DIM> coord = pElement->GetNodeLocation(local_index);
+                    horizontal_distance_square += (coord[0]-cell_center[0])*(coord[0]-cell_center[0]);
+                    vertical_distance_square += (coord[1]-cell_center[1])*(coord[1]-cell_center[1]);
                 }
                 double elongation = vertical_distance_square/horizontal_distance_square;
 
-                double shape_index = cell_perimeter/sqrt(cell_area);
-
                 *mpCellAspectRatioFile << index  << " ";
                 *mpCellAspectRatioFile << cell_area  << " ";
-                *mpCellAspectRatioFile << ylength  << " ";
-                *mpCellAspectRatioFile << aspectratio << " ";
-                *mpCellAspectRatioFile << elongation << " ";
                 *mpCellAspectRatioFile << shape_index << " ";
+                *mpCellAspectRatioFile << elongation << " ";
                 *mpCellAspectRatioFile << "\t";
             }
             *mpCellAspectRatioFile << "\n";

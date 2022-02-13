@@ -65,6 +65,8 @@ private:
 
     double mTimeForEquilibrium;
 
+    double mBoundaryVelocity;
+
     std::string mOutputDirectory;
 
     /** Results file for reaction forces. */
@@ -130,6 +132,11 @@ public:
     void SetEndTimeForEquilibrium(double timeForEquilibrium)
     {
       mTimeForEquilibrium = timeForEquilibrium;
+    }
+
+    void SetBoundaryVelocity(double boundaryVelocity)
+    {
+      mBoundaryVelocity = boundaryVelocity;
     }
 
     void SetOutputDirectory(std::string outputDirectory)

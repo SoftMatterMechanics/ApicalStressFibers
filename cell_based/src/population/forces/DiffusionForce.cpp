@@ -156,9 +156,9 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
                 // used in typical situation only. my assertion!
                 for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
                 {
-                    double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityAngle");
-                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitude");
-                    double polarity_magnitude_for_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("PolarityMagnitudeEquilibrium");
+                    double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_angle");
+                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude");
+                    double polarity_magnitude_for_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude_equilibrium");
                     // if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
                     //     force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
                     // else

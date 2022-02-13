@@ -99,7 +99,7 @@ void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM
     {
         double x = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
     //    double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD*dt)*x;
-        double polarity_angle = (*cell_iter)->GetCellData()->GetItem("PolarityAngle")+sqrt(2*mD)*x*dt;
+        double polarity_angle = (*cell_iter)->GetCellData()->GetItem("polarity_angle")+sqrt(2*mD)*x*dt;
         if (polarity_angle>=2*M_PI)
             polarity_angle -= 2*M_PI;
         else if (polarity_angle < 0.0)
@@ -111,11 +111,10 @@ void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM
 template<unsigned DIM>
 void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude, double polarityMagnitudeEquilibrium)
 {
-    pCell->GetCellData()->SetItem("PolarityAngle", polarityAngle);
-    pCell->GetCellData()->SetItem("PolarityMagnitude", polarityMagnitude);
-    pCell->GetCellData()->SetItem("PolarityMagnitudeEquilibrium", polarityMagnitudeEquilibrium);
+    pCell->GetCellData()->SetItem("polarity_angle", polarityAngle);
+    pCell->GetCellData()->SetItem("polarity_magnitude", polarityMagnitude);
+    pCell->GetCellData()->SetItem("polarity_magnitude_equilibrium", polarityMagnitudeEquilibrium);
 }
-
 
 template<unsigned DIM>
 void PolarityModifier<DIM>::OutputSimulationModifierParameters(out_stream& rParamsFile)

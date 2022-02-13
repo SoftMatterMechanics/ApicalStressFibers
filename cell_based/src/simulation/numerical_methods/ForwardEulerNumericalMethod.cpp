@@ -139,10 +139,13 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
         double t_now = SimulationTime::Instance()->GetTime();
         if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
         { 
-            *mpReactionForcesFile << t_now << "\n";
+            // *mpReactionForcesFile << t_now << "\n";
+            *mpReactionForcesFile << t_now << " ";
         }
 
         unsigned index = 0;
+        c_vector<double, SPACE_DIM> up_sum_reaction_force = zero_vector<double>(SPACE_DIM);
+        c_vector<double, SPACE_DIM> bottom_sum_reaction_force = zero_vector<double>(SPACE_DIM);
         for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
              node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
              ++node_iter, ++index)
@@ -154,7 +157,7 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
             if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium && node_iter->IsBoundaryNode())
             {   
                 double y_coord= node_iter->rGetLocation()[1];
-                double vertical_velocity_of_boundary_nodes = 0.02;
+                double vertical_velocity_of_boundary_nodes = this->mBoundaryVelocity;
                 c_vector<double, SPACE_DIM> reaction_force = zero_vector<double>(SPACE_DIM);
 
                 if (y_coord > this->mCenterYCoordination)
@@ -164,7 +167,8 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
                     displacement[1] = new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
                     reaction_force[0] = -forces[index][0];
                     reaction_force[1] = vertical_velocity_of_boundary_nodes-forces[index][1];
-                    *mpReactionForcesFile << "up" << " ";
+                    up_sum_reaction_force += reaction_force; 
+                    // *mpReactionForcesFile << "up" << " ";
                 }
                 else
                 {
@@ -173,12 +177,13 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
                     displacement[1] = -new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
                     reaction_force[0] = -forces[index][0];
                     reaction_force[1] = -vertical_velocity_of_boundary_nodes-forces[index][1];
-                    *mpReactionForcesFile << "bottom" << " ";
+                    bottom_sum_reaction_force += reaction_force;
+                    // *mpReactionForcesFile << "bottom" << " ";
                 }
 
-                *mpReactionForcesFile << index  << " ";
-                *mpReactionForcesFile << reaction_force[0] << " " << reaction_force[1] << " ";
-                *mpReactionForcesFile << "\n";
+                // *mpReactionForcesFile << index  << " ";
+                // *mpReactionForcesFile << reaction_force[0] << " " << reaction_force[1] << " ";
+                // *mpReactionForcesFile << "\n";
             }
             else
             {
@@ -187,6 +192,12 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
 
             c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
             this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
+        }
+
+        if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
+        { 
+            *mpReactionForcesFile << up_sum_reaction_force[0] << " " << up_sum_reaction_force[1] << " "<< bottom_sum_reaction_force[0] << " " << bottom_sum_reaction_force[1] << " ";
+            *mpReactionForcesFile << "\n";
         }
 
         return new_adaptive_timestep;

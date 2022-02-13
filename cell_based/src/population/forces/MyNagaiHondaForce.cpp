@@ -93,7 +93,7 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             }
             else
             {
-                target_areas[elem_index] = p_cell_population->GetCellUsingLocationIndex(elem_index)->GetCellData()->GetItem("target area");
+                target_areas[elem_index] = p_cell_population->GetCellUsingLocationIndex(elem_index)->GetCellData()->GetItem("target_area");
                 // std::cout << "elem_index = " << elem_index << ", target_area=" << target_areas[elem_index] << std::endl;
             }    
         }
@@ -215,6 +215,7 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             {
                 perimeter_stiffness = GetNagaiHondaMembraneSurfaceEnergyParameter()*pow(mFixedTargetPerimeter/element_perimeters[elem_index],1.0);
                 p_cell->GetCellData()->SetItem("perimeter_elasticity", perimeter_stiffness);
+                // perimeter_stiffness = p_cell->GetCellData()->GetItem("perimeter_elasticity");
             }
             else
             {

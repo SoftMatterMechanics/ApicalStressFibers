@@ -93,7 +93,7 @@ public:
         bool   seed_manually = true;
         unsigned random_seed_for_target_area = 1;
         double min_target_area = 1.0;
-        double max_target_area = 6.0;
+        double max_target_area = 9.0;
         bool   use_fixed_target_area_without_modifier = false;
         double target_area = (min_target_area + max_target_area)/2; // A0, target areas are not uniform
         double target_perimeter = target_shape_index*sqrt(target_area);
@@ -104,12 +104,16 @@ public:
         double area_elastic_modulus = 1.0; // Ka
 
       // 3. Edge elasticity
-        double edge_elastic_modulus = 0.1; // Kp
+        double edge_elastic_modulus = 0.05; // Kp
 
       // 4. Cell-Cell adhesion & constant cortical contraction
+      // this parameter value here is one half of its real value because the edge is shared by two cells
         double cell_cell_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area); // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
         double cell_boundary_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area); // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
+
+      // 5. stress fiber tension
+        double sf_tension = 1.0;
 
       // 5. Random force
         bool   add_random_force = true;
@@ -125,12 +129,12 @@ public:
 
       // 6. Time
         bool   if_equilibrate_for_a_while = true;
-        double time_for_equilibrium = 400.0;
+        double time_for_equilibrium = 40.0;
         if (time_for_equilibrium <= 0.0)
            if_equilibrate_for_a_while = false;
         
         double dt = 0.01;
-        double end_time = (double) round(center_y_coordination*2.0/0.02) + time_for_equilibrium;   // tissue elongation 30%, boundary velocity 0.01
+        double end_time = (double) round(center_y_coordination*1.0/0.02) + time_for_equilibrium;   // tissue elongation 30%, boundary velocity 0.01
         double max_movement_per_timestep = 0.01; 
         bool   apply_adaptive_timestep = true;
         double sampling_time = 1.0;
@@ -256,6 +260,7 @@ public:
         p_nh_force->SetFixedTargetArea(target_area); // to be determined
         p_nh_force->SetTargetShapeIndex(target_shape_index);
         p_nh_force->SetFixedTargetPerimeter(target_perimeter);
+        p_nh_force->SetEndTimeForEquilibrium(time_for_equilibrium);
         p_nh_force->SetUseFaceElementToGetAdhesionParameterBoolean(if_use_face_element_to_get_adhesion_parameter);
 
         // p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
@@ -263,15 +268,16 @@ public:
       /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
 
 
-      // /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
-      //   MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
+      /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
+        MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
         
-      //   p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-      //   p_sf_force->SetEndTimeForEquilibrium(time_for_equilibrium);
-      //   p_sf_force->SetFlagForStressfiberCreation(0);
+        p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_sf_force->SetEndTimeForEquilibrium(time_for_equilibrium);
+        p_sf_force->SetFlagForStressfiberCreation(0);
+        p_sf_force->SetStressfiberTension(sf_tension);
 
-      //   simulator.AddForce(p_sf_force);
-      // /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
+        simulator.AddForce(p_sf_force);
+      /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
 
 
       /*-----------------------------------START: Brownian Random Force -------------------------*/
