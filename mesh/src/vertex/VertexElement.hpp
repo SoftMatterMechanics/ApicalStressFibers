@@ -255,6 +255,17 @@ public:
      */
     c_vector<double,2> GetStressfiberEndpointsratio();
 
+    /**
+     * @param endpointsratio the new ratio of end points of a specified stress fiber
+     */
+    void UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio);
+
+    /**
+     * @param newStressfiberNode the new node pointer of a specified stress fiber
+     * @param index the local index of associated nodes of a specified stress fiber
+     */
+    void UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index);
+
     // -------------------end of my additions!!!!--------------
 
     void SetGroupNumber(unsigned groupNumber)
@@ -724,6 +735,18 @@ public:
      * @return the pointer to the associate node
      */
     c_vector<double,2> GetStressfiberEndpointsratio();
+
+    /**
+     * @param endpointsratio the new ratio of end points of a specified stress fiber
+     */
+    void UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio);
+
+    /**
+     * @param newStressfiberNode the new node pointer of a specified stress fiber
+     * @param index the local index of associated nodes of a specified stress fiber
+     */
+    void UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index);
+    
     // ------------------------end of my additions------------------------
 
     void SetEdgeMyosinActivty(double edgeMyosinActivty)

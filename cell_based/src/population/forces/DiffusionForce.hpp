@@ -82,7 +82,9 @@ private :
 
     bool mIfEquilibrateForAWhile;
 
-    double mEndTimeForEquilibrium;
+    double mStartTimeForRandom;
+
+    double mEndTimeForRandom;
 
 
     /**
@@ -142,9 +144,14 @@ public :
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
     }
 
-    void SetEndTimeForEquilibrium(double endTimeForEquilibrium)
+    void SetStartTimeForRandom(double startTimeForRandom)
     {
-      mEndTimeForEquilibrium = endTimeForEquilibrium;
+      mStartTimeForRandom = startTimeForRandom;
+    }
+
+    void SetEndTimeForRandom(double endTimeForRandom)
+    {
+      mEndTimeForRandom = endTimeForRandom;
     }
 
 

@@ -259,6 +259,18 @@ c_vector<double,2> VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberEndpoint
     return zero_vector<double>(2);
 }
 
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
+{
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index)
+{
+}
+
 //////////////////////////////////////////////////////////////////////
 //                  Specialization for 1d elements                  //
 //                                                                  //
@@ -354,6 +366,21 @@ template <unsigned SPACE_DIM>
 c_vector<double,2> VertexElement<1, SPACE_DIM>::GetStressfiberEndpointsratio()
 {
     return mEndpointsratio;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
+{
+    mEndpointsratio = endpointsratio;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index)
+{
+    assert(index < mStressfiberNodes.size());
+    mStressfiberNodes[index] = newStressfiberNode;
 }
 
 // Explicit instantiation

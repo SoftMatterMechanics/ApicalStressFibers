@@ -157,18 +157,19 @@ void DiffusionForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& rCel
                 for (std::set<unsigned>::iterator iter = containing_elem_indices.begin(); iter!= containing_elem_indices.end(); iter++)
                 {
                     double polarity_angle = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_angle");
-                    double polarity_magnitude = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude");
-                    double polarity_magnitude_for_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude_equilibrium");
+                    double polarity_magnitude_after_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude_after");
+                    double polarity_magnitude_before_equilibrium = rCellPopulation.GetCellUsingLocationIndex(*iter)->GetCellData()->GetItem("polarity_magnitude_before");
                     // if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
                     //     force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude*cos(polarity_angle-i*M_PI/2);
                     // else
                     //     force_contribution[i] += 1.0/containing_elem_indices.size()*polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
 
-                    if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForEquilibrium))
-                        force_contribution[i] += polarity_magnitude*cos(polarity_angle-i*M_PI/2);
+                    if (!(mIfEquilibrateForAWhile && t_now<mEndTimeForRandom))
+                        force_contribution[i] += polarity_magnitude_after_equilibrium*cos(polarity_angle-i*M_PI/2);
+                    else if (mIfEquilibrateForAWhile && t_now>mStartTimeForRandom && t_now<mEndTimeForRandom)
+                        force_contribution[i] += polarity_magnitude_before_equilibrium*cos(polarity_angle-i*M_PI/2);
                     else
-                        force_contribution[i] += polarity_magnitude_for_equilibrium*cos(polarity_angle-i*M_PI/2);
-
+                        force_contribution[i] += 0.0;
                 }
             }
         }

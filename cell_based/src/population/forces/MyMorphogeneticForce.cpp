@@ -34,7 +34,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "MyMorphogeneticForce.hpp"
-#include "MyToroidal2dVertexMesh.hpp"
+#include "MyNoPBCToroidal2dVertexMesh.hpp"
 
 template<unsigned DIM>
 MyMorphogeneticForce<DIM>::MyMorphogeneticForce()
@@ -67,25 +67,30 @@ void MyMorphogeneticForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>
         unsigned num_top_boundary_nodes = 0;
         unsigned num_bottom_boundary_nodes = 0;
 
-        // count the nodes of top and bottom boundaries
-        for (unsigned node_index=0; node_index<num_nodes; node_index++)
+        double t_now = SimulationTime::Instance()->GetTime();
+        if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
         {
-            Node<DIM>* p_this_node = p_cell_population->GetNode(node_index);
-
-            if (p_this_node->IsBoundaryNode())
+            // count the nodes of top and bottom boundaries
+            for (unsigned node_index=0; node_index<num_nodes; node_index++)
             {
-                double y_coord= p_this_node->rGetLocation()[1];
-                if (y_coord > this->mCenterYCoordination)
+                Node<DIM>* p_this_node = p_cell_population->GetNode(node_index);
+                
+                if (p_this_node->IsBoundaryNode())
                 {
-                    num_top_boundary_nodes += 1;
-                }
-                else
-                {
-                    num_bottom_boundary_nodes +=1;
+                    double y_coord= p_this_node->rGetLocation()[1];
+
+                    if (y_coord > this->mCenterYCoordination)
+                    {
+                        num_top_boundary_nodes += 1;
+                    }
+                    else
+                    {
+                        num_bottom_boundary_nodes +=1;
+                    }
                 }
             }
         }
-
+        
         std::cout<<"time="<<t_now<<std::endl;
         std::cout<<"num_top_boundary_nodes="<<num_top_boundary_nodes<<std::endl;
         std::cout<<"num_bottom_boundary_nodes="<<num_bottom_boundary_nodes<<std::endl;

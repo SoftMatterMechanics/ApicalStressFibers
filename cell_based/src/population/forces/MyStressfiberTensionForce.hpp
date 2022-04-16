@@ -61,8 +61,14 @@ private:
     std::string mOutputDirectory;      
 
     /** Results file for reaction forces. */
-    out_stream mpBisectorOrientationFile; 
+    out_stream mpPeelingBisectorOrientationFile; 
 
+    out_stream mpAngleBisectorFile;
+
+    out_stream mpStressFiberTensionFile;
+
+    out_stream mpElementInfoFile;
+    
     /**
      * Boost Serialization method for archiving/checkpointing.
      * Archives the object and its member variables.
@@ -80,11 +86,25 @@ protected:
 
     bool   mIfEquilibrateForAWhile;
 
-    double mTimeForEquilibrium;
+    double mStartTimeForStretching;
 
     unsigned mFlag;
 
-    double mSfTension;
+    double mSfStiffness;
+
+    double mNucleationPerimeterTension;
+
+    double mHalfWidth;
+
+    double mRestLengthOfNucleation;
+
+    double mAdhesionEnergy;
+
+    double mk;
+
+    double mC0;
+
+    double mRatePower;
 
 public:
 
@@ -117,11 +137,19 @@ public:
     // my methods
     void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile);
 
-    void SetEndTimeForEquilibrium(double timeForEquilibrium);
+    void SetStartTimeForStretching(double startTimeForStretching);
 
     void SetFlagForStressfiberCreation(unsigned flag);
 
-    void SetStressfiberTension(double sfTension);
+    void SetStressfiberStiffness(double sfStiffness);
+
+    void SetNucleationThresholdOfPerimeterTension(double nucleationPerimeterTension);
+
+    void SetHalfWidth(double halfWidth);
+
+    void SetRestLengthOfNucleation(double restLengthOfNucleation);
+
+    void SetPeelingParameters(double adhesionEnergy, double k, double C0, double ratePower);
 
     void SetOutputDirectory(std::string outputDirectory);
 };

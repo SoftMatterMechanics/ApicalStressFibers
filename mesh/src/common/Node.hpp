@@ -59,6 +59,9 @@ class Node
 {
 private:
 
+    /** The old location of this node in last step.*/   // added by Chao
+    c_vector<double, SPACE_DIM> mOldLocation;
+
     /** The index of this node within the mesh. */
     unsigned mIndex;
 
@@ -185,6 +188,18 @@ public:
      * Explicit destructor to free memory from mpNodeAttributes.
      */
     ~Node();
+
+    /**
+     * Set the node's location in the last time step.
+     *
+     * @param old_location the old location of the node
+     */
+    void SetOldLocation(c_vector<double, SPACE_DIM> old_location);    // added by Chao
+
+    /**
+     * Get the node's location in the last time step.
+     */
+    c_vector<double, SPACE_DIM>& GetOldLocation();    // added by Chao
 
     /**
      * Set the node's location.

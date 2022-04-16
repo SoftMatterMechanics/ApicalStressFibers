@@ -131,74 +131,308 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
         // }
 
         // my changes
-        OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
-        std::string output_file_for_reaction_forces;
-        output_file_for_reaction_forces = "reactionforces.dat";
-        mpReactionForcesFile = output_file_handler.OpenOutputFile(output_file_for_reaction_forces, std::ios::app);
-
         double t_now = SimulationTime::Instance()->GetTime();
-        if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
-        { 
-            // *mpReactionForcesFile << t_now << "\n";
-            *mpReactionForcesFile << t_now << " ";
-        }
-
-        unsigned index = 0;
-        c_vector<double, SPACE_DIM> up_sum_reaction_force = zero_vector<double>(SPACE_DIM);
-        c_vector<double, SPACE_DIM> bottom_sum_reaction_force = zero_vector<double>(SPACE_DIM);
-        for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
-             node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
-             ++node_iter, ++index)
+        if ( !(mIfEquilibrateForAWhile && t_now<=mTimeForEquilibrium) )
         {
-            // Get the current node location and calculate the new location according to the forward Euler method
-            const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation();
-            c_vector<double, SPACE_DIM> displacement = zero_vector<double>(SPACE_DIM);
+            // find the square that differentiate the top, bottom, left and right boundary points
+            double x_far_left = 0.0;
+            double x_far_right = 0.0;
+            double box_left = 0.0;
+            double box_right = 0.0;
+            double box_bottom = this->mCenterYCoordination;
+            double box_top = this->mCenterYCoordination;
             
-            if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium && node_iter->IsBoundaryNode())
-            {   
-                double y_coord= node_iter->rGetLocation()[1];
-                double vertical_velocity_of_boundary_nodes = this->mBoundaryVelocity;
-                c_vector<double, SPACE_DIM> reaction_force = zero_vector<double>(SPACE_DIM);
-
-                if (y_coord > this->mCenterYCoordination)
+            unsigned node_index = 0;
+            for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                ++node_iter, ++node_index)
+            {
+                if (node_iter->IsBoundaryNode())
                 {
-                    // displacement[0] = new_adaptive_timestep * forces[index][0];
-                    displacement[0] = 0.0;
-                    displacement[1] = new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
-                    reaction_force[0] = -forces[index][0];
-                    reaction_force[1] = vertical_velocity_of_boundary_nodes-forces[index][1];
-                    up_sum_reaction_force += reaction_force; 
-                    // *mpReactionForcesFile << "up" << " ";
+                    double x_coord= node_iter->rGetLocation()[0];
+                    double y_coord = node_iter->rGetLocation()[1];
+                    if (x_coord < x_far_left)
+                    {
+                        x_far_left = x_coord;
+                        box_left = x_far_left;
+                    }
+                    if (x_coord > x_far_right)
+                    {
+                        x_far_right = x_coord;
+                        box_right = x_far_right;
+                    }
+                    if (y_coord > box_top)
+                    {
+                        box_top = y_coord;
+                    }
+                    if (y_coord < box_bottom)
+                    {
+                        box_bottom = y_coord;
+                    }
+                }
+            }
+            double new_box_left = 3.0/4*x_far_left + 1.0/4*x_far_right;
+            double new_box_right = 1.0/4*x_far_left + 3.0/4*x_far_right;
+
+            if (!(new_box_left==box_left && new_box_right==box_right))
+            {
+                box_left = new_box_left;
+                box_right = new_box_right;
+
+                for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                    node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                    ++node_iter)
+                {
+                    if (node_iter->IsBoundaryNode())
+                    {
+                        double x_coord = node_iter->rGetLocation()[0];
+                        double y_coord = node_iter->rGetLocation()[1];
+                        if ( (x_coord > box_left) && (x_coord < box_right) )
+                        {
+                            if ( (y_coord < this->mCenterYCoordination) && (y_coord > box_bottom) )
+                            {
+                                box_bottom = y_coord;
+                            }
+                            if ( (y_coord > this->mCenterYCoordination) && (y_coord < box_top) )
+                            {
+                                box_top = y_coord;
+                            }
+                        }
+                    }
+                }
+
+                box_left = x_far_left;
+                box_right = x_far_right;
+                for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                    node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                    ++node_iter)
+                {
+                    if (node_iter->IsBoundaryNode())
+                    {
+                        double x_coord = node_iter->rGetLocation()[0];
+                        double y_coord = node_iter->rGetLocation()[1];
+                        if ( (y_coord > box_bottom) && (y_coord < box_top) )
+                        {
+                            if ( (x_coord < 0) && (x_coord > box_left) )
+                            {
+                                box_left = x_coord;
+                            }
+                            if ( (x_coord > 0) && (x_coord < box_right) )
+                            {
+                                box_right = x_coord;
+                            }
+                        }
+                    }
+                }
+
+                new_box_left = box_left;
+                new_box_right = box_right;
+            }
+
+            // std::cout << "left: " << box_left << std::endl;
+            // std::cout << "right: " << box_right << std::endl;
+            // std::cout << "bottom: " << box_bottom << std::endl;
+            // std::cout << "top: " << box_top << std::endl;
+
+            // count the nodes of top and bottom boundaries
+            unsigned num_top_boundary_nodes = 0;
+            unsigned num_bottom_boundary_nodes = 0;
+            unsigned num_left_boundary_nodes = 0;
+            unsigned num_right_boundary_nodes = 0;
+            double left_damping_force = 0.0;
+            double right_damping_force = 0.0;
+            double top_damping_force = 0.0;
+            double bottom_damping_force = 0.0;
+            unsigned index = 0;
+            for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                ++node_iter, ++index)
+            {
+                if (node_iter->IsBoundaryNode())
+                {
+                    double x_coord= node_iter->rGetLocation()[0];
+                    double y_coord= node_iter->rGetLocation()[1];
+
+                    // // vertical stretching
+                    // if ((x_coord <= box_left) && (y_coord < box_top) && (y_coord >box_bottom))
+                    // {
+                    //     num_left_boundary_nodes += 1;
+                    //     left_damping_force += forces[index][0]; 
+                    // }
+                    // if ((x_coord >= box_right) && (y_coord < box_top) && (y_coord >box_bottom))
+                    // {
+                    //     num_right_boundary_nodes += 1;
+                    //     right_damping_force += forces[index][0];
+                    // }
+                    // if (y_coord >= box_top)
+                    // {
+                    //     num_top_boundary_nodes += 1;
+                    //     top_damping_force += forces[index][1];
+                    // }
+                    // if (y_coord <= box_bottom)
+                    // {
+                    //     num_bottom_boundary_nodes += 1;
+                    //     bottom_damping_force += forces[index][1];
+                    // }
+
+                    // horizontal stretching
+                    if (x_coord <= box_left)
+                    {
+                        num_left_boundary_nodes += 1;
+                        left_damping_force += forces[index][0]; 
+                    }
+                    if (x_coord >= box_right)
+                    {
+                        num_right_boundary_nodes += 1;
+                        right_damping_force += forces[index][0];
+                    }
+                    // if ((y_coord >= box_top) && (x_coord > box_left) && (x_coord < box_right))
+                    if (y_coord >= box_top)
+                    {
+                        num_top_boundary_nodes += 1;
+                        top_damping_force += forces[index][1];
+                    }
+                    // if ((y_coord <= box_bottom) && (x_coord > box_left) && (x_coord < box_right))
+                    if (y_coord <= box_bottom)
+                    {
+                        num_bottom_boundary_nodes += 1;
+                        bottom_damping_force += forces[index][1];
+                    }
+                }
+            }
+
+            // std::cout << "left nodes: " << num_left_boundary_nodes << std::endl;
+            // std::cout << "right nodes: " << num_right_boundary_nodes << std::endl;
+            // std::cout << "bottom nodes: " << num_bottom_boundary_nodes << std::endl;
+            // std::cout << "top nodes: " << num_top_boundary_nodes << std::endl;
+
+            // unsigned nodes_num= index;
+            // std::vector<c_vector<double, SPACE_DIM> > old_location(nodes_num, zero_vector<double>(SPACE_DIM));
+            // std::vector<c_vector<double, SPACE_DIM> > new_location(nodes_num, zero_vector<double>(SPACE_DIM));
+            index = 0;
+            for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                ++node_iter, ++index)
+            {
+                // Get the current node location and calculate the new location according to the forward Euler method
+                // unsigned node_global_index = node_iter->GetIndex();
+                const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation(); 
+                // old_location[node_global_index] = r_old_location;
+
+                node_iter->SetOldLocation(r_old_location);
+                // std::cout << "old location(" << node_global_index << ")=" << old_location[node_global_index][0] << ", " << old_location[node_global_index][1]<<std::endl; 
+                // std::cout << "old location(" << node_global_index << ")=" << node_iter->GetOldLocation()[0] << ", " << node_iter->GetOldLocation()[1]<<std::endl; 
+
+                c_vector<double, SPACE_DIM> displacement = zero_vector<double>(SPACE_DIM);
+                double x_coord= node_iter->rGetLocation()[0];
+                double y_coord= node_iter->rGetLocation()[1];
+                
+                if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium && node_iter->IsBoundaryNode() )
+                {
+                    // // vertical stretching
+                    // double HorizontalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
+                    // double HorizontalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium);
+                    // double VerticalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
+                    // double VerticalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium)
+                    //                                     + this->mVerticalMorphogeneticForceGrowthRate*(t_now - this->mRealEquilibriumTime);
+                    
+                    // double HorizontalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? HorizontalMorphogeneticForce1:HorizontalMorphogeneticForce2);
+                    // double VerticalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? VerticalMorphogeneticForce1:VerticalMorphogeneticForce2);
+                    
+                    // if ((x_coord <= box_left) && (y_coord < box_top) && (y_coord > box_bottom))
+                    // {
+                    //     displacement[0] = new_adaptive_timestep * (-HorizontalMorphogeneticForce + left_damping_force)/num_left_boundary_nodes;
+                    //     displacement[1] = new_adaptive_timestep * forces[index][1]; 
+                    // }
+                    // if ((x_coord >= box_right) && (y_coord < box_top) && (y_coord > box_bottom))
+                    // {
+                    //     displacement[0] = new_adaptive_timestep * (HorizontalMorphogeneticForce + right_damping_force)/num_right_boundary_nodes;
+                    //     displacement[1] = new_adaptive_timestep * forces[index][1]; 
+                    // }
+                    // if (y_coord >= box_top)
+                    // {
+                    //     displacement[0] = new_adaptive_timestep * forces[index][0];
+                    //     displacement[1] = new_adaptive_timestep * (VerticalMorphogeneticForce + top_damping_force)/num_top_boundary_nodes;
+                    // }
+                    // if (y_coord <= box_bottom) 
+                    // {
+                    //     displacement[0] = new_adaptive_timestep * forces[index][0];
+                    //     displacement[1] = new_adaptive_timestep * (-VerticalMorphogeneticForce + bottom_damping_force)/num_bottom_boundary_nodes;
+                    // }
+
+                    // horizontal stretching
+                    double HorizontalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
+                    double HorizontalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium)
+                                                            + this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mRealEquilibriumTime);
+                    double VerticalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
+                    double VerticalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium);
+                    
+                    double HorizontalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? HorizontalMorphogeneticForce1:HorizontalMorphogeneticForce2);
+                    double VerticalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? VerticalMorphogeneticForce1:VerticalMorphogeneticForce2);
+                    
+                    if (x_coord <= box_left)
+                    {
+                        displacement[0] = new_adaptive_timestep * (-HorizontalMorphogeneticForce + left_damping_force)/num_left_boundary_nodes;
+                        displacement[1] = new_adaptive_timestep * forces[index][1]; 
+                    }
+                    if (x_coord >= box_right)
+                    {
+                        displacement[0] = new_adaptive_timestep * (HorizontalMorphogeneticForce + right_damping_force)/num_right_boundary_nodes;
+                        displacement[1] = new_adaptive_timestep * forces[index][1]; 
+                    }
+                    // if ((y_coord >= box_top) && (x_coord > box_left) && (x_coord < box_right))
+                    if (y_coord >= box_top)
+                    {
+                        displacement[0] = new_adaptive_timestep * forces[index][0];
+                        displacement[1] = new_adaptive_timestep * (VerticalMorphogeneticForce + top_damping_force)/num_top_boundary_nodes;
+                    }
+                    // if ((y_coord <= box_bottom) && (x_coord > box_left) && (x_coord < box_right))
+                    if (y_coord <= box_bottom)
+                    {
+                        displacement[0] = new_adaptive_timestep * forces[index][0];
+                        displacement[1] = new_adaptive_timestep * (-VerticalMorphogeneticForce + bottom_damping_force)/num_bottom_boundary_nodes;
+                    }
                 }
                 else
                 {
-                    // displacement[0] = new_adaptive_timestep * forces[index][0];
-                    displacement[0] = 0.0;
-                    displacement[1] = -new_adaptive_timestep * vertical_velocity_of_boundary_nodes;
-                    reaction_force[0] = -forces[index][0];
-                    reaction_force[1] = -vertical_velocity_of_boundary_nodes-forces[index][1];
-                    bottom_sum_reaction_force += reaction_force;
-                    // *mpReactionForcesFile << "bottom" << " ";
+                    displacement = new_adaptive_timestep * forces[index];
                 }
 
-                // *mpReactionForcesFile << index  << " ";
-                // *mpReactionForcesFile << reaction_force[0] << " " << reaction_force[1] << " ";
-                // *mpReactionForcesFile << "\n";
+                c_vector<double, SPACE_DIM> r_new_location = r_old_location + displacement;
+                this->SafeNodePositionUpdate(node_iter->GetIndex(), r_new_location);
+
+                // new_location[node_global_index] = r_new_location;
             }
-            else
+        }
+        else
+        {
+            unsigned index = 0;
+            for (typename AbstractMesh<ELEMENT_DIM, SPACE_DIM>::NodeIterator node_iter = this->mpCellPopulation->rGetMesh().GetNodeIteratorBegin();
+                node_iter != this->mpCellPopulation->rGetMesh().GetNodeIteratorEnd();
+                ++node_iter, ++index)
             {
+                // Get the current node location and calculate the new location according to the forward Euler method
+                const c_vector<double, SPACE_DIM>& r_old_location = node_iter->rGetLocation();
+                c_vector<double, SPACE_DIM> displacement = zero_vector<double>(SPACE_DIM);
+
                 displacement = new_adaptive_timestep * forces[index];
+
+                c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
+                this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
             }
-
-            c_vector<double, SPACE_DIM> new_location = r_old_location + displacement;
-            this->SafeNodePositionUpdate(node_iter->GetIndex(), new_location);
         }
 
-        if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
-        { 
-            *mpReactionForcesFile << up_sum_reaction_force[0] << " " << up_sum_reaction_force[1] << " "<< bottom_sum_reaction_force[0] << " " << bottom_sum_reaction_force[1] << " ";
-            *mpReactionForcesFile << "\n";
-        }
+        // OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
+        // std::string output_file_for_reaction_forces;
+        // output_file_for_reaction_forces = "reactionforces.dat";
+        // mpReactionForcesFile = output_file_handler.OpenOutputFile(output_file_for_reaction_forces, std::ios::app);
+
+        // double t_now = SimulationTime::Instance()->GetTime();
+        // if (this->mIfEquilibrateForAWhile && t_now>this->mTimeForEquilibrium)
+        // { 
+        //     // *mpReactionForcesFile << t_now << "\n";
+        //     *mpReactionForcesFile << t_now << " ";
+        // }
 
         return new_adaptive_timestep;
     }

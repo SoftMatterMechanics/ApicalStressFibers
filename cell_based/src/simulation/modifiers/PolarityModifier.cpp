@@ -41,7 +41,7 @@ template<unsigned DIM>
 PolarityModifier<DIM>::PolarityModifier()
     : AbstractCellBasedSimulationModifier<DIM>(),
       mD(0.1),
-      mPolarityMagnitude(0.1),
+      mPolarityMagnitudeAfterEquilibrium(0.1),
       mAngleForInitialization(M_PI),
       mSeedManually(false),
       mSeedForInitialRandomPolarity(0u)
@@ -85,7 +85,7 @@ void PolarityModifier<DIM>::InitializePolarityOfCells(AbstractCellPopulation<DIM
         double polarity_angle = 2*M_PI*RandomNumberGenerator::Instance()->ranf();
         // if (mSeedManually)
         //     polarity_angle = 2*M_PI*(rand()%int(1e5))/double(1e5);
-        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude, mPolarityMagnitudeEquilibrium);
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitudeAfterEquilibrium, mPolarityMagnitudeBeforeEquilibrium);
     }
 }
 
@@ -104,16 +104,16 @@ void PolarityModifier<DIM>::UpdatePolarityOfCells(AbstractCellPopulation<DIM,DIM
             polarity_angle -= 2*M_PI;
         else if (polarity_angle < 0.0)
             polarity_angle += 2*M_PI;
-        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitude, mPolarityMagnitudeEquilibrium);
+        SetPolarityOfCell(*cell_iter, polarity_angle, mPolarityMagnitudeAfterEquilibrium, mPolarityMagnitudeBeforeEquilibrium);
     }
 }
 
 template<unsigned DIM>
-void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitude, double polarityMagnitudeEquilibrium)
+void PolarityModifier<DIM>::SetPolarityOfCell(CellPtr pCell, double polarityAngle, double polarityMagnitudeAfterEquilibrium, double polarityMagnitudeBeforeEquilibrium)
 {
     pCell->GetCellData()->SetItem("polarity_angle", polarityAngle);
-    pCell->GetCellData()->SetItem("polarity_magnitude", polarityMagnitude);
-    pCell->GetCellData()->SetItem("polarity_magnitude_equilibrium", polarityMagnitudeEquilibrium);
+    pCell->GetCellData()->SetItem("polarity_magnitude_after", polarityMagnitudeAfterEquilibrium);
+    pCell->GetCellData()->SetItem("polarity_magnitude_before", polarityMagnitudeBeforeEquilibrium);
 }
 
 template<unsigned DIM>

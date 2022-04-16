@@ -65,7 +65,11 @@ private:
 
     double mTimeForEquilibrium;
 
-    double mBoundaryVelocity;
+    double mRealEquilibriumTime;
+
+    double mHorizontalMorphogeneticForceGrowthRate;
+
+    double mVerticalMorphogeneticForceGrowthRate;
 
     std::string mOutputDirectory;
 
@@ -129,14 +133,20 @@ public:
       mIfEquilibrateForAWhile = ifEquilibrateForAWhile;
     }
 
-    void SetEndTimeForEquilibrium(double timeForEquilibrium)
+    void SetTimeForEquilibrium(double timeForEquilibrium)
     {
       mTimeForEquilibrium = timeForEquilibrium;
     }
 
-    void SetBoundaryVelocity(double boundaryVelocity)
+    void SetRealEquilibriumTime(double realEquilibriumTime)
     {
-      mBoundaryVelocity = boundaryVelocity;
+      mRealEquilibriumTime = realEquilibriumTime;
+    }
+
+    void SetMorphogeneticForceGrowthRate(double horizontalMorphogeneticForceGrowthRate, double verticalMorphogeneticForceGrowthRate)
+    {
+      mHorizontalMorphogeneticForceGrowthRate = horizontalMorphogeneticForceGrowthRate;
+      mVerticalMorphogeneticForceGrowthRate = verticalMorphogeneticForceGrowthRate;
     }
 
     void SetOutputDirectory(std::string outputDirectory)

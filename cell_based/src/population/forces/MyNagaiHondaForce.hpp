@@ -116,7 +116,7 @@ protected:
 
     bool mUseFixedTargetArea;
 
-    double mTimeForEquilibrium;
+    double mTimeForRest;
 
     bool mIfUseFaceElementToGetAdhesionParameter;
 
@@ -238,9 +238,9 @@ public:
       mUseFixedTargetArea = useFixedTargetArea;
     }
 
-    void SetEndTimeForEquilibrium(double timeForEquilibrium)
+    void SetTimeForRest(double timeForRest)
     {
-      mTimeForEquilibrium = timeForEquilibrium;
+      mTimeForRest = timeForRest;
     }
 
     // tmp

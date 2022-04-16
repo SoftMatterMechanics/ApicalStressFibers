@@ -112,6 +112,19 @@ Node<SPACE_DIM>::~Node()
 //////////////////////////////////////////////////////////////////////////
 
 template<unsigned SPACE_DIM>
+void Node<SPACE_DIM>::SetOldLocation(c_vector<double, SPACE_DIM> old_location)    // added by Chao
+{
+    mOldLocation = old_location;
+}
+
+template<unsigned SPACE_DIM>
+c_vector<double, SPACE_DIM>& Node<SPACE_DIM>::GetOldLocation()    // added by Chao
+{
+    assert(!mIsDeleted);
+    return mOldLocation;
+}
+
+template<unsigned SPACE_DIM>
 void Node<SPACE_DIM>::SetPoint(ChastePoint<SPACE_DIM> point)
 {
     mLocation = point.rGetLocation();

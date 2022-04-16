@@ -139,7 +139,7 @@ public:
     void SetPerimeterElasticityParameter(double perimeterElasticity)  
     {
         mPerimeterElasticity = perimeterElasticity;
-    }                                            
+    }                                      
                                                                         
 };
 
@@ -244,14 +244,14 @@ void CellsGenerator<CELL_CYCLE_MODEL,DIM>::GenerateBasicRandom(std::vector<CellP
 
         // my changes (to generate cells with random target areas in the range [min_target_area, max_target_area])
         // srand((unsigned)time(NULL));// if srand() used in main time loop, we may not need it here. Try later!
-        // double random_number = RandomNumberGenerator::Instance()->ranf();
-        // double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*random_number;
-        double random_number = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
-        double cell_target_area = (mMinTargetArea+mMaxTargetArea)/2 + (mMaxTargetArea - mMinTargetArea)/2*1/3*random_number;
+        double random_number = RandomNumberGenerator::Instance()->ranf();
+        double cell_target_area = mMinTargetArea + (mMaxTargetArea - mMinTargetArea)*random_number;
+        // double random_number = RandomNumberGenerator::Instance()->StandardNormalRandomDeviate();
+        // double cell_target_area = (mMinTargetArea+mMaxTargetArea)/2 + (mMaxTargetArea - mMinTargetArea)/2*1/3*random_number;
         // std::cout << "seed=" << mRandomSeed << ", random=" << random_number << std::endl;                                                                      
         p_cell->GetCellData()->SetItem("target_area", cell_target_area);
 
-        p_cell->GetCellData()->SetItem("perimeter_elasticity", mPerimeterElasticity);
+        // p_cell->GetCellData()->SetItem("perimeter_elasticity", mPerimeterElasticity);
 
         rCells.push_back(p_cell);
     }

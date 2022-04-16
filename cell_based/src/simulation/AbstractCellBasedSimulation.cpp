@@ -64,7 +64,7 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mOutputCellVelocities(false),
       mMyOutputCellVelocities(false),
       mMySeed(0u),
-      mOutputCellAspectRatio(false),
+      mOutputCellElongation(false),
       mSamplingTimestepMultiple(1),
       mOmitFileNameResultsFromTimeX(false),
       mOutputSimulationInformationToFile(false)
@@ -389,15 +389,16 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
 
         mpCellVelocitiesFile = output_file_handler2.OpenOutputFile(output_file_for_cell_velocities);
     }
-    if (mOutputCellAspectRatio)
+    if (mOutputCellElongation)
     {
         OutputFileHandler output_file_handler3(this->mSimulationOutputDirectory+"/", false);
-        std::string output_file_for_cell_aspect_ratio;
+        std::string output_file_for_cell_elongation;
         std::ostringstream file_string;
-        file_string << "aspectratio " << std::to_string(mMySeed) << ".dat";
-        output_file_for_cell_aspect_ratio = file_string.str();
+        // file_string << "elongation" << std::to_string(mMySeed) << ".dat";
+        file_string << "elongation" << ".dat";
+        output_file_for_cell_elongation = file_string.str();
 
-        mpCellAspectRatioFile = output_file_handler3.OpenOutputFile(output_file_for_cell_aspect_ratio);
+        mpCellElongationFile = output_file_handler3.OpenOutputFile(output_file_for_cell_elongation);
     }
 
     if (PetscTools::AmMaster())
@@ -542,19 +543,19 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
             *mpCellVelocitiesFile << "\n";
         }
 
-        // Now write cell aspect ratio to file if required
-        if (mOutputCellAspectRatio && at_sampling_timestep)
+        // Now write cell elongation to file if required
+        if (mOutputCellElongation && at_sampling_timestep)
         {
             // Offset as doing this before we increase time by mDt
             if (mApplySamplingTimeInsteadOfSamplingTimestep)
             {
                 double t_now = p_time->GetTime() + mAdaptiveDt;
-                *mpCellAspectRatioFile << t_now << "\n";
+                *mpCellElongationFile << t_now << "\n";
             }
             else
             {
                 double t_now = p_time->GetTime() + mDt;
-                *mpCellAspectRatioFile << t_now << "\n";
+                *mpCellElongationFile << t_now << "\n";
             }
 
             MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>* pMesh = static_cast<MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>*>(& mrCellPopulation.rGetMesh());
@@ -585,15 +586,22 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                     horizontal_distance_square += (coord[0]-cell_center[0])*(coord[0]-cell_center[0]);
                     vertical_distance_square += (coord[1]-cell_center[1])*(coord[1]-cell_center[1]);
                 }
-                double elongation = vertical_distance_square/horizontal_distance_square;
+                double elongation1 = horizontal_distance_square/vertical_distance_square;
 
-                *mpCellAspectRatioFile << index  << " ";
-                *mpCellAspectRatioFile << cell_area  << " ";
-                *mpCellAspectRatioFile << shape_index << " ";
-                *mpCellAspectRatioFile << elongation << " ";
-                *mpCellAspectRatioFile << "\t";
+                double elongation2 = pMesh->GetElongationShapeFactorOfElement(index);
+
+                c_vector<double, 3> moments = pMesh->CalculateMomentsOfElement(index);
+                double elongation3 = moments(0)/moments(1);
+
+                *mpCellElongationFile << index  << " ";
+                *mpCellElongationFile << cell_area  << " ";
+                *mpCellElongationFile << shape_index << " ";
+                *mpCellElongationFile << elongation1 << " ";
+                *mpCellElongationFile << elongation2 << " ";
+                *mpCellElongationFile << elongation3 << " ";
+                *mpCellElongationFile << "\t";
             }
-            *mpCellAspectRatioFile << "\n";
+            *mpCellElongationFile << "\n";
         }
 
         // Update the assignment of cells to processes.
@@ -682,9 +690,9 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
     {
         mpCellVelocitiesFile->close();
     }
-    if (mOutputCellAspectRatio)
+    if (mOutputCellElongation)
     {
-        mpCellAspectRatioFile->close();
+        mpCellElongationFile->close();
     }
 
     if (PetscTools::AmMaster())

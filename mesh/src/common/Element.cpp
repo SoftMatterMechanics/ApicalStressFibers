@@ -106,7 +106,7 @@ void Element<ELEMENT_DIM, SPACE_DIM>::ResetIndex(unsigned index)
     //std::cout << "ResetIndex - removing nodes.\n" << std::flush;
     for (unsigned i=0; i<this->GetNumNodes(); i++)
     {
-       //std::cout << "Node " << this->mNodes[i]->GetIndex() << " element "<< this->mIndex << std::flush;
+    //    std::cout << "Node " << this->mNodes[i]->GetIndex() << " element "<< this->mIndex << std::flush;
        this->mNodes[i]->RemoveElement(this->mIndex);
     }
     //std::cout << "\nResetIndex - done.\n" << std::flush;

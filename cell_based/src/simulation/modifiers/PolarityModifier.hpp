@@ -61,14 +61,14 @@ class PolarityModifier : public AbstractCellBasedSimulationModifier<DIM,DIM>
     {
         archive & boost::serialization::base_object<AbstractCellBasedSimulationModifier<DIM,DIM> >(*this);
         archive & mD;
-        archive & mPolarityMagnitude;
+        archive & mPolarityMagnitudeAfterEquilibrium;
     }
 
 protected:
 
     double mD;
 
-    double mPolarityMagnitude;
+    double mPolarityMagnitudeAfterEquilibrium;
 
     double mAngleForInitialization;
 
@@ -76,7 +76,7 @@ protected:
 
     unsigned mSeedForInitialRandomPolarity;
 
-    double mPolarityMagnitudeEquilibrium;    
+    double mPolarityMagnitudeBeforeEquilibrium;    
 
 public:
 
@@ -95,14 +95,14 @@ public:
       mD = D;
     }
 
-    void SetPolarityMagnitude(double polarityMagnitude)
+    void SetPolarityMagnitudeAfterEquilibrium(double polarityMagnitudeAfterEquilibrium)
     {
-      mPolarityMagnitude = polarityMagnitude;
+      mPolarityMagnitudeAfterEquilibrium = polarityMagnitudeAfterEquilibrium;
     }
 
-    void SetPolarityMagnitudeEquilibrium(double polarityMagnitudeEquilibrium)
+    void SetPolarityMagnitudeBeforeEquilibrium(double polarityMagnitudeBeforeEquilibrium)
     {
-      mPolarityMagnitudeEquilibrium = polarityMagnitudeEquilibrium;
+      mPolarityMagnitudeBeforeEquilibrium = polarityMagnitudeBeforeEquilibrium;
     }
 
     void SetAngleForInitialization(double angleForInitialization)
