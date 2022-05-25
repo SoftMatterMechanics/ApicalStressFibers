@@ -68,6 +68,8 @@ private:
     out_stream mpStressFiberTensionFile;
 
     out_stream mpElementInfoFile;
+
+    out_stream mpCellStressFile;
     
     /**
      * Boost Serialization method for archiving/checkpointing.
@@ -83,6 +85,8 @@ private:
     }
 
 protected:
+
+    unsigned mAreaSeed;
 
     bool   mIfEquilibrateForAWhile;
 
@@ -105,6 +109,9 @@ protected:
     double mC0;
 
     double mRatePower;
+
+    double mCellCellAdhesionEnergyParameter;
+
 
 public:
 
@@ -135,6 +142,10 @@ public:
     void OutputForceParameters(out_stream& rParamsFile);
 
     // my methods
+    void UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell);
+
+    void SetAreaSeed(unsigned areaSeed);
+
     void SetIfEquilibrateForAWhile(bool ifEquilibrateForAWhile);
 
     void SetStartTimeForStretching(double startTimeForStretching);
@@ -150,6 +161,8 @@ public:
     void SetRestLengthOfNucleation(double restLengthOfNucleation);
 
     void SetPeelingParameters(double adhesionEnergy, double k, double C0, double ratePower);
+
+    void SetNagaiHondaCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter);
 
     void SetOutputDirectory(std::string outputDirectory);
 };

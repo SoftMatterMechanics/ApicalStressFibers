@@ -90,21 +90,36 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
 
         OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
         std::string output_file_for_angle_bisector;
-        output_file_for_angle_bisector = "anglebisector.dat";
+        // output_file_for_angle_bisector = "anglebisector.dat";
+        std::ostringstream file_string_angle_bisector;
+        file_string_angle_bisector << "anglebisector" << std::to_string(mAreaSeed) << ".dat";
+        output_file_for_angle_bisector = file_string_angle_bisector.str();
         mpAngleBisectorFile = output_file_handler.OpenOutputFile(output_file_for_angle_bisector, std::ios::app);
-
-        if ( (t_now - 20*floor(t_now/20)) < dt )
+        if ( (t_now - 1.0*floor(t_now/1.0)) < dt )
         {
             *mpAngleBisectorFile << t_now << "\n";
         }
 
         std::string output_file_for_elem_info;
-        output_file_for_elem_info = "eleminfo.dat";
+        // output_file_for_elem_info = "eleminfo.dat";
+        std::ostringstream file_string_elem_info;
+        file_string_elem_info << "eleminfo" << std::to_string(mAreaSeed) << ".dat";
+        output_file_for_elem_info = file_string_elem_info.str();
         mpElementInfoFile = output_file_handler.OpenOutputFile(output_file_for_elem_info, std::ios::app);
-
         if ( (t_now - 1.0*floor(t_now/1.0)) < dt )
         {
             *mpElementInfoFile << t_now <<"\n";
+        }
+
+        std::string output_file_for_cell_stress;
+        // output_file_for_elem_info = "cellstress.dat";
+        std::ostringstream file_string_cell_stress;
+        file_string_cell_stress << "cellstress" << std::to_string(mAreaSeed) << ".dat";
+        output_file_for_cell_stress = file_string_cell_stress.str();
+        mpCellStressFile = output_file_handler.OpenOutputFile(output_file_for_cell_stress, std::ios::app);
+        if ( (t_now - 1.0*floor(t_now/1.0)) < dt )
+        {
+            *mpCellStressFile << t_now <<"\n";
         }
 
         for (typename VertexMesh<DIM,DIM>::VertexElementIterator elem_iter = p_cell_population->rGetMesh().GetElementIteratorBegin();
@@ -118,11 +133,11 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
             unsigned num_stressfibers_elem = p_element->GetNumStressfibers();
             double cell_perimeter = p_cell_population->rGetMesh().GetSurfaceAreaOfElement(elem_index);
             double cell_target_perimeter = p_cell->GetCellData()->GetItem("cell_target_perimeter");
-            // double stressfiber_elasticity =  p_cell->GetCellData()->GetItem("perimeter_elasticity");
-            double stressfiber_elasticity =  this->mSfStiffness;
+            double stressfiber_elasticity =  p_cell->GetCellData()->GetItem("perimeter_elasticity");
+            // double stressfiber_elasticity =  this->mSfStiffness;
             double perimeter_tension = p_cell->GetCellData()->GetItem("cell_perimeter_tension");
             
-            if ( (t_now - 1.0*floor(t_now/1.0)) < dt )
+            if (((t_now - 1.0*floor(t_now/1.0)) < dt) && (p_cell->GetCellData()->GetItem("is_boundary_cell")==0))
             {
                 *mpElementInfoFile << elem_index << " ";
                 *mpElementInfoFile << p_cell->GetCellData()->GetItem("target_area") << " ";
@@ -279,7 +294,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                         end_points_ratio[0] = std::max((norm_2(vec_CD)-StretchingLengthOfNucleation)/norm_2(vec_CD),0.0);
                         end_points_ratio[1] = std::min(StretchingLengthOfNucleation/norm_2(vec_CE),1.0);
 
-                        VertexElement<DIM-1,DIM>* p_stressfiber = new VertexElement<DIM-1,DIM>(global_index, stressfiber_nodes, end_points_ratio);
+                        VertexElement<DIM-1,DIM>* p_stressfiber = new VertexElement<DIM-1,DIM>(global_index, stressfiber_nodes, end_points_ratio, mRestLengthOfNucleation);
                         p_element->AddStressfiber(p_stressfiber);
                         
                         global_index++;
@@ -312,6 +327,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     Node<DIM>* p_node2 = p_stressfiber->GetStressfiberNode(2);
                     Node<DIM>* p_node3 = p_stressfiber->GetStressfiberNode(3);
                     c_vector<double,2> ratio = p_stressfiber->GetStressfiberEndpointsratio();
+                    double restlength = p_stressfiber->GetStressfiberRestLength();
 
                     // calculate the force of a stress fiber
                     c_vector<double, DIM> locationA = (1-ratio[0])*p_node0->rGetLocation() + ratio[0]*p_node1->rGetLocation();
@@ -322,10 +338,10 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     double length_AB = norm_2(vec_AB);
                     double length_01 = norm_2(vec_01);
                     double length_23 = norm_2(vec_23);
-                    double peeling_length = (1-ratio[0])*length_01 + ratio[1]*length_23;
+                    // double peeling_length = (1-ratio[0])*length_01 + ratio[1]*length_23;
                     // double sf_tension = std::max(stressfiber_elasticity*(cell_perimeter*length_AB/peeling_length-cell_target_perimeter), 0.0);
                     // double sf_tension = std::max(stressfiber_elasticity*(length_AB-cell_target_perimeter*peeling_length/cell_perimeter), 0.0);
-                    double sf_tension = std::max(stressfiber_elasticity*(length_AB-cell_target_perimeter*peeling_length/cell_perimeter), 0.0);
+                    double sf_tension = std::max(stressfiber_elasticity*(length_AB - restlength), 0.0);
                     if (ratio[0]==1.0 || ratio[1]==0.0)
                     {
                         sf_tension = 0.0;
@@ -356,31 +372,34 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     //     std::cout<<"peeling happens in elem "<< elem_index << "." << std::endl;
                     // }
 
-                    if (sf_tension*(1-cos(alpha))>mAdhesionEnergy) 
+                    if (sf_tension*(1-cos(alpha))>mAdhesionEnergy && ratio[0]>0.0) 
                     {
                         double peeling_rate_A = pow(1/mk*(sf_tension*(1-cos(alpha))/mAdhesionEnergy-1), 1/mRatePower);
-                        double peeling_length_step_A = peeling_rate_A*cos(alpha)*dt;
+                        double peeling_length_step_A = peeling_rate_A*dt;
                         ratio[0] = ratio[0] - peeling_length_step_A/length_01;
                         ratio[0] = ratio[0]<0? 0:(ratio[0]>1? 1:ratio[0]);
+                        restlength += peeling_length_step_A/cell_perimeter*cell_target_perimeter;
 
                         IsPeeling[p_element->GetNodeLocalIndex(p_node1->GetIndex())] = true;
                         p_cell->GetCellData()->SetItem("peeling_flag",1);
                         // std::cout<<"peeling happens in elem "<< elem_index << "." << std::endl;
                     }
-                    if (sf_tension*(1-cos(beta))>mAdhesionEnergy)
+                    if (sf_tension*(1-cos(beta))>mAdhesionEnergy && ratio[1]<1.0)
                     {
                         double peeling_rate_B = pow(1/mk*(sf_tension*(1-cos(beta))/mAdhesionEnergy-1), 1/mRatePower);
-                        double peeling_length_step_B = peeling_rate_B*cos(beta)*dt;
+                        double peeling_length_step_B = peeling_rate_B*dt;
                         ratio[1] = ratio[1] + peeling_length_step_B/length_23;
                         ratio[1] = ratio[1]<0? 0:(ratio[1]>1? 1:ratio[1]);
+                        restlength += peeling_length_step_B/cell_perimeter*cell_target_perimeter;
 
                         IsPeeling[p_element->GetNodeLocalIndex(p_node1->GetIndex())] = true;
                         p_cell->GetCellData()->SetItem("peeling_flag",1);
                         // std::cout<<"peeling happens in elem "<< elem_index << "." << std::endl;
                     }
                     p_stressfiber->UpdateStressfiberEndpointsratio(ratio);
+                    p_stressfiber->UpdateStressfiberRestLength(restlength);
                 }
-                
+
             }
             p_cell->GetCellData()->SetItem("max_energy_release_rate", max_energy_release_rate);
 
@@ -415,7 +434,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                 name_item = oss.str();
                 p_cell->GetCellData()->SetItem(name_item, bisector_orientation);
 
-                if ( ((t_now - 20*floor(t_now/20)) < dt) )
+                if (((t_now - 1.0*floor(t_now/1.0)) < dt) && (p_cell->GetCellData()->GetItem("is_boundary_cell")==0))
                 {
                     *mpAngleBisectorFile << elem_index  << " ";
                     *mpAngleBisectorFile << local_index  << " ";
@@ -439,7 +458,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     end_points_ratio[0] = std::max((norm_2(vec_CD)-StretchingLengthOfNucleation)/norm_2(vec_CD),0.0);
                     end_points_ratio[1] = std::min(StretchingLengthOfNucleation/norm_2(vec_CE),1.0);
 
-                    VertexElement<DIM-1,DIM>* p_stressfiber = new VertexElement<DIM-1,DIM>(global_index, stressfiber_nodes, end_points_ratio);
+                    VertexElement<DIM-1,DIM>* p_stressfiber = new VertexElement<DIM-1,DIM>(global_index, stressfiber_nodes, end_points_ratio, mRestLengthOfNucleation);
                     p_element->AddStressfiber(p_stressfiber);
                     // std::cout<< p_element->GetNumStressfibers() << " stress fibers are created in element "<<p_element->GetIndex()<<std::endl;
                     
@@ -466,20 +485,21 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     Node<DIM>* p_node2 = p_stressfiber->GetStressfiberNode(2);
                     Node<DIM>* p_node3 = p_stressfiber->GetStressfiberNode(3);
                     c_vector<double,2> ratio = p_stressfiber->GetStressfiberEndpointsratio();
+                    double restlength = p_stressfiber->GetStressfiberRestLength();
 
                     c_vector<double, DIM> locationA = (1-ratio[0])*p_node0->rGetLocation() + ratio[0]*p_node1->rGetLocation();
                     c_vector<double, DIM> locationB = (1-ratio[1])*p_node2->rGetLocation() + ratio[1]*p_node3->rGetLocation();
                     c_vector<double, DIM> vec_AB = locationB - locationA;
-                    c_vector<double, DIM> vec_01 = p_node1->rGetLocation() - p_node0->rGetLocation();
-                    c_vector<double, DIM> vec_23 = p_node3->rGetLocation() - p_node2->rGetLocation();
+                    // c_vector<double, DIM> vec_01 = p_node1->rGetLocation() - p_node0->rGetLocation();
+                    // c_vector<double, DIM> vec_23 = p_node3->rGetLocation() - p_node2->rGetLocation();
                     double length_AB = norm_2(vec_AB);
-                    double length_01 = norm_2(vec_01);
-                    double length_23 = norm_2(vec_23);
+                    // double length_01 = norm_2(vec_01);
+                    // double length_23 = norm_2(vec_23);
 
-                    double peeling_length = (1-ratio[0])*length_01 + ratio[1]*length_23;
+                    // double peeling_length = (1-ratio[0])*length_01 + ratio[1]*length_23;
                     // double sf_tension = std::max(stressfiber_elasticity*(cell_perimeter*length_AB/peeling_length-cell_target_perimeter), 0.0);
                     // double sf_tension = std::max(stressfiber_elasticity*(length_AB-cell_target_perimeter*peeling_length/cell_perimeter), 0.0);
-                    double sf_tension = std::max(stressfiber_elasticity*(length_AB-cell_target_perimeter*peeling_length/cell_perimeter), 0.0);
+                    double sf_tension = std::max(stressfiber_elasticity*(length_AB - restlength), 0.0);
                     if (ratio[0]==1.0 || ratio[1]==0.0)
                     {
                         sf_tension = 0.0;
@@ -496,11 +516,14 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
 
                     OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
                     std::string output_file_for_peeling_bisector_orientation;
-                    output_file_for_peeling_bisector_orientation = "peelingbisectororientation.dat";
+                    // output_file_for_peeling_bisector_orientation = "peelingbisectororientation.dat";
+                    std::ostringstream file_string_peeling_bisector_orientation;
+                    file_string_peeling_bisector_orientation << "peelingbisectororientation" << std::to_string(mAreaSeed) << ".dat";
+                    output_file_for_peeling_bisector_orientation = file_string_peeling_bisector_orientation.str();
                     mpPeelingBisectorOrientationFile = output_file_handler.OpenOutputFile(output_file_for_peeling_bisector_orientation, std::ios::app);
 
                     unsigned node1_local_index = p_element->GetNodeLocalIndex(p_node1->GetIndex());
-                    if ( (IsPeeling[node1_local_index])&&((t_now - 1*floor(t_now/1)) < dt) )
+                    if ( (IsPeeling[node1_local_index])&&((t_now - 1.0*floor(t_now/1.0)) < dt) && (p_cell->GetCellData()->GetItem("is_boundary_cell")==0))
                     {
                         *mpPeelingBisectorOrientationFile << t_now << " ";
                         *mpPeelingBisectorOrientationFile << elem_index  << " ";
@@ -525,10 +548,13 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
 
                     // OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
                     std::string output_file_for_stress_fiber_tension;
-                    output_file_for_stress_fiber_tension = "stressfibertension.dat";
+                    // output_file_for_stress_fiber_tension = "stressfibertension.dat";
+                    std::ostringstream file_string_fiber_tension;
+                    file_string_fiber_tension << "stressfibertension" << std::to_string(mAreaSeed) << ".dat";
+                    output_file_for_stress_fiber_tension = file_string_fiber_tension.str();
                     mpStressFiberTensionFile = output_file_handler.OpenOutputFile(output_file_for_stress_fiber_tension, std::ios::app);
 
-                    if ( (t_now - 20*floor(t_now/20)) < dt )
+                    if (((t_now - 1.0*floor(t_now/1.0)) < dt) && (p_cell->GetCellData()->GetItem("is_boundary_cell")==0))
                     {
                         *mpStressFiberTensionFile << t_now << " ";
                         *mpStressFiberTensionFile << elem_index << " ";
@@ -553,10 +579,14 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     }
                 }
             }
+
+            UpdateStressStateOfCell(rCellPopulation, p_cell);
+
         }
         if ( (t_now - 1.0*floor(t_now/1.0)) < dt )
         {
             *mpElementInfoFile <<"\n";
+            *mpCellStressFile <<"\n";
         }
     }
 
@@ -633,12 +663,268 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
 }
 
 template<unsigned DIM>
+void MyStressfiberTensionForce<DIM>::UpdateStressStateOfCell(AbstractCellPopulation<DIM,DIM>& rCellPopulation, CellPtr pCell)
+{   
+    if (dynamic_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation) == nullptr)
+    {
+        EXCEPTION("MyStressfiberTensionForce is to be used with a VertexBasedCellPopulation only");
+    }
+
+    VertexBasedCellPopulation<DIM>* p_cell_population = static_cast<VertexBasedCellPopulation<DIM>*>(&rCellPopulation);
+    unsigned elem_index = rCellPopulation.GetLocationIndexUsingCell(pCell);
+    VertexElement<DIM, DIM>* p_element = p_cell_population->rGetMesh().GetElement(elem_index);
+
+    double cell_stress_XX = 0.0;
+    double cell_stress_YY = 0.0;
+    double cell_stress_XY = 0.0;
+    double cell_stress_YX = 0.0;
+    double shape_tensor_XX = 0.0;
+    double shape_tensor_YY = 0.0;
+    double shape_tensor_XY = 0.0;
+
+    double cell_area = p_cell_population->rGetMesh().GetVolumeOfElement(elem_index);
+    double target_area = pCell->GetCellData()->GetItem("target_area");
+    double perimeter_elasticity =  pCell->GetCellData()->GetItem("perimeter_elasticity");
+    double cell_perimeter = p_cell_population->rGetMesh().GetSurfaceAreaOfElement(elem_index);
+    c_vector<double, DIM> centroid = p_cell_population->rGetMesh().GetCentroidOfElement(elem_index);
+    
+    unsigned local_index_lowest_vertex = 0;
+    double y_coor_lowest_vertex = 10000.0;
+    for (unsigned local_index =0; local_index < p_element->GetNumNodes(); local_index++)
+    {
+        Node<DIM>* pNode = p_element->GetNode(local_index);
+        if (pNode->rGetLocation()[1]<y_coor_lowest_vertex)
+        {
+            local_index_lowest_vertex = local_index;
+            y_coor_lowest_vertex = pNode->rGetLocation()[1];
+        }
+    }
+    pCell->GetCellData()->SetItem("LocalIndexOfLowestVertex", local_index_lowest_vertex);
+
+    for (unsigned local_index =0; local_index < p_element->GetNumNodes(); local_index++)
+    {
+        //  --B
+        //    |
+        // C--A
+        Node<DIM>* pNodeC = p_element->GetNode((local_index-1+p_element->GetNumNodes())%p_element->GetNumNodes());
+        Node<DIM>* pNodeA = p_element->GetNode(local_index);
+        Node<DIM>* pNodeB = p_element->GetNode((local_index+1)%p_element->GetNumNodes());
+        c_vector<double,DIM> locationC = pNodeC->rGetLocation();
+        c_vector<double,DIM> locationA = pNodeA->rGetLocation();
+        c_vector<double,DIM> locationB = pNodeB->rGetLocation();
+        double l_CA = p_cell_population->rGetMesh().GetDistanceBetweenNodes(pNodeC->GetIndex(), pNodeA->GetIndex());
+        double l_AB = p_cell_population->rGetMesh().GetDistanceBetweenNodes(pNodeA->GetIndex(), pNodeB->GetIndex());
+        c_vector<double,DIM> vec_CA =  p_cell_population->rGetMesh().GetVectorFromAtoB(locationC, locationA);
+        c_vector<double,DIM> vec_AB =  p_cell_population->rGetMesh().GetVectorFromAtoB(locationA, locationB);
+
+        std::set<unsigned> elements_containing_nodeC = pNodeC->rGetContainingElementIndices();
+        std::set<unsigned> elements_containing_nodeA = pNodeA->rGetContainingElementIndices();
+        std::set<unsigned> elements_containing_nodeB = pNodeB->rGetContainingElementIndices();
+        // Find common elements
+        std::set<unsigned> shared_elements_CA;
+        std::set_intersection(elements_containing_nodeC.begin(),
+                            elements_containing_nodeC.end(),
+                            elements_containing_nodeA.begin(),
+                            elements_containing_nodeA.end(),
+                            std::inserter(shared_elements_CA, shared_elements_CA.begin()));
+        // Check that the nodes have a common edge
+        assert(!shared_elements_CA.empty());
+        if (shared_elements_CA.size() >= 3)
+        {
+            std::cout<< std::endl << "Get error in MyStressfiberTensionForce::UpdateStressStateOfCell";
+            std::cout<< std::endl << "Get shared elements more than 2";
+        }
+        // Find common elements
+        std::set<unsigned> shared_elements_AB;
+        std::set_intersection(elements_containing_nodeA.begin(),
+                            elements_containing_nodeA.end(),
+                            elements_containing_nodeB.begin(),
+                            elements_containing_nodeB.end(),
+                            std::inserter(shared_elements_AB, shared_elements_AB.begin()));
+        // Check that the nodes have a common edge
+        assert(!shared_elements_AB.empty());
+        if (shared_elements_AB.size() >= 3)
+        {
+            std::cout<< std::endl << "Get error in MyStressfiberTensionForce::UpdateStressStateOfCell";
+            std::cout<< std::endl << "Get shared elements more than 2";
+        }
+
+        // force contributions on the vertex from the element
+        // force from the area term
+        c_vector<double,DIM> element_area_gradient = p_cell_population->rGetMesh().GetAreaGradientOfElementAtNode(p_element, local_index);
+        c_vector<double,DIM> F_Press = -(cell_area-target_area)*element_area_gradient;
+
+        // Tension from perimeter term
+        c_vector<double,DIM> perimeter_gradient_at_node = p_cell_population->rGetMesh().GetPerimeterGradientOfElementAtNode(p_element, local_index);
+        c_vector<double, DIM> F_Tens = -perimeter_elasticity*cell_perimeter*perimeter_gradient_at_node;
+
+        // Cell-cell adhesion
+        double Lambda = mCellCellAdhesionEnergyParameter;
+        c_vector<double,DIM> F_Adhe = -Lambda*(vec_CA/l_CA -vec_AB/l_AB);
+
+        c_vector<double,DIM> Force = F_Press +F_Tens +F_Adhe;
+
+        // next: stress calculation
+        c_vector<double,DIM> node_location_ralate_to_centroid =  p_cell_population->rGetMesh().GetVectorFromAtoB(centroid, locationA);
+        cell_stress_XX += -1.0/cell_area*node_location_ralate_to_centroid[0]*Force[0];
+        cell_stress_YY += -1.0/cell_area*node_location_ralate_to_centroid[1]*Force[1];
+        cell_stress_XY += -1.0/cell_area*node_location_ralate_to_centroid[0]*Force[1];
+        cell_stress_YX += -1.0/cell_area*node_location_ralate_to_centroid[1]*Force[0];
+
+        shape_tensor_XX += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[0];
+        shape_tensor_YY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[1]*node_location_ralate_to_centroid[1];
+        shape_tensor_XY += 1.0/p_element->GetNumNodes()*node_location_ralate_to_centroid[0]*node_location_ralate_to_centroid[1];
+
+        if (false)
+        {
+            std::string name_item;
+            std::ostringstream oss;
+
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Press_x";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Press[0]);
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Press_y";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Press[1]);
+
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Tens_x";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Tens[0]);
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Tens_y";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Tens[1]);
+
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Adhe_x";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Adhe[0]);
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_F_Adhe_y";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, F_Adhe[1]);
+
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_Fx";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, Force[0]);
+            oss.str("");
+            oss << (local_index+p_element->GetNumNodes()-local_index_lowest_vertex)%(p_element->GetNumNodes()) 
+                    << "_Fy";
+            name_item = oss.str();
+            pCell->GetCellData()->SetItem(name_item, Force[1]);
+        }
+    } // end of iteration of vertices of the element, for calculation of force contributions and stress summation.
+
+    double cell_stress_delta = (cell_stress_XX - cell_stress_YY)*(cell_stress_XX - cell_stress_YY) + 4*cell_stress_XY*cell_stress_XY;
+    double stress_1 = 0.5*(cell_stress_XX + cell_stress_YY + sqrt(cell_stress_delta));
+    double stress_2 = 0.5*(cell_stress_XX + cell_stress_YY - sqrt(cell_stress_delta));
+
+    c_vector<double, DIM> stress_eigen_vec_1 = zero_vector<double>(DIM);
+    double principal_axis_of_stress = 0.0;
+    if (stress_1==cell_stress_XX)
+        principal_axis_of_stress = 0.0;
+    else if (stress_1==cell_stress_YY)
+        principal_axis_of_stress = M_PI/2;
+    else
+    {
+        stress_eigen_vec_1[0] = 1.0;
+        stress_eigen_vec_1[1] = (stress_1-cell_stress_XX)/cell_stress_XY;
+        principal_axis_of_stress = atan(stress_eigen_vec_1[1]/stress_eigen_vec_1[0]);
+    }
+
+    double shape_delta = (shape_tensor_XX-shape_tensor_YY)*(shape_tensor_XX-shape_tensor_YY) +4*shape_tensor_XY*shape_tensor_XY;
+    double shape_lambda1 = 0.5*(shape_tensor_XX+shape_tensor_YY+sqrt(shape_delta));
+    double shape_lambda2 = 0.5*(shape_tensor_XX+shape_tensor_YY-sqrt(shape_delta));
+    double aspect_ratio = sqrt(shape_lambda1/shape_lambda2);
+
+    c_vector<double, DIM> shape_eigen_vec_1 = zero_vector<double>(DIM);
+    double principal_axis_of_shape = 0.0;
+    if (shape_lambda1==shape_tensor_XX)
+        principal_axis_of_shape = 0.0;
+    else if (shape_lambda1==shape_tensor_YY)
+        principal_axis_of_shape = M_PI/2;
+    else
+    {
+        shape_eigen_vec_1[0] = 1.0;
+        shape_eigen_vec_1[1] = (shape_lambda1-shape_tensor_XX)/shape_tensor_XY;
+        principal_axis_of_shape = atan(shape_eigen_vec_1[1]/shape_eigen_vec_1[0]);
+    }
+
+    double t_now = SimulationTime::Instance()->GetTime();
+    double dt = SimulationTime::Instance()->GetTimeStep();
+    if (pCell->GetCellData()->GetItem("is_boundary_cell")==0)
+    {
+        pCell->GetCellData()->SetItem("StressXX", cell_stress_XX);
+        pCell->GetCellData()->SetItem("StressYY", cell_stress_YY);
+        pCell->GetCellData()->SetItem("StressXY", cell_stress_XY);
+        pCell->GetCellData()->SetItem("Stress1", stress_1);
+        pCell->GetCellData()->SetItem("Stress2", stress_2);
+        pCell->GetCellData()->SetItem("PrincipalAxisOfStress", principal_axis_of_stress);
+        pCell->GetCellData()->SetItem("shape_tensor_xx", shape_tensor_XX);
+        pCell->GetCellData()->SetItem("shape_tensor_yy", shape_tensor_YY);
+        pCell->GetCellData()->SetItem("shape_tensor_xy", shape_tensor_XY);
+        pCell->GetCellData()->SetItem("AspectRatio", aspect_ratio);
+        pCell->GetCellData()->SetItem("PrincipalAxisOfShape", principal_axis_of_shape);
+
+        if ((t_now - 1.0*floor(t_now/1.0)) < dt)
+        {
+            OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
+            std::string output_file_for_cell_stress;
+            // output_file_for_elem_info = "cellstress.dat";
+            std::ostringstream file_string_cell_stress;
+            file_string_cell_stress << "cellstress" << std::to_string(mAreaSeed) << ".dat";
+            output_file_for_cell_stress = file_string_cell_stress.str();
+            mpCellStressFile = output_file_handler.OpenOutputFile(output_file_for_cell_stress, std::ios::app);
+            *mpCellStressFile << elem_index <<" ";
+            *mpCellStressFile << cell_area <<" ";
+            *mpCellStressFile << cell_stress_XX <<" ";
+            *mpCellStressFile << cell_stress_YY <<" ";
+            *mpCellStressFile << cell_stress_XY <<" ";
+            *mpCellStressFile << stress_1 <<" ";
+            *mpCellStressFile << stress_2 <<" ";
+            *mpCellStressFile << principal_axis_of_stress <<" ";
+        }
+    }
+    else
+    {
+        pCell->GetCellData()->SetItem("StressXX", 0);
+        pCell->GetCellData()->SetItem("StressYY", 0);
+        pCell->GetCellData()->SetItem("StressXY", 0);
+        pCell->GetCellData()->SetItem("Stress1", 0);
+        pCell->GetCellData()->SetItem("Stress2", 0);
+        pCell->GetCellData()->SetItem("PrincipalAxisOfStress", 0);
+        pCell->GetCellData()->SetItem("shape_tensor_xx", 0);
+        pCell->GetCellData()->SetItem("shape_tensor_yy", 0);
+        pCell->GetCellData()->SetItem("shape_tensor_xy", 0);
+        pCell->GetCellData()->SetItem("AspectRatio", 1);
+        pCell->GetCellData()->SetItem("PrincipalAxisOfShape", 0);
+    }
+}
+
+template<unsigned DIM>
 void MyStressfiberTensionForce<DIM>::OutputForceParameters(out_stream& rParamsFile)
 {
     *rParamsFile << "\t\t\t<StressfiberTensionForce>" << " " << "</StressfiberTensionForce>\n";
 
     // Call method on direct parent class
     AbstractForce<DIM>::OutputForceParameters(rParamsFile);
+}
+
+template<unsigned DIM>
+void MyStressfiberTensionForce<DIM>::SetAreaSeed(unsigned areaSeed)
+{
+    mAreaSeed = areaSeed;
 }
 
 template<unsigned DIM>
@@ -690,6 +976,12 @@ void MyStressfiberTensionForce<DIM>::SetPeelingParameters(double adhesionEnergy,
     mk = k;
     mC0 = C0;
     mRatePower = ratePower;
+}
+
+template<unsigned DIM>
+void MyStressfiberTensionForce<DIM>::SetNagaiHondaCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter)
+{
+    mCellCellAdhesionEnergyParameter = cellCellAdhesionEnergyParameter;
 }
 
 template<unsigned DIM>

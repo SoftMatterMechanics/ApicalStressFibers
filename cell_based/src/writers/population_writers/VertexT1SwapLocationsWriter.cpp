@@ -82,6 +82,7 @@ void VertexT1SwapLocationsWriter<ELEMENT_DIM, SPACE_DIM>::Visit(VertexBasedCellP
     }
 
     pCellPopulation->rGetMesh().ClearLocationsOfT1Swaps();
+
 }
 
 // Explicit instantiation

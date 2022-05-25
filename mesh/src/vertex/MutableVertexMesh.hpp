@@ -138,6 +138,12 @@ protected:
 
     bool mMarkLeadingCells;
 
+    std::string mOutputDirectory;
+
+    out_stream mpElementInfoOfT1SwapFile;
+
+    unsigned mAreaSeed;
+
     /**
      * Divide an element along the axis passing through two of its nodes.
      *
@@ -929,6 +935,16 @@ public:
     void SetMarkLeadingCells(bool markLeadingCells)
     {
       mMarkLeadingCells = markLeadingCells;
+    }
+
+    void SetAreaSeed(unsigned areaSeed)
+    {
+      mAreaSeed = areaSeed;
+    }
+
+    void SetOutputDirectory(std::string outputDirectory)
+    {
+      mOutputDirectory = outputDirectory;
     }
 
 };

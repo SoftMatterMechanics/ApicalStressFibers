@@ -87,21 +87,21 @@ public:
       /*-------------------------START: Basic Settings-----------------------*/
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
-        double target_shape_index = 3.0;
-        double cell_cell_adhesion_energy_density = -0.1;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -0.1;  // Gamma at boundary
-        unsigned seed_for_initial_random_polarity = 2;
-        double polarity_magnitude_before_equilibrium = 0.025;  // for before equilibrium
-        double nucleation_perimeter_tension = 0.4;
-        double adhesion_energy = 0.0002;
-        double sf_stiffness = 0.04;
+        double target_shape_index = 3;
+        double cell_cell_adhesion_energy_density = -0.3;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = -0.3;  // Gamma at boundary
+        unsigned seed_for_initial_random_polarity = 3;
+        double polarity_magnitude_before_equilibrium = 0.05;  // for before equilibrium
+        double nucleation_perimeter_tension = 0.08;
+        double adhesion_energy = 0.00015;
+        double sf_stiffness = 0.0;
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number
         unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
         // double target_shape_index = 3.0;
         bool   seed_manually = true;
-        unsigned random_seed_for_target_area = 1;
+        unsigned random_seed_for_target_area = 30;
         double min_target_area = 1.0;
         double max_target_area = 7.0;
         bool   use_fixed_target_area_without_modifier = false;
@@ -126,12 +126,12 @@ public:
         // double adhesion_energy = 0.0002;
         double k = 1;
         double C0 = 0.1;
-        double rate_power = 0.4;
+        double rate_power = 0.8;
 
       // 6. morphogenetic force
         double horizontal_morphogenetic_force = 5.5;
         double vertical_morphogenetic_force = 2;
-        double horizontal_morphogenetic_force_growth_rate = 0.001;
+        double horizontal_morphogenetic_force_growth_rate = 0.002;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
@@ -149,7 +149,7 @@ public:
       // 8. Time
         bool   if_equilibrate_for_a_while = true;
         double time_for_rest = 0;
-        double time_for_random_movement = 400.0;
+        double time_for_random_movement = 250.0;
         double time_for_relaxation = 150.0;
         double time_for_equilibrium = time_for_rest + time_for_random_movement + time_for_relaxation;
         if (time_for_equilibrium <= 0.0)
@@ -230,7 +230,7 @@ public:
         simulator.SetOutputCellVelocities(output_cell_velocity);
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
         if (my_output_cell_velocity && seed_manually)
-          simulator.SetMySeed(random_seed_for_target_area);
+          simulator.SetAreaSeed(random_seed_for_target_area);
         simulator.SetOutputCellElongation(output_cell_elongation);
 
         // Timestep
@@ -310,6 +310,7 @@ public:
       /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
         MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
         
+        p_sf_force->SetAreaSeed(random_seed_for_target_area);
         p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
         p_sf_force->SetStartTimeForStretching(start_time_for_stretching);
         p_sf_force->SetFlagForStressfiberCreation(0);
@@ -318,7 +319,8 @@ public:
         p_sf_force->SetHalfWidth(half_width);
         p_sf_force->SetRestLengthOfNucleation(rest_length_of_nucleation);
         p_sf_force->SetPeelingParameters(adhesion_energy, k, C0, rate_power);
-
+        p_sf_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density);
+        
         // simulator.AddForce(p_sf_force);
       /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
 
@@ -369,34 +371,34 @@ public:
         c_vector<double,2> point1 = zero_vector<double>(2);
         c_vector<double,2> normal1 = zero_vector<double>(2);
         normal1(1) = -1.0;
-        double stop_time1 = time_for_equilibrium;
+        double stop_time1 = time_for_rest + time_for_random_movement;
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc1, (&cell_population, point1, normal1, stop_time1));
 
         c_vector<double,2> point2 = zero_vector<double>(2);
         c_vector<double,2> normal2 = zero_vector<double>(2);
         point2(1) = (1.5*num_ele_up + 0.5)*sqrt(initial_area/(3*sqrt(3)/2));
         normal2(1) = 1.0;
-        double stop_time2 = time_for_equilibrium;
+        double stop_time2 = time_for_rest + time_for_random_movement;
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc2, (&cell_population, point2, normal2, stop_time2));
 
-        // c_vector<double,2> point3 = zero_vector<double>(2);
-        // c_vector<double,2> normal3 = zero_vector<double>(2);
-        // point3(0) = -half_width;
-        // normal3(0) = -1.0;
-        // double stop_time3 = time_for_equilibrium;
-        // MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc3, (&cell_population, point3, normal3, stop_time3));
+        c_vector<double,2> point3 = zero_vector<double>(2);
+        c_vector<double,2> normal3 = zero_vector<double>(2);
+        point3(0) = -half_width*1.0;
+        normal3(0) = -1.0;
+        double stop_time3 = time_for_rest + time_for_random_movement;
+        MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc3, (&cell_population, point3, normal3, stop_time3));
 
-        // c_vector<double,2> point4 = zero_vector<double>(2);
-        // c_vector<double,2> normal4 = zero_vector<double>(2);
-        // point4(0) = half_width + sqrt(initial_area/(3*sqrt(3)/2))*sqrt(3)/2;
-        // normal4(0) = 1.0;
-        // double stop_time4 = time_for_equilibrium;
-        // MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc4, (&cell_population, point4, normal4, stop_time4));        
+        c_vector<double,2> point4 = zero_vector<double>(2);
+        c_vector<double,2> normal4 = zero_vector<double>(2);
+        point4(0) = (half_width + sqrt(initial_area/(3*sqrt(3)/2))*sqrt(3)/2)*1.0;
+        normal4(0) = 1.0;
+        double stop_time4 = time_for_rest + time_for_random_movement;
+        MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc4, (&cell_population, point4, normal4, stop_time4));        
 
         simulator.AddCellPopulationBoundaryCondition(p_bc1);
         simulator.AddCellPopulationBoundaryCondition(p_bc2);
-        // simulator.AddCellPopulationBoundaryCondition(p_bc3);
-        // simulator.AddCellPopulationBoundaryCondition(p_bc4);        
+        simulator.AddCellPopulationBoundaryCondition(p_bc3);
+        simulator.AddCellPopulationBoundaryCondition(p_bc4);        
       /*--------------------------------END: Boundary condition-----------------------------*/
     
 
@@ -406,22 +408,22 @@ public:
         time_t raw_time = time(0);
         struct tm * now = localtime(& raw_time);
 
-        std::string output_directory = "aSF/Date: ";
+        std::string output_directory = "aSF/SFStiffnessEqualKp-1/";
         oss.str("");
-        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
+        oss << "p0=" << std::fixed  << setprecision(1) << target_shape_index << ",";
+        oss << "Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
+                << setprecision(1) << cell_cell_adhesion_energy_density << "/";
         output_directory += oss.str();
-
+        
         oss.str("");
-        oss << "Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        oss << "Date=" << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday;
+        oss << "_Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
         oss << "_NumUp=" << num_ele_up;
         oss << "_NumAc=" << num_ele_across;
         oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
                 << setprecision(2) << area_elastic_modulus;
         // oss << "_Kp=" << ((edge_elastic_modulus>=0.01 || edge_elastic_modulus==0.0)? std::fixed : std::scientific) 
         //         << setprecision(2) << edge_elastic_modulus;
-        oss << "_Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << cell_cell_adhesion_energy_density;
-        oss << "_p0=" << std::fixed  << setprecision(2) << target_shape_index;
 
         oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
         oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;

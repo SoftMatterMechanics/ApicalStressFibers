@@ -76,6 +76,8 @@ private:
 
     c_vector<double,2> mEndpointsratio;
 
+    double mRestLength;
+
     unsigned mGroupNumber;
 
     bool mIsLeadingCell;
@@ -182,7 +184,8 @@ public:
      */
     VertexElement(unsigned index,
                   const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes,
-                  c_vector<double,2> rEndpointsratio);
+                  c_vector<double,2> rEndpointsratio,
+                  double rRestLength);
 
 
     /**
@@ -256,15 +259,25 @@ public:
     c_vector<double,2> GetStressfiberEndpointsratio();
 
     /**
-     * @param endpointsratio the new ratio of end points of a specified stress fiber
+     * @return the rest length of the specified stress fiber
      */
-    void UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio);
+    double GetStressfiberRestLength();
 
     /**
      * @param newStressfiberNode the new node pointer of a specified stress fiber
      * @param index the local index of associated nodes of a specified stress fiber
      */
     void UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index);
+
+    /**
+     * @param endpointsratio the new ratio of end points of a specified stress fiber
+     */
+    void UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio);
+
+    /**
+     * @param newRestLength the new rest length of a specified stress fiber
+     */
+    void UpdateStressfiberRestLength(double newRestLength);
 
     // -------------------end of my additions!!!!--------------
 
@@ -656,6 +669,8 @@ private:
 
     c_vector<double,2> mEndpointsratio; // added by Chao
 
+    double mRestLength; // added by Chao
+
 public:
 
     /**
@@ -676,7 +691,8 @@ public:
     // my addition
     VertexElement(unsigned index,
               const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
-              c_vector<double,2> rEndpointsratio); // declaration for 1d case
+              c_vector<double,2> rEndpointsratio,
+              double rRestLength); // declaration for 1d case
 
     /**
      * @return the number of faces owned by this element.
@@ -731,10 +747,20 @@ public:
     Node<SPACE_DIM>* GetStressfiberNode(unsigned index);
 
     /**
-     * @param index the local index of associate nodes of a specified stress fiber
-     * @return the pointer to the associate node
+     * @return the end points ratio of the stress fiber
      */
     c_vector<double,2> GetStressfiberEndpointsratio();
+
+    /**
+     * @return the rest length of the specified stress fiber
+     */
+    double GetStressfiberRestLength();
+
+    /**
+     * @param newStressfiberNode the new node pointer of a specified stress fiber
+     * @param index the local index of associated nodes of a specified stress fiber
+     */
+    void UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index);
 
     /**
      * @param endpointsratio the new ratio of end points of a specified stress fiber
@@ -742,11 +768,10 @@ public:
     void UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio);
 
     /**
-     * @param newStressfiberNode the new node pointer of a specified stress fiber
-     * @param index the local index of associated nodes of a specified stress fiber
+     * @param newRestLength the new rest length of a specified stress fiber
      */
-    void UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index);
-    
+    void UpdateStressfiberRestLength(double newRestLength);
+
     // ------------------------end of my additions------------------------
 
     void SetEdgeMyosinActivty(double edgeMyosinActivty)

@@ -203,7 +203,6 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             element_perimeter_gradient = previous_edge_gradient + next_edge_gradient;
             // membrane_surface_tension_contribution -= GetNagaiHondaMembraneSurfaceEnergyParameter()*(element_perimeters[elem_index] - cell_target_perimeter)*element_perimeter_gradient;
 
-            
             CellPtr p_cell = rCellPopulation.GetCellUsingLocationIndex(elem_index);
             // if (t_now < this->mTimeForRest)
             // {
@@ -214,6 +213,7 @@ void MyNagaiHondaForce<DIM>::AddForceContribution(AbstractCellPopulation<DIM>& r
             // {
             //     perimeter_stiffness = p_cell->GetCellData()->GetItem("perimeter_elasticity");
             // }
+            // double perimeter_stiffness = GetNagaiHondaMembraneSurfaceEnergyParameter();
             double perimeter_stiffness = -previous_edge_adhesion_parameter/(mTargetShapeIndex*sqrt(target_areas[elem_index]));
             p_cell->GetCellData()->SetItem("perimeter_elasticity", perimeter_stiffness);
             membrane_surface_tension_contribution -= perimeter_stiffness*element_perimeters[elem_index]*element_perimeter_gradient;

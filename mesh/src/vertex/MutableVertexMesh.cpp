@@ -1867,6 +1867,23 @@ void MutableVertexMesh<ELEMENT_DIM, SPACE_DIM>::PerformT1Swap(Node<SPACE_DIM>* p
         std::cout << std::endl;
     }
 
+    // my changes
+    OutputFileHandler output_file_handler(this->mOutputDirectory+"/", false);
+    std::string output_file_for_t1_swap;
+    std::ostringstream file_string_t1_swap;
+    file_string_t1_swap << "eleminfooft1swap" << std::to_string(mAreaSeed) << ".dat";
+    output_file_for_t1_swap = file_string_t1_swap.str();
+    mpElementInfoOfT1SwapFile = output_file_handler.OpenOutputFile(output_file_for_t1_swap, std::ios::app);
+
+    for (std::set<unsigned>::iterator iter = rElementsContainingNodes.begin(); iter != rElementsContainingNodes.end(); iter++ )
+    {
+        unsigned elem_index = this->GetElement(*iter)->GetIndex();
+        double elem_area = this->GetVolumeOfElement(elem_index);
+        *mpElementInfoOfT1SwapFile << elem_index << "\t";
+        *mpElementInfoOfT1SwapFile << elem_area << "\t";
+    }
+    *mpElementInfoOfT1SwapFile << "\n";
+
     // First compute and store the location of the T1 swap, which is at the midpoint of nodes A and B
     double distance_between_nodes_CD = mCellRearrangementRatio*mCellRearrangementThreshold;
 

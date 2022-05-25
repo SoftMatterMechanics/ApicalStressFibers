@@ -67,6 +67,8 @@ private:
 
     double mRealEquilibriumTime;
 
+    double mLoadingGrowthStopTime;
+
     double mHorizontalMorphogeneticForceGrowthRate;
 
     double mVerticalMorphogeneticForceGrowthRate;
@@ -141,6 +143,11 @@ public:
     void SetRealEquilibriumTime(double realEquilibriumTime)
     {
       mRealEquilibriumTime = realEquilibriumTime;
+    }
+
+    void SetLoadingGrowthStopTime(double loadingGrowthStopTime)
+    {
+      mLoadingGrowthStopTime = loadingGrowthStopTime;
     }
 
     void SetMorphogeneticForceGrowthRate(double horizontalMorphogeneticForceGrowthRate, double verticalMorphogeneticForceGrowthRate)

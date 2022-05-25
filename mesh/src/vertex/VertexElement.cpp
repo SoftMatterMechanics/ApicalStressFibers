@@ -152,13 +152,16 @@ VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index,
 
 // my addition for construction of a stress fiber
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
-VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, c_vector<double,2> rEndpointsratio)
+VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index, 
+                                                    const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
+                                                    c_vector<double,2> rEndpointsratio,
+                                                    double rRestLength)
     : MutableElement<ELEMENT_DIM, SPACE_DIM>(index)
 {
     mStressfiberNodes=rStressfiberNodes;
     mEndpointsratio=rEndpointsratio;
+    mRestLength=rRestLength;
 } 
-
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 VertexElement<ELEMENT_DIM, SPACE_DIM>::~VertexElement()
@@ -261,6 +264,13 @@ c_vector<double,2> VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberEndpoint
 
 // my addition
 template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+double VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberRestLength()
+{
+    return 0.0;
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
 {
 }
@@ -268,6 +278,12 @@ void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_ve
 // my addition
 template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index)
+{
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberRestLength(double newRestLength)
 {
 }
 
@@ -298,13 +314,15 @@ VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, const std::vector<Nod
 template<unsigned SPACE_DIM>
 VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, 
                                            const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
-                                           c_vector<double,2> rEndpointsratio)
+                                           c_vector<double,2> rEndpointsratio,
+                                           double rRestLength)
     : MutableElement<1, SPACE_DIM>(index)
 {
     if (SPACE_DIM==2)
     {
         mStressfiberNodes=rStressfiberNodes;
         mEndpointsratio=rEndpointsratio;
+        mRestLength=rRestLength;
     }
 } // this is the typical constructor for a stress fiber!
 
@@ -370,9 +388,9 @@ c_vector<double,2> VertexElement<1, SPACE_DIM>::GetStressfiberEndpointsratio()
 
 // my addition
 template <unsigned SPACE_DIM>
-void VertexElement<1, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
+double VertexElement<1, SPACE_DIM>::GetStressfiberRestLength()
 {
-    mEndpointsratio = endpointsratio;
+    return mRestLength;
 }
 
 // my addition
@@ -381,6 +399,20 @@ void VertexElement<1, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM>* newStre
 {
     assert(index < mStressfiberNodes.size());
     mStressfiberNodes[index] = newStressfiberNode;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
+{
+    mEndpointsratio = endpointsratio;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberRestLength(double newRestLength)
+{
+    mRestLength= newRestLength;
 }
 
 // Explicit instantiation

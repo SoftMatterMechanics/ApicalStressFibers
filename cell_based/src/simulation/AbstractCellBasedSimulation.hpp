@@ -158,7 +158,7 @@ protected:
 
     bool mMyOutputCellVelocities; // my changes
 
-    unsigned mMySeed; // my changes
+    unsigned mAreaSeed; // my changes
 
     bool mOutputCellElongation; // my changes
 
@@ -536,9 +536,9 @@ public:
       mMyOutputCellVelocities = myOutputCellVelocities;
     }
 
-    void SetMySeed(unsigned mySeed)
+    void SetAreaSeed(unsigned areaSeed)
     {
-      mMySeed = mySeed;
+      mAreaSeed = areaSeed;
     }
 
     void SetOutputCellElongation(bool outputCellElongation)

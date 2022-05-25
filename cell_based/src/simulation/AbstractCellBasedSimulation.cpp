@@ -63,7 +63,7 @@ AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::AbstractCellBasedSimulation(
       mOutputDivisionLocations(false),
       mOutputCellVelocities(false),
       mMyOutputCellVelocities(false),
-      mMySeed(0u),
+      mAreaSeed(0u),
       mOutputCellElongation(false),
       mSamplingTimestepMultiple(1),
       mOmitFileNameResultsFromTimeX(false),
@@ -383,7 +383,7 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         else
         {
             std::ostringstream file_string;
-            file_string << "velocity " << std::to_string(mMySeed) << ".dat";
+            file_string << "velocity " << std::to_string(mAreaSeed) << ".dat";
             output_file_for_cell_velocities = file_string.str();
         }
 
@@ -394,8 +394,8 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
         OutputFileHandler output_file_handler3(this->mSimulationOutputDirectory+"/", false);
         std::string output_file_for_cell_elongation;
         std::ostringstream file_string;
-        // file_string << "elongation" << std::to_string(mMySeed) << ".dat";
-        file_string << "elongation" << ".dat";
+        file_string << "elongation" << std::to_string(mAreaSeed) << ".dat";
+        // file_string << "elongation" << ".dat";
         output_file_for_cell_elongation = file_string.str();
 
         mpCellElongationFile = output_file_handler3.OpenOutputFile(output_file_for_cell_elongation);
@@ -568,6 +568,9 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 double cell_area = pMesh->GetVolumeOfElement(index);
                 double cell_perimeter = pMesh->GetSurfaceAreaOfElement(index);
                 double shape_index = cell_perimeter/sqrt(cell_area);
+                CellPtr p_cell = mrCellPopulation.GetCellUsingLocationIndex(index);
+                bool IsBoundaryCell = false;
+                p_cell->GetCellData()->SetItem("is_boundary_cell", 0);
 
                 VertexElement<ELEMENT_DIM, SPACE_DIM>* pElement = pMesh->GetElement(index);
                 unsigned num_nodes_elem = pElement->GetNumNodes();
@@ -585,6 +588,12 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                     c_vector<double,SPACE_DIM> coord = pElement->GetNodeLocation(local_index);
                     horizontal_distance_square += (coord[0]-cell_center[0])*(coord[0]-cell_center[0]);
                     vertical_distance_square += (coord[1]-cell_center[1])*(coord[1]-cell_center[1]);
+
+                    if (pElement->GetNode(local_index)->IsBoundaryNode())
+                    {
+                        IsBoundaryCell = true;
+                        p_cell->GetCellData()->SetItem("is_boundary_cell", 1);
+                    }
                 }
                 double elongation1 = horizontal_distance_square/vertical_distance_square;
 
@@ -593,13 +602,16 @@ void AbstractCellBasedSimulation<ELEMENT_DIM,SPACE_DIM>::Solve()
                 c_vector<double, 3> moments = pMesh->CalculateMomentsOfElement(index);
                 double elongation3 = moments(0)/moments(1);
 
-                *mpCellElongationFile << index  << " ";
-                *mpCellElongationFile << cell_area  << " ";
-                *mpCellElongationFile << shape_index << " ";
-                *mpCellElongationFile << elongation1 << " ";
-                *mpCellElongationFile << elongation2 << " ";
-                *mpCellElongationFile << elongation3 << " ";
-                *mpCellElongationFile << "\t";
+                if (!IsBoundaryCell)
+                {
+                    *mpCellElongationFile << index  << " ";
+                    *mpCellElongationFile << cell_area  << " ";
+                    *mpCellElongationFile << shape_index << " ";
+                    *mpCellElongationFile << elongation1 << " ";
+                    *mpCellElongationFile << elongation2 << " ";
+                    *mpCellElongationFile << elongation3 << " ";
+                    *mpCellElongationFile << "\t";
+                }
             }
             *mpCellElongationFile << "\n";
         }

@@ -364,9 +364,13 @@ double ForwardEulerNumericalMethod<ELEMENT_DIM,SPACE_DIM>::GetNewAdaptiveTimeste
                     double HorizontalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
                     double HorizontalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium)
                                                             + this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mRealEquilibriumTime);
+                    // double HorizontalMorphogeneticForce3 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium)
+                    //                                         + this->mHorizontalMorphogeneticForceGrowthRate*(this->mLoadingGrowthStopTime - this->mRealEquilibriumTime);
+                                                            
                     double VerticalMorphogeneticForce1 = this->mHorizontalMorphogeneticForceGrowthRate*(t_now - this->mTimeForEquilibrium);
                     double VerticalMorphogeneticForce2 = this->mHorizontalMorphogeneticForceGrowthRate*(this->mRealEquilibriumTime - this->mTimeForEquilibrium);
                     
+                    // double HorizontalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? HorizontalMorphogeneticForce1:(t_now < this->mLoadingGrowthStopTime? HorizontalMorphogeneticForce2:HorizontalMorphogeneticForce3));
                     double HorizontalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? HorizontalMorphogeneticForce1:HorizontalMorphogeneticForce2);
                     double VerticalMorphogeneticForce = (t_now < this->mRealEquilibriumTime? VerticalMorphogeneticForce1:VerticalMorphogeneticForce2);
                     
