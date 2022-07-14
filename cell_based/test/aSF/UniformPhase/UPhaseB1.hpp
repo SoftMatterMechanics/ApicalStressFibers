@@ -67,10 +67,12 @@ The University of Hong Kong.
 
 #include "PlaneBoundaryCondition.hpp"
 #include "ToroidalHoneycombVertexMeshGenerator.hpp"
-#include "MyToroidalHoneycombVertexMeshGenerator.hpp"
+#include "MyNoPBCToroidalHoneycombVertexMeshGenerator.hpp"
+// #include "MyToroidalHoneycombVertexMeshGenerator.hpp"
 // #include "NagaiHondaForce.hpp"
 #include "MyNagaiHondaForce.hpp"
-#include "MyMorphogeneticForce.hpp"
+// #include "MyMorphogeneticForce.hpp"
+#include "MyStressfiberTensionForce.hpp"
 #include "DiffusionForce.hpp"
 #include "PlaneBasedCellKiller.hpp"
 
@@ -83,70 +85,91 @@ public:
     void TestApicalStressFibers()
     {
       /*-------------------------START: Basic Settings-----------------------*/
-      /* Energy equation form: 1/2*KA*(A-A0)^2 + 1/2*KL*(L-L0)^2 + 2*Gamma*L */
+      /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
+
+        double edge_elastic_modulus = 0.01; // KL
+        double cell_cell_adhesion_energy_density = -0.1;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = cell_cell_adhesion_energy_density;   // Gamma at boundary
+        unsigned random_seed_for_target_area = 6;
+        double polarity_magnitude_before_equilibrium = 0.18;  // for before equilibrium
+
+        double nucleation_perimeter_tension = 4;
+        double adhesion_energy = 0.0002;
+        double sf_stiffness = 0.0;
 
       // 1. Cell mesh and size
-        unsigned num_ele_across = 8; // cell number along anterior-posterior, must be an even number
-        unsigned num_ele_up = 8; // cell number along medial-lateral, must be an even number
-
-        double target_shape_index = 4.0;
-        double initial_area = M_PI; // set the initial areas to be uniform, A = 3*sqrt(3)/2*l^2
-        
+        unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number
+        unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
+        bool   seed_manually = true;
+        double min_target_area = 1.0;
+        double max_target_area = 7.0;
+        bool   use_fixed_target_area_without_modifier = false;
+        double target_shape_index = -cell_cell_adhesion_energy_density/edge_elastic_modulus/sqrt(min_target_area);
+        double target_area = (min_target_area + max_target_area)/2; // A0, target areas are not uniform
+        double initial_area = (min_target_area + max_target_area)/2; // set the initial areas to be uniform, A = 3*sqrt(3)/2*l^2
         double center_y_coordination = 0.5*(1.5*num_ele_up+0.5)*sqrt(initial_area/(3*sqrt(3)/2));
+        double half_width = num_ele_across/2*sqrt(initial_area/(3*sqrt(3)/2))*sqrt(3)/2*2;
 
       // 2. Area elasticity
-        double area_elastic_modulus = 1.0; // KA
-        bool   use_fixed_target_area_without_modifier = false;
-        double target_area = M_PI; // A0, target areas are not uniform
-        unsigned random_seed_for_target_area = 1;
-        double min_target_area = initial_area/5;
-        double max_target_area = initial_area*9/5;
+        double area_elastic_modulus = 1.0; // Ka
 
-      // 3. Edge elasticity
-        double edge_elastic_modulus = 0.04; // KL
-        // double rest_edge_length = sqrt(target_area/(6*sqrt(3)/4));
-
-      // 4. Cell-Cell adhesion & constant cortical contraction
-        double cell_cell_adhesion_energy_density = -2*target_shape_index*edge_elastic_modulus; // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -2*target_shape_index*edge_elastic_modulus; // Gamma at boundary
+      // 4. Cell-cell adhesion & constant cortical contraction
+      // this parameter value here is one half of its real value because the edge is shared by two cells
+        // double cell_cell_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        // double cell_boundary_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);   // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
 
-      // 5. Random force
+      // 5. Stress fiber tension
+        // double sf_stiffness = 0.05;
+        // double nucleation_perimeter_tension = 0.4;
+        double rest_length_of_nucleation = 0.02;   // delta0 = 0.02;
+        // double adhesion_energy = 0.0002;
+        double k = 1;
+        double C0 = 0.1;
+        double rate_power = 0.8;
+
+      // 6. morphogenetic force
+        double horizontal_morphogenetic_force = 0.01;
+        double vertical_morphogenetic_force = 0;
+        double horizontal_morphogenetic_force_growth_rate = 0.002;
+        double vertical_morphogenetic_force_growth_rate = 0.02;
+
+      // 7. Random force
         bool   add_random_force = true;
         bool   has_brownian_random_force = false; // brownian random force is used in cell center model
         double translational_diffusion_constant = 0.0;
         double set_node_radius = 2.0; // effective cell diameter (in units of 10 microns)
 
         bool   has_polarity = true;
-        bool   seed_manually = true;
-        unsigned seed_for_initial_random_polarity = 1;
-        double polarity_magnitude_equilibrium = 0.02;  // for before equilibrium
-        double polarity_magnitude = 0.0;  // for after equilibrium
-        double rotational_diffusion_constant = 0.2;
-
-      // 6. Morphogenetic Force
-        bool     multiple_leading_cells = true;
-        bool     add_pulling_force_evenly_on_nodes_of_leading_cell = true;
-        double   pulling_force_on_leading_cell = 0.0;// MF (morphogenetic force)
-
-      // 7. Cell rearrangement threshold length for T1 & T2 transitions
-        double cell_rearrangement_threshold = 0.05; 
-        double t2_threshold = 0.001;
+        unsigned seed_for_initial_random_polarity = 3;
+        // double polarity_magnitude_before_equilibrium = 0.04;  // for before equilibrium
+        double polarity_magnitude_after_equilibrium = 0.0;  // for after equilibrium
+        double rotational_diffusion_constant = 0.5;
 
       // 8. Time
         bool   if_equilibrate_for_a_while = true;
-        double time_for_equilibrium = 200.0;
+        double time_for_rest = 0;
+        double time_for_random_movement = 250.0;
+        double time_for_relaxation = 150.0;
+        double time_for_equilibrium = time_for_rest + time_for_random_movement + time_for_relaxation;
         if (time_for_equilibrium <= 0.0)
            if_equilibrate_for_a_while = false;
-        
-        double dt = 0.01;
-        double end_time = 300.0;
-        double max_movement_per_timestep = 0.001; 
+
+        double dt = 0.05;
+        double real_equilibrium_time = time_for_equilibrium + vertical_morphogenetic_force/vertical_morphogenetic_force_growth_rate;
+        double start_time_for_stretching = real_equilibrium_time;
+        double end_time = real_equilibrium_time + (horizontal_morphogenetic_force - vertical_morphogenetic_force)/horizontal_morphogenetic_force_growth_rate; 
+        double max_movement_per_timestep = 0.05; 
         bool   apply_adaptive_timestep = true;
         double sampling_time = 1.0;
         unsigned sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
+        
+      // 9. Cell rearrangement threshold length for T1 & T2 transitions
+        double cell_rearrangement_threshold = 0.01; 
+        double t2_threshold = 0.001;
+        double t3_threshold = 5.0;
 
-      // 9. Output & display
+      // 10. Output & display
         bool   if_update_face_elements_in_mesh = true;
         bool   output_concise_swap_information_when_remesh = false;
         bool   output_detailed_swap_information_when_remesh = false;
@@ -158,11 +181,12 @@ public:
 
 
       /*-----------------------START: Generate cell monolayer mesh-------------------*/
-        MyToroidalHoneycombVertexMeshGenerator generator(num_ele_across, num_ele_up, initial_area, cell_rearrangement_threshold, t2_threshold);
-        MyToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
+        MyNoPBCToroidalHoneycombVertexMeshGenerator generator(num_ele_across, num_ele_up, initial_area, cell_rearrangement_threshold, t2_threshold);
+        MyNoPBCToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
 
-        p_mesh->SetDistanceForT3SwapChecking(5.0); 
+        p_mesh->SetDistanceForT3SwapChecking(t3_threshold); 
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);
+        p_mesh->SetAreaSeed(random_seed_for_target_area);
       //  p_mesh->SetIfClassifyElementsWithGroupNumbers(classify_elements_with_group_numbers);
       //  p_mesh->SetMarkLeadingCells(mark_leading_cells);
         p_mesh->SetOutputConciseSwapInformationWhenRemesh(output_concise_swap_information_when_remesh);
@@ -184,6 +208,7 @@ public:
         cells_generator.SetMinimumDivisionAge(minimum_division_age);
         cells_generator.SetRandomSeedForTargetAreas(random_seed_for_target_area);
         cells_generator.SetLimitsOfTargetAreas(min_target_area, max_target_area);
+        // cells_generator.SetPerimeterElasticityParameter(edge_elastic_modulus);
 
         cells_generator.GenerateBasicRandom(cells, p_mesh->GetNumElements(), p_transit_type);
         
@@ -197,15 +222,17 @@ public:
         OffLatticeSimulation<2> simulator(cell_population);
 
         // output cell velocity:
+        bool run_with_birth = false;
+        bool output_cell_velocity = true;
         bool my_output_cell_velocity = true;
+        bool output_cell_elongation = true;
+
+        simulator.SetNoBirth(!run_with_birth);
+        simulator.SetOutputCellVelocities(output_cell_velocity);
         simulator.SetMyOutputCellVelocities(my_output_cell_velocity);
         if (my_output_cell_velocity && seed_manually)
-          simulator.SetMySeed(seed_for_initial_random_polarity);
-        
-        bool output_cell_velocity = true;
-        bool run_with_birth = false;
-        simulator.SetOutputCellVelocities(output_cell_velocity);
-        simulator.SetNoBirth(!run_with_birth);
+          simulator.SetAreaSeed(random_seed_for_target_area);
+        simulator.SetOutputCellElongation(output_cell_elongation);
 
         // Timestep
         simulator.SetApplyAdaptiveTimestep(apply_adaptive_timestep);
@@ -224,34 +251,22 @@ public:
         p_numerical_method->SetForceCollection(&force_collection);
         p_numerical_method->SetMaxMovementPerTimestep(max_movement_per_timestep);
         p_numerical_method->SetOutputNumericalMethodInformation(output_numerical_method_information);
+        p_numerical_method->SetCenterYCoordination(center_y_coordination);
+        p_numerical_method->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_numerical_method->SetTimeForEquilibrium(time_for_equilibrium);
+        p_numerical_method->SetRealEquilibriumTime(real_equilibrium_time);
+        p_numerical_method->SetMorphogeneticForceGrowthRate(horizontal_morphogenetic_force_growth_rate, vertical_morphogenetic_force_growth_rate);
         simulator.SetNumericalMethod(p_numerical_method);
       /*---------------------------------END: Simulator settings-----------------------------*/
 
 
       /*--------------------------------START: Modifier Settings-----------------------------*/
-        // // TargetAreaModifier
-        // MAKE_PTR_ARGS(TargetAreaLinearGrowthModifier<2>, p_growth_modifier, ());
-
-        // double growth_rate_for_target_area_after_division = 0.0;
-        // p_growth_modifier->SetUseUseMyOwnRuleForUpdateTargetAreaOfCell(true);
-        // p_growth_modifier->SetReferenceTargetArea(initial_area);// to be determined
-        // p_growth_modifier->SetGrowthRate(growth_rate_for_target_area_after_division);
-        // p_growth_modifier->SetAgeToStartGrowing(0.0);
-        // simulator.AddSimulationModifier(p_growth_modifier);
-
-        // // Contractility and Cell-Cell Adhesion Modifier
-        // MAKE_PTR_ARGS(FaceValueAndStressStateModifier<2>, p_face_value_and_stress_state_modifier, ());
-        
-        // p_face_value_and_stress_state_modifier->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-        // p_face_value_and_stress_state_modifier->SetEndTimeForEquilibrium(time_for_equilibrium);
-        // simulator.AddSimulationModifier(p_face_value_and_stress_state_modifier);
-
         // Polarity modifier
         if (has_polarity)
         {
           MAKE_PTR_ARGS(PolarityModifier<2>, p_polarity_modifier, ());
-          p_polarity_modifier->SetPolarityMagnitude(polarity_magnitude);
-          p_polarity_modifier->SetPolarityMagnitudeEquilibrium(polarity_magnitude_equilibrium);
+          p_polarity_modifier->SetPolarityMagnitudeAfterEquilibrium(polarity_magnitude_after_equilibrium);
+          p_polarity_modifier->SetPolarityMagnitudeBeforeEquilibrium(polarity_magnitude_before_equilibrium);
           p_polarity_modifier->SetSeedManually(seed_manually);
           p_polarity_modifier->SetSeedForInitialRandomPolarity(seed_for_initial_random_polarity);
           p_polarity_modifier->SetD(rotational_diffusion_constant);
@@ -260,42 +275,55 @@ public:
       /*----------------------------------END: Modifier Settings------------------------------*/
 
 
-      /*---------------------------------START: MyMorphogeneticForce-----------------------------*/
-        MAKE_PTR(MyMorphogeneticForce<2>, p_morphogenetic_force);
+      // /*---------------------------------START: MyMorphogeneticForce-----------------------------*/
+      //   MAKE_PTR(MyMorphogeneticForce<2>, p_morphogenetic_force);
         
-        p_morphogenetic_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
-        p_morphogenetic_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
-        p_morphogenetic_force->SetCenterYCoordination(center_y_coordination);
-        p_morphogenetic_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-        p_morphogenetic_force->SetEndTimeForEquilibrium(time_for_equilibrium);
+      //   p_morphogenetic_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
+      //   p_morphogenetic_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
+      //   p_morphogenetic_force->SetCenterYCoordination(center_y_coordination);
+      //   p_morphogenetic_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+      //   p_morphogenetic_force->SetEndTimeForEquilibrium(time_for_equilibrium);
 
-        simulator.AddForce(p_morphogenetic_force);
-      /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
+      //   simulator.AddForce(p_morphogenetic_force);
+      // /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
 
 
       /*---------------------------------START: MyNagaiHondaForce-----------------------------*/
         MAKE_PTR(MyNagaiHondaForce<2>, p_nh_force);
         
         p_nh_force->SetNagaiHondaDeformationEnergyParameter(area_elastic_modulus); // KA
-        p_nh_force->SetNagaiHondaMembraneSurfaceEnergyParameter(edge_elastic_modulus); // KL
+        // p_nh_force->SetNagaiHondaMembraneSurfaceEnergyParameter(edge_elastic_modulus); // KL
         p_nh_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density); // Gamma
         p_nh_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(cell_boundary_adhesion_energy_density); // Gamma at boundary
 
         p_nh_force->SetUseFixedTargetArea(use_fixed_target_area_without_modifier); // used in the case where there is no target area modifier! (no division)
         p_nh_force->SetFixedTargetArea(target_area); // to be determined
         p_nh_force->SetTargetShapeIndex(target_shape_index);
+        // p_nh_force->SetFixedTargetPerimeter(target_perimeter);
+        p_nh_force->SetTimeForRest(time_for_rest);
         p_nh_force->SetUseFaceElementToGetAdhesionParameterBoolean(if_use_face_element_to_get_adhesion_parameter);
-
-        // // Morphogenetic force
-        // p_force->SetAddPullingForceEvenlyOnNodesOfLeadingCell(add_pulling_force_evenly_on_nodes_of_leading_cell);
-        // p_force->SetPullingForceOnLeadingCell(pulling_force_on_leading_cell);
-
-        // p_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-        // p_force->SetEndTimeForEquilibrium(time_for_equilibrium);
 
         // p_force->SetOutputInformationForNagaiHondaForce(output_information_for_nagai_honda_force);
         simulator.AddForce(p_nh_force);
       /*-------------------------------------END: MyNagaiHondaForce------------------------------*/
+
+
+      /*---------------------------------START: My Stressfiber Tension Force-----------------------------*/
+        MAKE_PTR(MyStressfiberTensionForce<2>, p_sf_force);
+        
+        p_sf_force->SetAreaSeed(random_seed_for_target_area);
+        p_sf_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
+        p_sf_force->SetStartTimeForStretching(start_time_for_stretching);
+        p_sf_force->SetFlagForStressfiberCreation(0);
+        p_sf_force->SetStressfiberStiffness(sf_stiffness);
+        p_sf_force->SetNucleationThresholdOfPerimeterTension(nucleation_perimeter_tension);
+        p_sf_force->SetHalfWidth(half_width);
+        p_sf_force->SetRestLengthOfNucleation(rest_length_of_nucleation);
+        p_sf_force->SetPeelingParameters(adhesion_energy, k, C0, rate_power);
+        p_sf_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density);
+
+        // simulator.AddForce(p_sf_force);
+      /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
 
 
       /*-----------------------------------START: Brownian Random Force -------------------------*/
@@ -316,9 +344,9 @@ public:
           p_random_force->SetTheSameNodeRadius(node_radius);
 
           p_random_force->SetHasPolarity(has_polarity);
-
           p_random_force->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
-          p_random_force->SetEndTimeForEquilibrium(time_for_equilibrium);
+          p_random_force->SetStartTimeForRandom(time_for_rest);
+          p_random_force->SetEndTimeForRandom(time_for_rest + time_for_random_movement);
 
           simulator.AddForce(p_random_force);
         }
@@ -344,18 +372,34 @@ public:
         c_vector<double,2> point1 = zero_vector<double>(2);
         c_vector<double,2> normal1 = zero_vector<double>(2);
         normal1(1) = -1.0;
-        double stop_time1 = time_for_equilibrium;
+        double stop_time1 = time_for_rest + time_for_random_movement;
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc1, (&cell_population, point1, normal1, stop_time1));
 
         c_vector<double,2> point2 = zero_vector<double>(2);
         c_vector<double,2> normal2 = zero_vector<double>(2);
         point2(1) = (1.5*num_ele_up + 0.5)*sqrt(initial_area/(3*sqrt(3)/2));
         normal2(1) = 1.0;
-        double stop_time2 = time_for_equilibrium;
+        double stop_time2 = time_for_rest + time_for_random_movement;
         MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc2, (&cell_population, point2, normal2, stop_time2));
+
+        c_vector<double,2> point3 = zero_vector<double>(2);
+        c_vector<double,2> normal3 = zero_vector<double>(2);
+        point3(0) = -half_width*1.0;
+        normal3(0) = -1.0;
+        double stop_time3 = time_for_rest + time_for_random_movement;
+        MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc3, (&cell_population, point3, normal3, stop_time3));
+
+        c_vector<double,2> point4 = zero_vector<double>(2);
+        c_vector<double,2> normal4 = zero_vector<double>(2);
+        point4(0) = (half_width + sqrt(initial_area/(3*sqrt(3)/2))*sqrt(3)/2)*1.0;
+        normal4(0) = 1.0;
+        double stop_time4 = time_for_rest + time_for_random_movement;
+        MAKE_PTR_ARGS(PlaneBoundaryCondition<2>, p_bc4, (&cell_population, point4, normal4, stop_time4));        
 
         simulator.AddCellPopulationBoundaryCondition(p_bc1);
         simulator.AddCellPopulationBoundaryCondition(p_bc2);
+        simulator.AddCellPopulationBoundaryCondition(p_bc3);
+        simulator.AddCellPopulationBoundaryCondition(p_bc4);        
       /*--------------------------------END: Boundary condition-----------------------------*/
     
 
@@ -365,46 +409,45 @@ public:
         time_t raw_time = time(0);
         struct tm * now = localtime(& raw_time);
 
-        std::string output_directory = "aSF/Date: ";
+        std::string output_directory = "aSF/UniformPhase/";
         oss.str("");
-        oss << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << '/';
+        // oss << "p0=" << std::fixed  << setprecision(1) << target_shape_index << ",";
+        oss << "Kp=" << std::fixed << setprecision(2) << edge_elastic_modulus << ",";
+        oss << "Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
+                << setprecision(3) << cell_cell_adhesion_energy_density << "/";
         output_directory += oss.str();
-
+        
         oss.str("");
-        oss << "Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        oss << "Date=" << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday;
+        oss << "_Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        // oss << "_NumUp=" << num_ele_up;
+        // oss << "_NumAc=" << num_ele_across;
+        // oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
+        //         << setprecision(2) << area_elastic_modulus;
+        // oss << "_Kp=" << ((edge_elastic_modulus>=0.01 || edge_elastic_modulus==0.0)? std::fixed : std::scientific) 
+        //         << setprecision(2) << edge_elastic_modulus;
 
-        oss << "_NumUp=" << num_ele_up;
-        oss << "_NumAc=" << num_ele_across;
+        // oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
+        // oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;
+        // oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
+        oss << "_Aseed=" << random_seed_for_target_area;
 
-        oss << "_KA=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << area_elastic_modulus;
-        oss << "_KL=" << ((edge_elastic_modulus>=0.01 || edge_elastic_modulus==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << edge_elastic_modulus;
-        oss << "_Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << cell_cell_adhesion_energy_density;
+        oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;
+        oss << "_Pseed=" << seed_for_initial_random_polarity;
 
-        if (multiple_leading_cells)
-        oss << "_MF=" << std::fixed  << setprecision(0) << pulling_force_on_leading_cell;
-
+        oss << "_dt=" << std::fixed  << setprecision(3) << dt;
+        oss << "_maxd=" << std::fixed  << setprecision(3) << max_movement_per_timestep;
         if (if_equilibrate_for_a_while)
         {
           oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
         }
-
-        oss << "_Fp=" << ((polarity_magnitude>=0.01 || polarity_magnitude==0.0)? std::fixed : std::scientific) << setprecision(2) << polarity_magnitude;
-        if (polarity_magnitude!=0.0)
-        {
-          oss << "_Dr=" << ((rotational_diffusion_constant>=0.01)? std::fixed : std::scientific) << setprecision(2) << rotational_diffusion_constant;
-          if (seed_manually)
-            oss << "_PSeed=" << seed_for_initial_random_polarity;
-          else
-            oss << "_PSeed=NA";
-        }      
-
-        oss << "_Dt=" << std::scientific << setprecision(1) << dt;
-        if (apply_adaptive_timestep)
-          oss << "_MaxMv=" << ((max_movement_per_timestep>=0.01)? std::fixed : std::scientific) << setprecision(3) << max_movement_per_timestep;
-        oss << "_T1Thresh=" << ((cell_rearrangement_threshold>=0.01)? std::fixed : std::scientific) << setprecision(3) << cell_rearrangement_threshold;
+        oss << "_realeqtime=" << std::fixed << setprecision(1) << real_equilibrium_time;
+        oss << "_simtime=" << std::fixed << setprecision(1) << end_time; 
+        
+        oss << "_Fx=" << std::fixed << setprecision(1) << horizontal_morphogenetic_force;
+        oss << "_Fy=" << std::fixed << setprecision(1) << vertical_morphogenetic_force;
+        oss << "_vFx=" << std::fixed << setprecision(3) << horizontal_morphogenetic_force_growth_rate;
+        oss << "_vFy=" << std::fixed << setprecision(2) << vertical_morphogenetic_force_growth_rate;
 
         output_directory += oss.str();
         std::string concise_output_directory = output_directory;
@@ -427,6 +470,10 @@ public:
           EXCEPTION("Output directory is not set.");
         }
       /*--------------------------END: Output Directory and Simulation Information File---------------------*/
+        p_mesh->SetOutputDirectory(concise_output_directory);
+
+        p_sf_force->SetOutputDirectory(concise_output_directory);
+        simulator.AddForce(p_sf_force);
 
         simulator.Solve();
     }

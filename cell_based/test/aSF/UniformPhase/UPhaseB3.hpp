@@ -87,24 +87,24 @@ public:
       /*-------------------------START: Basic Settings-----------------------*/
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
-        double target_shape_index = 3.6;
+        double edge_elastic_modulus = 0.01; // KL
         double cell_cell_adhesion_energy_density = -0.1;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -0.1;  // Gamma at boundary
-        unsigned seed_for_initial_random_polarity = 3;
-        double polarity_magnitude_before_equilibrium = 0.01;  // for before equilibrium
-        double nucleation_perimeter_tension = 0.4;
+        double cell_boundary_adhesion_energy_density = cell_cell_adhesion_energy_density;   // Gamma at boundary
+        unsigned random_seed_for_target_area = 8;
+        double polarity_magnitude_before_equilibrium = 0.18;  // for before equilibrium
+
+        double nucleation_perimeter_tension = 4;
         double adhesion_energy = 0.0002;
         double sf_stiffness = 0.0;
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number
         unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
-        // double target_shape_index = 3.0;
         bool   seed_manually = true;
-        unsigned random_seed_for_target_area = 19;
         double min_target_area = 1.0;
         double max_target_area = 7.0;
         bool   use_fixed_target_area_without_modifier = false;
+        double target_shape_index = -cell_cell_adhesion_energy_density/edge_elastic_modulus/sqrt(min_target_area);
         double target_area = (min_target_area + max_target_area)/2; // A0, target areas are not uniform
         double initial_area = (min_target_area + max_target_area)/2; // set the initial areas to be uniform, A = 3*sqrt(3)/2*l^2
         double center_y_coordination = 0.5*(1.5*num_ele_up+0.5)*sqrt(initial_area/(3*sqrt(3)/2));
@@ -115,8 +115,8 @@ public:
 
       // 4. Cell-cell adhesion & constant cortical contraction
       // this parameter value here is one half of its real value because the edge is shared by two cells
-        // double cell_cell_adhesion_energy_density = -0.3;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        // double cell_boundary_adhesion_energy_density = -0.3;  // Gamma at boundary
+        // double cell_cell_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        // double cell_boundary_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);   // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
 
       // 5. Stress fiber tension
@@ -129,8 +129,8 @@ public:
         double rate_power = 0.8;
 
       // 6. morphogenetic force
-        double horizontal_morphogenetic_force = 5.5;
-        double vertical_morphogenetic_force = 2;
+        double horizontal_morphogenetic_force = 0.01;
+        double vertical_morphogenetic_force = 0;
         double horizontal_morphogenetic_force_growth_rate = 0.002;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
@@ -141,7 +141,7 @@ public:
         double set_node_radius = 2.0; // effective cell diameter (in units of 10 microns)
 
         bool   has_polarity = true;
-        // unsigned seed_for_initial_random_polarity = 3;
+        unsigned seed_for_initial_random_polarity = 3;
         // double polarity_magnitude_before_equilibrium = 0.04;  // for before equilibrium
         double polarity_magnitude_after_equilibrium = 0.0;  // for after equilibrium
         double rotational_diffusion_constant = 0.5;
@@ -165,7 +165,7 @@ public:
         unsigned sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
         
       // 9. Cell rearrangement threshold length for T1 & T2 transitions
-        double cell_rearrangement_threshold = 0.0001; 
+        double cell_rearrangement_threshold = 0.01; 
         double t2_threshold = 0.001;
         double t3_threshold = 5.0;
 
@@ -409,26 +409,27 @@ public:
         time_t raw_time = time(0);
         struct tm * now = localtime(& raw_time);
 
-        std::string output_directory = "aSF/CellStress/";
+        std::string output_directory = "aSF/UniformPhase/";
         oss.str("");
-        oss << "p0=" << std::fixed  << setprecision(1) << target_shape_index << ",";
+        // oss << "p0=" << std::fixed  << setprecision(1) << target_shape_index << ",";
+        oss << "Kp=" << std::fixed << setprecision(2) << edge_elastic_modulus << ",";
         oss << "Gamma=" << ((fabs(cell_cell_adhesion_energy_density)>=0.01 || fabs(cell_cell_adhesion_energy_density)==0.0)? std::fixed : std::scientific) 
-                << setprecision(1) << cell_cell_adhesion_energy_density << "/";
+                << setprecision(3) << cell_cell_adhesion_energy_density << "/";
         output_directory += oss.str();
         
         oss.str("");
         oss << "Date=" << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday;
         oss << "_Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        oss << "_NumUp=" << num_ele_up;
-        oss << "_NumAc=" << num_ele_across;
-        oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << area_elastic_modulus;
+        // oss << "_NumUp=" << num_ele_up;
+        // oss << "_NumAc=" << num_ele_across;
+        // oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
+        //         << setprecision(2) << area_elastic_modulus;
         // oss << "_Kp=" << ((edge_elastic_modulus>=0.01 || edge_elastic_modulus==0.0)? std::fixed : std::scientific) 
         //         << setprecision(2) << edge_elastic_modulus;
 
-        oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
-        oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;
-        oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
+        // oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
+        // oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;
+        // oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
         oss << "_Aseed=" << random_seed_for_target_area;
 
         oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;

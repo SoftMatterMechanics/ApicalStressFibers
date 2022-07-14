@@ -155,12 +155,17 @@ template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 VertexElement<ELEMENT_DIM, SPACE_DIM>::VertexElement(unsigned index, 
                                                     const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
                                                     c_vector<double,2> rEndpointsratio,
-                                                    double rRestLength)
+                                                    double rRestLength,
+                                                    bool rIsPeeled,
+                                                    double rPeelingTime)
     : MutableElement<ELEMENT_DIM, SPACE_DIM>(index)
 {
+    mStressfiberGlobalIndex = index;
     mStressfiberNodes=rStressfiberNodes;
     mEndpointsratio=rEndpointsratio;
     mRestLength=rRestLength;
+    mIsPeeled=rIsPeeled;
+    mPeelingTime=rPeelingTime;
 } 
 
 template<unsigned ELEMENT_DIM, unsigned SPACE_DIM>
@@ -243,6 +248,13 @@ VertexElement<ELEMENT_DIM-1, SPACE_DIM>* VertexElement<ELEMENT_DIM, SPACE_DIM>::
 
 // my addition
 template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+unsigned VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberGlobalIndex()
+{
+    return 0;
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 unsigned VertexElement<ELEMENT_DIM, SPACE_DIM>::GetNumStressfibers() const
 {
     return mStressfibers.size();
@@ -271,6 +283,20 @@ double VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberRestLength()
 
 // my addition
 template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+bool VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberPeelStatus()
+{
+    return false;
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+double VertexElement<ELEMENT_DIM, SPACE_DIM>::GetStressfiberPeelingTime()
+{
+    return 0.0;
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberEndpointsratio(c_vector<double,2> endpointsratio)
 {
 }
@@ -284,6 +310,18 @@ void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM
 // my addition
 template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
 void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberRestLength(double newRestLength)
+{
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberPeelStatus(bool newPeelStatus)
+{
+}
+
+// my addition
+template <unsigned ELEMENT_DIM, unsigned SPACE_DIM>
+void VertexElement<ELEMENT_DIM, SPACE_DIM>::UpdateStressfiberPeelingTime(double newPeelingTime)
 {
 }
 
@@ -315,14 +353,19 @@ template<unsigned SPACE_DIM>
 VertexElement<1, SPACE_DIM>::VertexElement(unsigned index, 
                                            const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
                                            c_vector<double,2> rEndpointsratio,
-                                           double rRestLength)
+                                           double rRestLength,
+                                           bool rIsPeeled,
+                                           double rPeelingTime)
     : MutableElement<1, SPACE_DIM>(index)
 {
     if (SPACE_DIM==2)
     {
+        mStressfiberGlobalIndex = index;
         mStressfiberNodes=rStressfiberNodes;
         mEndpointsratio=rEndpointsratio;
         mRestLength=rRestLength;
+        mIsPeeled=rIsPeeled;
+        mPeelingTime=rPeelingTime;
     }
 } // this is the typical constructor for a stress fiber!
 
@@ -373,6 +416,13 @@ unsigned VertexElement<1, SPACE_DIM>::GetNumStressfibers() const
 
 // my addition
 template <unsigned SPACE_DIM>
+unsigned VertexElement<1, SPACE_DIM>::GetStressfiberGlobalIndex()
+{
+    return mStressfiberGlobalIndex;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
 Node<SPACE_DIM>* VertexElement<1, SPACE_DIM>::GetStressfiberNode(unsigned index)
 {
     assert(index < mStressfiberNodes.size());
@@ -395,6 +445,20 @@ double VertexElement<1, SPACE_DIM>::GetStressfiberRestLength()
 
 // my addition
 template <unsigned SPACE_DIM>
+bool VertexElement<1, SPACE_DIM>::GetStressfiberPeelStatus()
+{
+    return mIsPeeled;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+double VertexElement<1, SPACE_DIM>::GetStressfiberPeelingTime()
+{
+    return mPeelingTime;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
 void VertexElement<1, SPACE_DIM>::UpdateStressfiberNode(Node<SPACE_DIM>* newStressfiberNode, unsigned index)
 {
     assert(index < mStressfiberNodes.size());
@@ -413,6 +477,20 @@ template <unsigned SPACE_DIM>
 void VertexElement<1, SPACE_DIM>::UpdateStressfiberRestLength(double newRestLength)
 {
     mRestLength= newRestLength;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberPeelStatus(bool newPeelStatus)
+{
+    mIsPeeled= newPeelStatus;
+}
+
+// my addition
+template <unsigned SPACE_DIM>
+void VertexElement<1, SPACE_DIM>::UpdateStressfiberPeelingTime(double newPeelingTime)
+{
+    mPeelingTime= newPeelingTime;
 }
 
 // Explicit instantiation

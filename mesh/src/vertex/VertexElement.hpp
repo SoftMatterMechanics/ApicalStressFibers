@@ -72,11 +72,17 @@ private:
     // my changes
     std::vector<VertexElement<ELEMENT_DIM-1, SPACE_DIM>*> mStressfibers;
 
+    unsigned mStressfiberGlobalIndex;
+
     std::vector<Node<SPACE_DIM>*> mStressfiberNodes;
 
     c_vector<double,2> mEndpointsratio;
 
     double mRestLength;
+
+    bool mIsPeeled;
+
+    double mPeelingTime;
 
     unsigned mGroupNumber;
 
@@ -185,7 +191,9 @@ public:
     VertexElement(unsigned index,
                   const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes,
                   c_vector<double,2> rEndpointsratio,
-                  double rRestLength);
+                  double rRestLength,
+                  bool rIsPeeled,
+                  double rPeelingTime);
 
 
     /**
@@ -248,6 +256,12 @@ public:
 
     /**
      * @param index the local index of associate nodes of a specified stress fiber
+     * @return the global index of the stress fiber
+     */
+    unsigned GetStressfiberGlobalIndex();
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
      * @return the pointer to the associate node
      */
     Node<SPACE_DIM>* GetStressfiberNode(unsigned index);
@@ -264,6 +278,16 @@ public:
     double GetStressfiberRestLength();
 
     /**
+     * @return the peeling status of the specified stress fiber
+     */
+    bool GetStressfiberPeelStatus();
+
+    /**
+     * @return the peeling time of the specified stress fiber
+     */
+    double GetStressfiberPeelingTime();
+
+    /**
      * @param newStressfiberNode the new node pointer of a specified stress fiber
      * @param index the local index of associated nodes of a specified stress fiber
      */
@@ -278,6 +302,17 @@ public:
      * @param newRestLength the new rest length of a specified stress fiber
      */
     void UpdateStressfiberRestLength(double newRestLength);
+
+    /**
+     * @param newPeelingTime the new peeling time of a specified stress fiber
+     */
+    void UpdateStressfiberPeelingTime(double newPeelingTime);
+
+    /**
+     * @param newPeelStatus the new peeling status of a specified stress fiber
+     */
+    void UpdateStressfiberPeelStatus(bool newPeelStatus);
+
 
     // -------------------end of my additions!!!!--------------
 
@@ -665,11 +700,17 @@ private:
 
     double mElementMyosinActivity; // change made by Chao
 
+    unsigned mStressfiberGlobalIndex;  // added by Chao
+
     std::vector<Node<SPACE_DIM>*> mStressfiberNodes; // added by Chao
 
     c_vector<double,2> mEndpointsratio; // added by Chao
 
     double mRestLength; // added by Chao
+
+    bool mIsPeeled; // added by Chao
+
+    double mPeelingTime; // added by Chao
 
 public:
 
@@ -692,7 +733,9 @@ public:
     VertexElement(unsigned index,
               const std::vector<Node<SPACE_DIM>*>& rStressfiberNodes, 
               c_vector<double,2> rEndpointsratio,
-              double rRestLength); // declaration for 1d case
+              double rRestLength,
+              bool rIsPeeled,
+              double rPeelingTime); // declaration for 1d case
 
     /**
      * @return the number of faces owned by this element.
@@ -742,6 +785,12 @@ public:
 
     /**
      * @param index the local index of associate nodes of a specified stress fiber
+     * @return the global index of the stress fiber
+     */
+    unsigned GetStressfiberGlobalIndex();
+
+    /**
+     * @param index the local index of associate nodes of a specified stress fiber
      * @return the pointer to the associate node
      */
     Node<SPACE_DIM>* GetStressfiberNode(unsigned index);
@@ -755,6 +804,16 @@ public:
      * @return the rest length of the specified stress fiber
      */
     double GetStressfiberRestLength();
+
+    /**
+     * @return the peeling status of the specified stress fiber
+     */
+    bool GetStressfiberPeelStatus();
+
+    /**
+     * @return the peeling time of the specified stress fiber
+     */
+    double GetStressfiberPeelingTime();
 
     /**
      * @param newStressfiberNode the new node pointer of a specified stress fiber
@@ -771,6 +830,17 @@ public:
      * @param newRestLength the new rest length of a specified stress fiber
      */
     void UpdateStressfiberRestLength(double newRestLength);
+
+    /**
+     * @param newPeelStatus the new peeling status of a specified stress fiber
+     */
+    void UpdateStressfiberPeelStatus(bool newPeelStatus);
+
+    /**
+     * @param newPeelingTime the new peeling time of a specified stress fiber
+     */
+    void UpdateStressfiberPeelingTime(double newPeelingTime);
+
 
     // ------------------------end of my additions------------------------
 
@@ -934,8 +1004,6 @@ public:
     {
       return 0.0;
     }
-
-
 
 };
 

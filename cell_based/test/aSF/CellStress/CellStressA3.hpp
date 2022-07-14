@@ -77,6 +77,7 @@ The University of Hong Kong.
 #include "PlaneBasedCellKiller.hpp"
 
 // #include <ctime>
+#include "VoronoiVertexMeshGenerator.hpp"
 
 class ApicalStressFibers : public AbstractCellBasedTestSuite
 {
@@ -91,7 +92,7 @@ public:
         double cell_cell_adhesion_energy_density = -0.1;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
         double cell_boundary_adhesion_energy_density = -0.1;  // Gamma at boundary
         unsigned seed_for_initial_random_polarity = 3;
-        double polarity_magnitude_before_equilibrium = 0.02;  // for before equilibrium
+        double polarity_magnitude_before_equilibrium = 0.01;  // for before equilibrium
         double nucleation_perimeter_tension = 0.4;
         double adhesion_energy = 0.0002;
         double sf_stiffness = 0.0;
@@ -148,9 +149,9 @@ public:
 
       // 8. Time
         bool   if_equilibrate_for_a_while = true;
-        double time_for_rest = 50;
-        double time_for_random_movement = 0.0;
-        double time_for_relaxation = 0.0;
+        double time_for_rest = 0;
+        double time_for_random_movement = 250.0;
+        double time_for_relaxation = 150.0;
         double time_for_equilibrium = time_for_rest + time_for_random_movement + time_for_relaxation;
         if (time_for_equilibrium <= 0.0)
            if_equilibrate_for_a_while = false;
@@ -165,7 +166,7 @@ public:
         unsigned sampling_timestep_multiple = (unsigned) round(sampling_time/dt);
         
       // 9. Cell rearrangement threshold length for T1 & T2 transitions
-        double cell_rearrangement_threshold = 0.000001;  
+        double cell_rearrangement_threshold = 0.0001;  
         double t2_threshold = 0.001;
         double t3_threshold = 5.0;
 
@@ -183,6 +184,8 @@ public:
       /*-----------------------START: Generate cell monolayer mesh-------------------*/
         MyNoPBCToroidalHoneycombVertexMeshGenerator generator(num_ele_across, num_ele_up, initial_area, cell_rearrangement_threshold, t2_threshold);
         MyNoPBCToroidal2dVertexMesh* p_mesh = generator.GetToroidalMesh();
+        // VoronoiVertexMeshGenerator generator(num_ele_across,num_ele_up,0,1);
+        // MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
 
         p_mesh->SetDistanceForT3SwapChecking(t3_threshold); 
         p_mesh->SetUpdateFaceElementsInMeshBoolean(if_update_face_elements_in_mesh);

@@ -63,6 +63,8 @@ private:
     /** Results file for reaction forces. */
     out_stream mpPeelingBisectorOrientationFile; 
 
+    out_stream mpCuttingBisectorOrientationFile; 
+
     out_stream mpAngleBisectorFile;
 
     out_stream mpStressFiberTensionFile;
@@ -70,6 +72,10 @@ private:
     out_stream mpElementInfoFile;
 
     out_stream mpCellStressFile;
+
+    out_stream mpAnimationElemFile;
+    
+    out_stream mpAnimationSFFile;
     
     /**
      * Boost Serialization method for archiving/checkpointing.
@@ -104,11 +110,7 @@ protected:
 
     double mAdhesionEnergy;
 
-    double mk;
-
-    double mC0;
-
-    double mRatePower;
+    double mCytoViscosity;
 
     double mCellCellAdhesionEnergyParameter;
 
@@ -160,7 +162,7 @@ public:
 
     void SetRestLengthOfNucleation(double restLengthOfNucleation);
 
-    void SetPeelingParameters(double adhesionEnergy, double k, double C0, double ratePower);
+    void SetPeelingParameters(double adhesionEnergy, double cytoViscosity);
 
     void SetNagaiHondaCellCellAdhesionEnergyParameter(double cellCellAdhesionEnergyParameter);
 

@@ -101,7 +101,7 @@ public:
         unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
         // double target_shape_index = 3.0;
         bool   seed_manually = true;
-        unsigned random_seed_for_target_area = 16;
+        unsigned random_seed_for_target_area = 29;
         double min_target_area = 1.0;
         double max_target_area = 7.0;
         bool   use_fixed_target_area_without_modifier = false;

@@ -129,9 +129,9 @@ public:
         double rate_power = 0.8;
 
       // 6. morphogenetic force
-        double horizontal_morphogenetic_force = 5;
+        double horizontal_morphogenetic_force = 4;
         double vertical_morphogenetic_force = 2;
-        double horizontal_morphogenetic_force_growth_rate = 0.002;
+        double horizontal_morphogenetic_force_growth_rate = 0.0005;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
