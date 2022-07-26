@@ -89,3 +89,13 @@ aSF/UniformPhase/UPhaseD2.hpp
 aSF/UniformPhase/UPhaseD3.hpp
 aSF/UniformPhase/UPhaseD4.hpp
 aSF/UniformPhase/UPhaseD5.hpp
+aSF/UniformPhase/UPhaseE1.hpp
+aSF/UniformPhase/UPhaseE2.hpp
+aSF/UniformPhase/UPhaseE3.hpp
+aSF/UniformPhase/UPhaseE4.hpp
+aSF/UniformPhase/UPhaseE5.hpp
+aSF/UniformPhase/UPhaseF1.hpp
+aSF/UniformPhase/UPhaseF2.hpp
+aSF/UniformPhase/UPhaseF3.hpp
+aSF/UniformPhase/UPhaseF4.hpp
+aSF/UniformPhase/UPhaseF5.hpp

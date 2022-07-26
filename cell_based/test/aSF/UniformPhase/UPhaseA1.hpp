@@ -87,20 +87,24 @@ public:
       /*-------------------------START: Basic Settings-----------------------*/
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
-        double edge_elastic_modulus = 0.01; // KL
-        double cell_cell_adhesion_energy_density = -0.1;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = cell_cell_adhesion_energy_density;   // Gamma at boundary
-        unsigned random_seed_for_target_area = 1;
-        double polarity_magnitude_before_equilibrium = 0.18;  // for before equilibrium
-
-        double nucleation_perimeter_tension = 4;
-        double adhesion_energy = 0.0002;
-        double sf_stiffness = 0.0;
+        double edge_elastic_modulus = 0.05;
+        double cell_cell_adhesion_energy_density = -0.2;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = -0.2;  // Gamma at boundary
+        double polarity_magnitude_before_equilibrium = 0.08;  // for before equilibrium
+        unsigned random_seed_for_target_area = 4;
+        // 5. Stress fiber tension
+        double sf_stiffness = 0.0;   // 0.0 means the stiffness of stress fibers is equal to the perimeter stiffness
+        double nucleation_perimeter_tension = 0.0;  // threshold for stress fibers nucleation
+        double rest_length_of_nucleation = 0.19;   // delta0 = 0.02;
+        double adhesion_energy = 10;   // cortex-membrane adhesion energy
+        double cyto_viscosity = 1;  // viscosity of cytoplasma
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number
         unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
+        // double target_shape_index = 3.0;
         bool   seed_manually = true;
+        // unsigned random_seed_for_target_area = 1;
         double min_target_area = 1.0;
         double max_target_area = 7.0;
         bool   use_fixed_target_area_without_modifier = false;
@@ -115,23 +119,17 @@ public:
 
       // 4. Cell-cell adhesion & constant cortical contraction
       // this parameter value here is one half of its real value because the edge is shared by two cells
-        // double cell_cell_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        // double cell_boundary_adhesion_energy_density = -target_shape_index*edge_elastic_modulus*sqrt(min_target_area);   // Gamma at boundary
+        // double cell_cell_adhesion_energy_density = -0.3;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        // double cell_boundary_adhesion_energy_density = -0.3;  // Gamma at boundary
         bool   if_use_face_element_to_get_adhesion_parameter = false;
 
       // 5. Stress fiber tension
-        // double sf_stiffness = 0.05;
-        // double nucleation_perimeter_tension = 0.4;
-        double rest_length_of_nucleation = 0.02;   // delta0 = 0.02;
-        // double adhesion_energy = 0.0002;
-        double k = 1;
-        double C0 = 0.1;
-        double rate_power = 0.8;
+
 
       // 6. morphogenetic force
-        double horizontal_morphogenetic_force = 0.01;
-        double vertical_morphogenetic_force = 0;
-        double horizontal_morphogenetic_force_growth_rate = 0.002;
+        double horizontal_morphogenetic_force = 7.5;
+        double vertical_morphogenetic_force = 2;
+        double horizontal_morphogenetic_force_growth_rate = 0.001;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
@@ -292,7 +290,7 @@ public:
         MAKE_PTR(MyNagaiHondaForce<2>, p_nh_force);
         
         p_nh_force->SetNagaiHondaDeformationEnergyParameter(area_elastic_modulus); // KA
-        // p_nh_force->SetNagaiHondaMembraneSurfaceEnergyParameter(edge_elastic_modulus); // KL
+        p_nh_force->SetNagaiHondaMembraneSurfaceEnergyParameter(edge_elastic_modulus); // KL
         p_nh_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density); // Gamma
         p_nh_force->SetNagaiHondaCellBoundaryAdhesionEnergyParameter(cell_boundary_adhesion_energy_density); // Gamma at boundary
 
@@ -317,10 +315,10 @@ public:
         p_sf_force->SetFlagForStressfiberCreation(0);
         p_sf_force->SetStressfiberStiffness(sf_stiffness);
         p_sf_force->SetNucleationThresholdOfPerimeterTension(nucleation_perimeter_tension);
-        p_sf_force->SetHalfWidth(half_width);
         p_sf_force->SetRestLengthOfNucleation(rest_length_of_nucleation);
-        p_sf_force->SetPeelingParameters(adhesion_energy, k, C0, rate_power);
+        p_sf_force->SetPeelingParameters(adhesion_energy, cyto_viscosity);
         p_sf_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density);
+        // p_sf_force->SetHalfWidth(half_width);
 
         // simulator.AddForce(p_sf_force);
       /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
@@ -419,7 +417,7 @@ public:
         
         oss.str("");
         oss << "Date=" << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday;
-        oss << "_Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        oss << "_Time=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
         // oss << "_NumUp=" << num_ele_up;
         // oss << "_NumAc=" << num_ele_across;
         // oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
@@ -432,15 +430,21 @@ public:
         // oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
         oss << "_Aseed=" << random_seed_for_target_area;
 
-        oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;
-        oss << "_Pseed=" << seed_for_initial_random_polarity;
+        // oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;
+        // oss << "_Pseed=" << seed_for_initial_random_polarity;
 
-        oss << "_dt=" << std::fixed  << setprecision(3) << dt;
-        oss << "_maxd=" << std::fixed  << setprecision(3) << max_movement_per_timestep;
-        if (if_equilibrate_for_a_while)
-        {
-          oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
-        }
+        // oss << "_dt=" << std::fixed  << setprecision(3) << dt;
+        // oss << "_maxd=" << std::fixed  << setprecision(3) << max_movement_per_timestep;
+        // if (if_equilibrate_for_a_while)
+        // {
+        //   oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
+        // }
+
+        oss << "_NucTen=" << std::fixed  << setprecision(2) << nucleation_perimeter_tension;  
+        oss << "_NucRestLen=" << std::fixed  << setprecision(3) << rest_length_of_nucleation;
+        oss << "_Eadh=" << std::scientific << adhesion_energy;
+        oss << "_CytoVis=" << std::scientific << cyto_viscosity;
+
         oss << "_realeqtime=" << std::fixed << setprecision(1) << real_equilibrium_time;
         oss << "_simtime=" << std::fixed << setprecision(1) << end_time; 
         

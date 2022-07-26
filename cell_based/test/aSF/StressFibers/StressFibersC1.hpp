@@ -97,7 +97,7 @@ public:
         double nucleation_perimeter_tension = 0.0;  // threshold for stress fibers nucleation
         double rest_length_of_nucleation = 0.19;   // delta0 = 0.02;
         double adhesion_energy = 1e-2;   // cortex-membrane adhesion energy
-        double cyto_viscosity = 1e-1;  // viscosity of cytoplasma
+        double cyto_viscosity = 1;  // viscosity of cytoplasma
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number

@@ -201,7 +201,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                     Node<DIM>* p_node2 = p_stressfiber->GetStressfiberNode(2);
                     Node<DIM>* p_node3 = p_stressfiber->GetStressfiberNode(3);
                     c_vector<double,2> ratio = p_stressfiber->GetStressfiberEndpointsratio();
-                    double restlength = p_stressfiber->GetStressfiberRestLength();
+                    // double restlength = p_stressfiber->GetStressfiberRestLength();
 
                     bool node1_overlap_with_node2 = (p_node1->GetIndex() == p_node2->GetIndex());
 
@@ -246,22 +246,22 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                                 Node<DIM>* new_p_node0 = p_element->GetNode(local_index_previous_node1);
                                 p_stressfiber->UpdateStressfiberNode(new_p_node0,0);
 
-                                for (unsigned delete_sf_local_index=0; delete_sf_local_index<num_stressfibers_elem; delete_sf_local_index++)
-                                {
-                                    VertexElement<DIM-1, DIM>* p_delete_sf = p_element->GetStressfiber(delete_sf_local_index);
-                                    Node<DIM>* p_delete_node1 = p_delete_sf->GetStressfiberNode(1);
-                                    c_vector<double,2> delete_ratio = p_delete_sf->GetStressfiberEndpointsratio();
-                                    double delete_restlength = p_delete_sf->GetStressfiberRestLength();
+                                // for (unsigned delete_sf_local_index=0; delete_sf_local_index<num_stressfibers_elem; delete_sf_local_index++)
+                                // {
+                                //     VertexElement<DIM-1, DIM>* p_delete_sf = p_element->GetStressfiber(delete_sf_local_index);
+                                //     Node<DIM>* p_delete_node1 = p_delete_sf->GetStressfiberNode(1);
+                                //     c_vector<double,2> delete_ratio = p_delete_sf->GetStressfiberEndpointsratio();
+                                //     double delete_restlength = p_delete_sf->GetStressfiberRestLength();
 
-                                    if (p_node0->GetIndex() == p_delete_node1->GetIndex())
-                                    {
-                                        ratio[0] = delete_ratio[0];
-                                        restlength += delete_restlength;
-                                        p_stressfiber->UpdateStressfiberEndpointsratio(ratio);
-                                        p_stressfiber->UpdateStressfiberRestLength(restlength);
-                                        break;
-                                    }
-                                }
+                                //     if (p_node0->GetIndex() == p_delete_node1->GetIndex())
+                                //     {
+                                //         ratio[0] = delete_ratio[0];
+                                //         restlength += delete_restlength;
+                                //         p_stressfiber->UpdateStressfiberEndpointsratio(ratio);
+                                //         p_stressfiber->UpdateStressfiberRestLength(restlength);
+                                //         break;
+                                //     }
+                                // }
                             }
                             else 
                             {
@@ -296,22 +296,22 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                                 Node<DIM>* new_p_node3 = p_element->GetNode(local_index_next_node2);
                                 p_stressfiber->UpdateStressfiberNode(new_p_node3,3);
 
-                                for (unsigned delete_sf_local_index=0; delete_sf_local_index<num_stressfibers_elem; delete_sf_local_index++)
-                                {
-                                    VertexElement<DIM-1, DIM>* p_delete_sf = p_element->GetStressfiber(delete_sf_local_index);
-                                    Node<DIM>* p_delete_node1 = p_delete_sf->GetStressfiberNode(1);
-                                    c_vector<double,2> delete_ratio = p_delete_sf->GetStressfiberEndpointsratio();
-                                    double delete_restlength = p_delete_sf->GetStressfiberRestLength();
+                                // for (unsigned delete_sf_local_index=0; delete_sf_local_index<num_stressfibers_elem; delete_sf_local_index++)
+                                // {
+                                //     VertexElement<DIM-1, DIM>* p_delete_sf = p_element->GetStressfiber(delete_sf_local_index);
+                                //     Node<DIM>* p_delete_node1 = p_delete_sf->GetStressfiberNode(1);
+                                //     c_vector<double,2> delete_ratio = p_delete_sf->GetStressfiberEndpointsratio();
+                                //     double delete_restlength = p_delete_sf->GetStressfiberRestLength();
 
-                                    if (p_node3->GetIndex() == p_delete_node1->GetIndex())
-                                    {
-                                        ratio[1] = delete_ratio[1];
-                                        restlength += delete_restlength;
-                                        p_stressfiber->UpdateStressfiberEndpointsratio(ratio);
-                                        p_stressfiber->UpdateStressfiberRestLength(restlength);
-                                        break;
-                                    }
-                                }
+                                //     if (p_node3->GetIndex() == p_delete_node1->GetIndex())
+                                //     {
+                                //         ratio[1] = delete_ratio[1];
+                                //         restlength += delete_restlength;
+                                //         p_stressfiber->UpdateStressfiberEndpointsratio(ratio);
+                                //         p_stressfiber->UpdateStressfiberRestLength(restlength);
+                                //         break;
+                                //     }
+                                // }
                             }
                             else 
                             {
@@ -591,7 +591,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                         bool peeled = false;
                         if (energy_release_rate_A>mAdhesionEnergy)
                         {
-                            double peeling_rate_A = (energy_release_rate_A-mAdhesionEnergy)/(4/3*M_PI*mCytoViscosity*length_AB);
+                            double peeling_rate_A = (energy_release_rate_A-mAdhesionEnergy)/(4/3*M_PI*mCytoViscosity*length_AB*pow(sin(alpha),2));
                             double peeling_length_step_A = peeling_rate_A*dt;
                             double ratio0_before_peeling = ratio[0];
                             ratio[0] = ratio[0] - peeling_length_step_A/length_01;
@@ -607,7 +607,7 @@ void MyStressfiberTensionForce<DIM>::AddForceContribution(AbstractCellPopulation
                         }
                         if (energy_release_rate_B>mAdhesionEnergy)
                         {
-                            double peeling_rate_B = (energy_release_rate_B-mAdhesionEnergy)/(4/3*M_PI*mCytoViscosity*length_AB);
+                            double peeling_rate_B = (energy_release_rate_B-mAdhesionEnergy)/(4/3*M_PI*mCytoViscosity*length_AB*pow(sin(beta),2));
                             double peeling_length_step_B = peeling_rate_B*dt;
                             double ratio1_before_peeling = ratio[1];
                             ratio[1] = ratio[1] + peeling_length_step_B/length_23;
