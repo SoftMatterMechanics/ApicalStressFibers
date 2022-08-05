@@ -69,6 +69,16 @@ aSF/RateDep/RateDepB2.hpp
 aSF/RateDep/RateDepB3.hpp
 aSF/RateDep/RateDepB4.hpp
 aSF/RateDep/RateDepB5.hpp
+aSF/RateDep/RateDepC1.hpp
+aSF/RateDep/RateDepC2.hpp
+aSF/RateDep/RateDepC3.hpp
+aSF/RateDep/RateDepC4.hpp
+aSF/RateDep/RateDepC5.hpp
+aSF/RateDep/RateDepD1.hpp
+aSF/RateDep/RateDepD2.hpp
+aSF/RateDep/RateDepD3.hpp
+aSF/RateDep/RateDepD4.hpp
+aSF/RateDep/RateDepD5.hpp
 aSF/UniformPhase/UPhaseA1.hpp
 aSF/UniformPhase/UPhaseA2.hpp
 aSF/UniformPhase/UPhaseA3.hpp

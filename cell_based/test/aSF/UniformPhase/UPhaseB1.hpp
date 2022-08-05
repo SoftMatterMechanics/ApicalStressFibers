@@ -87,11 +87,11 @@ public:
       /*-------------------------START: Basic Settings-----------------------*/
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
-        double edge_elastic_modulus = 0.05;
-        double cell_cell_adhesion_energy_density = -0.2;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -0.2;  // Gamma at boundary
-        double polarity_magnitude_before_equilibrium = 0.08;  // for before equilibrium
-        unsigned random_seed_for_target_area = 26;
+        double edge_elastic_modulus = 0.01;
+        double cell_cell_adhesion_energy_density = -0.04;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = -0.04;  // Gamma at boundary
+        double polarity_magnitude_before_equilibrium = 0.03;  // for before equilibrium
+        unsigned random_seed_for_target_area = 40;
         // 5. Stress fiber tension
         double sf_stiffness = 0.0;   // 0.0 means the stiffness of stress fibers is equal to the perimeter stiffness
         double nucleation_perimeter_tension = 0.0;  // threshold for stress fibers nucleation
@@ -127,9 +127,9 @@ public:
 
 
       // 6. morphogenetic force
-        double horizontal_morphogenetic_force = 7.5;
+        double horizontal_morphogenetic_force = 6;
         double vertical_morphogenetic_force = 2;
-        double horizontal_morphogenetic_force_growth_rate = 0.001;
+        double horizontal_morphogenetic_force_growth_rate = 0.0005;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
@@ -450,7 +450,7 @@ public:
         
         oss << "_Fx=" << std::fixed << setprecision(1) << horizontal_morphogenetic_force;
         oss << "_Fy=" << std::fixed << setprecision(1) << vertical_morphogenetic_force;
-        oss << "_vFx=" << std::fixed << setprecision(3) << horizontal_morphogenetic_force_growth_rate;
+        oss << "_vFx=" << std::fixed << setprecision(4) << horizontal_morphogenetic_force_growth_rate;
         oss << "_vFy=" << std::fixed << setprecision(2) << vertical_morphogenetic_force_growth_rate;
 
         output_directory += oss.str();

@@ -87,21 +87,24 @@ public:
       /*-------------------------START: Basic Settings-----------------------*/
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
-        double target_shape_index = 3.6;
-        double cell_cell_adhesion_energy_density = -0.4;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -0.4;  // Gamma at boundary
-        unsigned seed_for_initial_random_polarity = 3;
+        double target_shape_index = 3.5;
+        double cell_cell_adhesion_energy_density = -0.3;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = -0.3;  // Gamma at boundary
         double polarity_magnitude_before_equilibrium = 0.04;  // for before equilibrium
-        double nucleation_perimeter_tension = 0.4;
-        double adhesion_energy = 0.0002;
-        double sf_stiffness = 0.0;
+        unsigned random_seed_for_target_area = 59;
+        // 5. Stress fiber tension
+        double sf_stiffness = 0.0;   // 0.0 means the stiffness of stress fibers is equal to the perimeter stiffness
+        double nucleation_perimeter_tension = 0.0;  // threshold for stress fibers nucleation
+        double rest_length_of_nucleation = 0.19;   // delta0 = 0.02;
+        double adhesion_energy = 10;   // cortex-membrane adhesion energy
+        double cyto_viscosity = 1;  // viscosity of cytoplasma
 
       // 1. Cell mesh and size
         unsigned num_ele_across = 16; // cell number along anterior-posterior, must be an even number
         unsigned num_ele_up = 16; // cell number along medial-lateral, must be an even number
         // double target_shape_index = 3.0;
         bool   seed_manually = true;
-        unsigned random_seed_for_target_area = 30;
+        // unsigned random_seed_for_target_area = 1;
         double min_target_area = 1.0;
         double max_target_area = 7.0;
         bool   use_fixed_target_area_without_modifier = false;
@@ -120,18 +123,12 @@ public:
         bool   if_use_face_element_to_get_adhesion_parameter = false;
 
       // 5. Stress fiber tension
-        // double sf_stiffness = 0.05;
-        // double nucleation_perimeter_tension = 0.4;
-        double rest_length_of_nucleation = 0.02;   // delta0 = 0.02;
-        // double adhesion_energy = 0.0002;
-        double k = 1;
-        double C0 = 0.1;
-        double rate_power = 0.8;
+
 
       // 6. morphogenetic force
-        double horizontal_morphogenetic_force = 4;
+        double horizontal_morphogenetic_force = 5.5;
         double vertical_morphogenetic_force = 2;
-        double horizontal_morphogenetic_force_growth_rate = 0.0005;
+        double horizontal_morphogenetic_force_growth_rate = 0.001;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
@@ -141,7 +138,7 @@ public:
         double set_node_radius = 2.0; // effective cell diameter (in units of 10 microns)
 
         bool   has_polarity = true;
-        // unsigned seed_for_initial_random_polarity = 3;
+        unsigned seed_for_initial_random_polarity = 3;
         // double polarity_magnitude_before_equilibrium = 0.04;  // for before equilibrium
         double polarity_magnitude_after_equilibrium = 0.0;  // for after equilibrium
         double rotational_diffusion_constant = 0.5;
@@ -158,10 +155,7 @@ public:
         double dt = 0.05;
         double real_equilibrium_time = time_for_equilibrium + vertical_morphogenetic_force/vertical_morphogenetic_force_growth_rate;
         double start_time_for_stretching = real_equilibrium_time;
-        double loading_growth_stop_time = real_equilibrium_time + (horizontal_morphogenetic_force - vertical_morphogenetic_force)/horizontal_morphogenetic_force_growth_rate; 
-        double creep_time = 1000;
-        double end_time = loading_growth_stop_time + creep_time;
-        
+        double end_time = real_equilibrium_time + (horizontal_morphogenetic_force - vertical_morphogenetic_force)/horizontal_morphogenetic_force_growth_rate; 
         double max_movement_per_timestep = 0.05; 
         bool   apply_adaptive_timestep = true;
         double sampling_time = 1.0;
@@ -258,7 +252,6 @@ public:
         p_numerical_method->SetIfEquilibrateForAWhile(if_equilibrate_for_a_while);
         p_numerical_method->SetTimeForEquilibrium(time_for_equilibrium);
         p_numerical_method->SetRealEquilibriumTime(real_equilibrium_time);
-        p_numerical_method->SetLoadingGrowthStopTime(loading_growth_stop_time);
         p_numerical_method->SetMorphogeneticForceGrowthRate(horizontal_morphogenetic_force_growth_rate, vertical_morphogenetic_force_growth_rate);
         simulator.SetNumericalMethod(p_numerical_method);
       /*---------------------------------END: Simulator settings-----------------------------*/
@@ -321,10 +314,10 @@ public:
         p_sf_force->SetFlagForStressfiberCreation(0);
         p_sf_force->SetStressfiberStiffness(sf_stiffness);
         p_sf_force->SetNucleationThresholdOfPerimeterTension(nucleation_perimeter_tension);
-        p_sf_force->SetHalfWidth(half_width);
         p_sf_force->SetRestLengthOfNucleation(rest_length_of_nucleation);
-        p_sf_force->SetPeelingParameters(adhesion_energy, k, C0, rate_power);
+        p_sf_force->SetPeelingParameters(adhesion_energy, cyto_viscosity);
         p_sf_force->SetNagaiHondaCellCellAdhesionEnergyParameter(cell_cell_adhesion_energy_density);
+        // p_sf_force->SetHalfWidth(half_width);
 
         // simulator.AddForce(p_sf_force);
       /*-------------------------------------END: My Stressfiber Tension Force------------------------------*/
@@ -422,34 +415,34 @@ public:
         
         oss.str("");
         oss << "Date=" << (now->tm_year + 1900 -2000) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday;
-        oss << "_Timestamp=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
-        oss << "_NumUp=" << num_ele_up;
-        oss << "_NumAc=" << num_ele_across;
-        oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
-                << setprecision(2) << area_elastic_modulus;
+        oss << "_Time=" << now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec;
+        // oss << "_NumUp=" << num_ele_up;
+        // oss << "_NumAc=" << num_ele_across;
+        // oss << "_Ka=" << ((area_elastic_modulus>=0.01 || area_elastic_modulus==0.0)? std::fixed : std::scientific) 
+        //         << setprecision(2) << area_elastic_modulus;
         // oss << "_Kp=" << ((edge_elastic_modulus>=0.01 || edge_elastic_modulus==0.0)? std::fixed : std::scientific) 
         //         << setprecision(2) << edge_elastic_modulus;
 
-        oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
-        oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;
-        oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
+        // oss << "_Ai=" << std::fixed  << setprecision(2) << initial_area;
+        // oss << "_minA0=" << std::fixed  << setprecision(2) << min_target_area;
+        // oss << "_maxA0=" << std::fixed  << setprecision(2) << max_target_area;
         oss << "_Aseed=" << random_seed_for_target_area;
 
-        oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;
-        oss << "_Pseed=" << seed_for_initial_random_polarity;
+        // oss << "_fp=" << std::fixed  << setprecision(3) << polarity_magnitude_before_equilibrium;
+        // oss << "_Pseed=" << seed_for_initial_random_polarity;
 
-        oss << "_dt=" << std::fixed  << setprecision(3) << dt;
-        oss << "_maxd=" << std::fixed  << setprecision(3) << max_movement_per_timestep;
-        if (if_equilibrate_for_a_while)
-        {
-          oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
-        }
+        // oss << "_dt=" << std::fixed  << setprecision(3) << dt;
+        // oss << "_maxd=" << std::fixed  << setprecision(3) << max_movement_per_timestep;
+        // if (if_equilibrate_for_a_while)
+        // {
+        //    oss << "_eqtime=" << std::fixed << setprecision(1) << time_for_equilibrium;
+        // }
         oss << "_realeqtime=" << std::fixed << setprecision(1) << real_equilibrium_time;
         oss << "_simtime=" << std::fixed << setprecision(1) << end_time; 
         
         oss << "_Fx=" << std::fixed << setprecision(1) << horizontal_morphogenetic_force;
         oss << "_Fy=" << std::fixed << setprecision(1) << vertical_morphogenetic_force;
-        oss << "_vFx=" << std::fixed << setprecision(3) << horizontal_morphogenetic_force_growth_rate;
+        oss << "_vFx=" << std::fixed << setprecision(4) << horizontal_morphogenetic_force_growth_rate;
         oss << "_vFy=" << std::fixed << setprecision(2) << vertical_morphogenetic_force_growth_rate;
 
         output_directory += oss.str();

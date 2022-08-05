@@ -450,7 +450,7 @@ public:
         
         oss << "_Fx=" << std::fixed << setprecision(1) << horizontal_morphogenetic_force;
         oss << "_Fy=" << std::fixed << setprecision(1) << vertical_morphogenetic_force;
-        oss << "_vFx=" << std::fixed << setprecision(3) << horizontal_morphogenetic_force_growth_rate;
+        oss << "_vFx=" << std::fixed << setprecision(4) << horizontal_morphogenetic_force_growth_rate;
         oss << "_vFy=" << std::fixed << setprecision(2) << vertical_morphogenetic_force_growth_rate;
 
         output_directory += oss.str();

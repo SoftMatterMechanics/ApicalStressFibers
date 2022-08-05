@@ -88,10 +88,10 @@ public:
       /* Energy equation form: 1/2*Ka*(A-A0)^2 + 1/2*Kp*(P-P0)^2 + Gamma*L */
 
         double target_shape_index = 3.5;
-        double cell_cell_adhesion_energy_density = -0.3;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
-        double cell_boundary_adhesion_energy_density = -0.3;  // Gamma at boundary
+        double cell_cell_adhesion_energy_density = -0.4;  // Gamma, this parameter consists of cell-cell adhesion and cortical contraction 
+        double cell_boundary_adhesion_energy_density = -0.4;  // Gamma at boundary
         double polarity_magnitude_before_equilibrium = 0.04;  // for before equilibrium
-        unsigned random_seed_for_target_area = 49;
+        unsigned random_seed_for_target_area = 26;
         // 5. Stress fiber tension
         double sf_stiffness = 0.0;   // 0.0 means the stiffness of stress fibers is equal to the perimeter stiffness
         double nucleation_perimeter_tension = 0.0;  // threshold for stress fibers nucleation
@@ -128,7 +128,7 @@ public:
       // 6. morphogenetic force
         double horizontal_morphogenetic_force = 5.5;
         double vertical_morphogenetic_force = 2;
-        double horizontal_morphogenetic_force_growth_rate = 0.001;
+        double horizontal_morphogenetic_force_growth_rate = 0.0002;
         double vertical_morphogenetic_force_growth_rate = 0.02;
 
       // 7. Random force
